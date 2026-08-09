@@ -95,7 +95,7 @@ export default function SlotFormModal({ open, mode = 'add', initialValues, onClo
             <label className={labelClass} htmlFor="slot-gender">
               Gender
             </label>
-            <select id="slot-gender" value={form.gender} onChange={setField('gender')} className={`${inputClass} bg-white`}>
+            <select id="slot-gender" value={form.gender} onChange={setField('gender')} className={`${inputClass} bg-surface`}>
               <option value="Mixed">Mixed</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
@@ -105,7 +105,7 @@ export default function SlotFormModal({ open, mode = 'add', initialValues, onClo
             <label className={labelClass} htmlFor="slot-status">
               Status
             </label>
-            <select id="slot-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+            <select id="slot-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>

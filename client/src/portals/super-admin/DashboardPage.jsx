@@ -3,12 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { getDashboard } from '../../services/dashboardService';
+import { GraduationCapIcon, CampusIcon, BriefcaseIcon, HourglassIcon } from '../../components/icons';
+import ExportButtons from '../../components/ExportButtons';
+
+const KPI_EXPORT_COLUMNS = [
+  { header: 'Metric', accessor: (k) => k.label },
+  { header: 'Value', accessor: (k) => k.value },
+  { header: 'Change vs last month', accessor: (k) => k.delta },
+];
 
 const KPI_ICON = {
-  students: { bg: 'bg-success-bg', color: 'text-success-text', emoji: '🎓' },
-  campuses: { bg: 'bg-warning-bg', color: 'text-warning-text', emoji: '🏫' },
-  placement: { bg: 'bg-info-bg', color: 'text-info-text', emoji: '💼' },
-  pending: { bg: 'bg-danger-50', color: 'text-danger-600', emoji: '⏳' },
+  students: { bg: 'bg-success-bg', color: 'text-success-text', Icon: GraduationCapIcon },
+  campuses: { bg: 'bg-warning-bg', color: 'text-warning-text', Icon: CampusIcon },
+  placement: { bg: 'bg-info-bg', color: 'text-info-text', Icon: BriefcaseIcon },
+  pending: { bg: 'bg-danger-50', color: 'text-danger-600', Icon: HourglassIcon },
 };
 
 const DELTA_TONE = {
@@ -30,9 +38,9 @@ function CardShell({ children, className = '', hover = false }) {
   return (
     <motion.div
       variants={fadeInUp}
-      whileHover={hover ? { y: -3, boxShadow: '0 12px 26px rgba(16,35,28,0.10)' } : undefined}
+      whileHover={hover ? { y: -3, boxShadow: '0 12px 26px rgba(13,25,53,0.10)' } : undefined}
       transition={{ duration: 0.18, ease: 'easeOut' }}
-      className={`bg-white border border-neutral-200 rounded-xl ${className}`}
+      className={`bg-surface border border-neutral-200 rounded-xl ${className}`}
     >
       {children}
     </motion.div>
@@ -48,7 +56,7 @@ function DashboardSkeleton() {
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="bg-white border border-neutral-200 rounded-xl p-5 flex flex-col gap-3">
+          <div key={i} className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <SkeletonBlock className="h-3 w-24" />
               <SkeletonBlock className="w-[34px] h-[34px] rounded" />
@@ -59,11 +67,11 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid grid-cols-[1.5fr_1fr] gap-4">
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
           <SkeletonBlock className="h-4 w-52" />
           <SkeletonBlock className="h-[170px] w-full" />
         </div>
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
           <SkeletonBlock className="h-4 w-36" />
           {[0, 1, 2, 3, 4].map((i) => (
             <SkeletonBlock key={i} className="h-8 w-full" />
@@ -71,13 +79,13 @@ function DashboardSkeleton() {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
           <SkeletonBlock className="h-4 w-40" />
           {[0, 1, 2].map((i) => (
             <SkeletonBlock key={i} className="h-14 w-full" />
           ))}
         </div>
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
           <SkeletonBlock className="h-4 w-32" />
           {[0, 1, 2, 3, 4].map((i) => (
             <SkeletonBlock key={i} className="h-5 w-full" />
@@ -90,12 +98,13 @@ function DashboardSkeleton() {
 
 function KpiCard({ kpi }) {
   const icon = KPI_ICON[kpi.icon] ?? KPI_ICON.students;
+  const Icon = icon.Icon;
   return (
     <CardShell hover className="p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-overline uppercase text-neutral-500">{kpi.label}</span>
-        <div className={`w-[34px] h-[34px] rounded flex items-center justify-center text-base ${icon.bg} ${icon.color}`}>
-          {icon.emoji}
+        <div className={`w-[34px] h-[34px] rounded flex items-center justify-center ${icon.bg} ${icon.color}`}>
+          <Icon width="17" height="17" />
         </div>
       </div>
       <div className="font-heading text-h3 text-neutral-900">{kpi.value}</div>
@@ -112,7 +121,7 @@ function KpiCard({ kpi }) {
 function TrendTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-neutral-200 rounded-md shadow-card px-3 py-2 flex flex-col gap-1">
+    <div className="bg-surface border border-neutral-200 rounded-md shadow-card px-3 py-2 flex flex-col gap-1">
       <span className="text-caption text-neutral-900 font-semibold">{label}</span>
       {payload.map((p) => (
         <span key={p.dataKey} className="text-caption text-neutral-600" style={{ color: p.color }}>
@@ -133,11 +142,11 @@ function TrendChart({ trend }) {
         </div>
         <div className="flex gap-3.5">
           <div className="flex items-center gap-1.5 text-caption text-neutral-600">
-            <span className="w-[9px] h-[9px] rounded-sm bg-royal-500" />
+            <span className="w-[9px] h-[9px] rounded-sm bg-chart-enrollment" />
             Enrollment
           </div>
           <div className="flex items-center gap-1.5 text-caption text-neutral-600">
-            <span className="w-[9px] h-[9px] rounded-sm bg-parrot-500" />
+            <span className="w-[9px] h-[9px] rounded-sm bg-gold-500" />
             Placement
           </div>
         </div>
@@ -155,14 +164,14 @@ function TrendChart({ trend }) {
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#8A9A93', fontSize: 11.5, fontWeight: 500 }}
+                tick={{ fill: 'var(--neutral-500)', fontSize: 11.5, fontWeight: 500 }}
               />
               <YAxis hide />
-              <Tooltip content={<TrendTooltip />} cursor={{ fill: 'rgba(16,35,28,0.04)' }} />
+              <Tooltip content={<TrendTooltip />} cursor={{ fill: 'var(--chart-cursor)' }} />
               <Bar
                 dataKey="enrollment"
                 name="Enrollment"
-                fill="#2F6FE4"
+                fill="var(--chart-enrollment)"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={14}
                 animationDuration={800}
@@ -171,7 +180,7 @@ function TrendChart({ trend }) {
               <Bar
                 dataKey="placement"
                 name="Placement"
-                fill="#7CB342"
+                fill="#C9A227"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={14}
                 animationDuration={800}
@@ -205,7 +214,7 @@ function CampusPerformance({ campuses }) {
                   initial={{ width: 0 }}
                   animate={{ width: `${c.pct}%` }}
                   transition={{ duration: 0.7, ease: 'easeOut' }}
-                  className="h-full rounded-pill bg-gradient-to-r from-royal-500 to-royal-600"
+                  className="h-full rounded-pill bg-gradient-to-r from-gold-500 to-gold-600"
                 />
               </div>
             </motion.div>
@@ -269,14 +278,14 @@ function PendingApprovals({ approvals }) {
                       <button
                         type="button"
                         onClick={() => resolve(a.id, 'approved')}
-                        className="border-none bg-royal-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-royal-600"
+                        className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600"
                       >
                         Approve
                       </button>
                       <button
                         type="button"
                         onClick={() => resolve(a.id, 'rejected')}
-                        className="border border-danger-200 bg-white text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50"
+                        className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50"
                       >
                         Reject
                       </button>
@@ -303,7 +312,7 @@ function RecentActivity({ activity }) {
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-2.5">
           {activity.map((act) => (
             <motion.div key={act.id} variants={fadeInUp} className="flex gap-2.5 items-start">
-              <span className="w-[7px] h-[7px] rounded-full bg-royal-500 mt-1.5 shrink-0" />
+              <span className="w-[7px] h-[7px] rounded-full bg-gold-500 mt-1.5 shrink-0" />
               <div className="flex flex-col gap-0.5">
                 <span className="text-body-sm text-neutral-900">{act.text}</span>
                 <span className="text-badge text-neutral-400 font-normal">{act.time}</span>
@@ -328,12 +337,12 @@ export default function DashboardPage() {
 
   if (isError) {
     return (
-      <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3 items-start">
+      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3 items-start">
         <div className="text-body-sm text-danger-600">Couldn't load the dashboard. Please try again.</div>
         <button
           type="button"
           onClick={() => refetch()}
-          className="border-none bg-royal-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-royal-600"
+          className="border-none bg-gold-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-gold-600"
         >
           Retry
         </button>
@@ -345,6 +354,10 @@ export default function DashboardPage() {
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-5">
+      <div className="flex items-center justify-end">
+        <ExportButtons title="Dashboard Summary" filenameBase="titan-dashboard" columns={KPI_EXPORT_COLUMNS} rows={kpis} />
+      </div>
+
       <div className="grid grid-cols-4 gap-4">
         {kpis.map((kpi) => (
           <KpiCard key={kpi.id} kpi={kpi} />

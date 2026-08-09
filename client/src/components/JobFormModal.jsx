@@ -54,7 +54,7 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
             <label className={labelClass} htmlFor="job-type">
               Type
             </label>
-            <select id="job-type" value={form.type} onChange={setField('type')} className={`${inputClass} bg-white`}>
+            <select id="job-type" value={form.type} onChange={setField('type')} className={`${inputClass} bg-surface`}>
               <option value="Full-time">Full-time</option>
               <option value="Part-time">Part-time</option>
               <option value="Internship">Internship</option>
@@ -67,7 +67,7 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
           <label className={labelClass} htmlFor="job-status">
             Status
           </label>
-          <select id="job-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+          <select id="job-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
             <option value="open">Open</option>
             <option value="closed">Closed</option>
           </select>

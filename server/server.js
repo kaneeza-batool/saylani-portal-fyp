@@ -1,9 +1,14 @@
 require('dotenv').config();
+require('./utils/fixDns');
 
+const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+
+const { initSocket } = require('./utils/socket');
+const { startAlertEngine } = require('./utils/alertEngine');
 
 const authRoutes = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -21,6 +26,9 @@ const attendanceRequestRoutes = require('./routes/attendanceRequestRoutes');
 const studentAttendanceRoutes = require('./routes/studentAttendanceRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
+const mlRoutes = require('./routes/mlRoutes');
+const alertRoutes = require('./routes/alertRoutes');
+const mapRoutes = require('./routes/mapRoutes');
 
 const app = express();
 
@@ -49,6 +57,9 @@ app.use('/api/admin/attendance-requests', attendanceRequestRoutes);
 app.use('/api/admin/student-attendance', studentAttendanceRoutes);
 app.use('/api/admin/audit-logs', auditLogRoutes);
 app.use('/api/admin/reports', reportsRoutes);
+app.use('/api/admin/ml', mlRoutes);
+app.use('/api/admin/alerts', alertRoutes);
+app.use('/api/admin/map', mapRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -60,11 +71,15 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+const httpServer = http.createServer(app);
+initSocket(httpServer, { corsOrigin: process.env.CLIENT_URL });
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    startAlertEngine();
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err.message);

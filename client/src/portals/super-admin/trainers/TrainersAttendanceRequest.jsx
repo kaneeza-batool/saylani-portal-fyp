@@ -44,7 +44,7 @@ export default function TrainersAttendanceRequest() {
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+          className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
         >
           <option value="all">All requests</option>
           <option value="pending">Pending</option>
@@ -54,17 +54,17 @@ export default function TrainersAttendanceRequest() {
       </div>
 
       {isLoading ? (
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-14 w-full bg-neutral-100 rounded animate-pulse" />
           ))}
         </div>
       ) : isError ? (
-        <div className="bg-white border border-neutral-200 rounded-xl py-14 px-5 text-center text-danger-600 text-body-sm">
+        <div className="bg-surface border border-neutral-200 rounded-xl py-14 px-5 text-center text-danger-600 text-body-sm">
           Couldn't load requests. Please try again.
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-xl py-14 px-5 text-center text-neutral-400 text-body-sm">
+        <div className="bg-surface border border-neutral-200 rounded-xl py-14 px-5 text-center text-neutral-400 text-body-sm">
           No attendance correction requests.
         </div>
       ) : (
@@ -75,7 +75,7 @@ export default function TrainersAttendanceRequest() {
               <motion.div
                 key={r._id}
                 variants={fadeInUp}
-                className="bg-white border border-neutral-200 rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+                className="bg-surface border border-neutral-200 rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
               >
                 <div className="flex flex-col gap-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -95,14 +95,14 @@ export default function TrainersAttendanceRequest() {
                       <button
                         type="button"
                         onClick={() => resolveMutation.mutate({ id: r._id, status: 'approved' })}
-                        className="border-none bg-royal-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-royal-600"
+                        className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600"
                       >
                         Approve
                       </button>
                       <button
                         type="button"
                         onClick={() => resolveMutation.mutate({ id: r._id, status: 'rejected' })}
-                        className="border border-danger-200 bg-white text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50"
+                        className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50"
                       >
                         Reject
                       </button>
@@ -125,7 +125,7 @@ export default function TrainersAttendanceRequest() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Previous
             </button>
@@ -133,7 +133,7 @@ export default function TrainersAttendanceRequest() {
               type="button"
               disabled={page >= pages}
               onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Next
             </button>

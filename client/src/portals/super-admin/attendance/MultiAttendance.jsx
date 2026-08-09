@@ -62,7 +62,7 @@ export default function MultiAttendance() {
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-royal-500 transition-colors">
+        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" />
@@ -80,7 +80,7 @@ export default function MultiAttendance() {
           type="button"
           onClick={() => markMutation.mutate()}
           disabled={selected.size === 0 || markMutation.isPending}
-          className="border-none bg-royal-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {markMutation.isPending ? 'Marking...' : `Mark ${selected.size || ''} Present`.trim()}
         </button>
@@ -93,7 +93,7 @@ export default function MultiAttendance() {
         </div>
       )}
 
-      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200 items-center">
           <input type="checkbox" checked={students.length > 0 && selected.size === students.length} onChange={toggleAll} className="cursor-pointer" />
           <span className="text-overline uppercase text-neutral-500">Student</span>
@@ -122,7 +122,7 @@ export default function MultiAttendance() {
               >
                 <input type="checkbox" checked={selected.has(s.rollNumber)} onChange={() => toggle(s.rollNumber)} className="cursor-pointer" />
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded bg-neutral-100 text-primary-600 flex items-center justify-center font-heading font-bold text-badge shrink-0">
+                  <div className="w-7 h-7 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-badge shrink-0">
                     {initials(s.name)}
                   </div>
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{s.name}</span>

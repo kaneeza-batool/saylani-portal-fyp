@@ -1,0 +1,21 @@
+{
+  "featureNames": [
+    "attendanceRate",
+    "paymentOverdue",
+    "paymentPending",
+    "tenureMonths",
+    "statusPending"
+  ],
+  "weights": [
+    -3.11473213238568,
+    2.3350971935949385,
+    0.6926939193517723,
+    1.2672196414529322,
+    1.7507517345274635
+  ],
+  "bias": -0.8107230175163983,
+  "trainedAt": "2026-08-08T10:20:53.995Z",
+  "trainingSamples": 600,
+  "trainAccuracy": 0.8016666666666666,
+  "finalLoss": 0.4640192366537356
+}

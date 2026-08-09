@@ -40,13 +40,13 @@ export default function Profile() {
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="show" className="max-w-[560px]">
-      <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-5">
+      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="font-heading font-bold text-h6 text-neutral-900">Profile Information</div>
           <button
             type="button"
             onClick={handleLogout}
-            className="border-none bg-royal-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-royal-600 flex items-center gap-1.5"
+            className="border-none bg-gold-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-gold-600 flex items-center gap-1.5"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -58,7 +58,7 @@ export default function Profile() {
         </div>
 
         <div className="flex items-center gap-3.5">
-          <div className="w-16 h-16 rounded-full bg-parrot-500 text-white flex items-center justify-center font-heading font-bold text-h5 shrink-0">
+          <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 flex items-center justify-center font-heading font-bold text-h5 shrink-0 border border-gold-500/40">
             {initials(user?.name)}
           </div>
           <div>

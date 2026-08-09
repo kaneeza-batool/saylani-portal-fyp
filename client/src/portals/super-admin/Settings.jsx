@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
 const inputClass =
-  'border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-royal-500 transition-colors';
+  'border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors';
 const labelClass = 'text-caption font-semibold text-neutral-600';
 
 const fadeIn = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
@@ -40,7 +40,7 @@ export default function Settings() {
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="show" className="max-w-[560px]">
-      <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
+      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
         <div>
           <div className="font-heading font-bold text-h6 text-neutral-900">Account Settings</div>
           <div className="text-body-sm text-neutral-400 mt-0.5">Update your name, email, or password.</div>
@@ -106,7 +106,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={saving}
-            className="mt-1 self-start border-none bg-royal-500 text-white text-body-sm font-semibold px-4.5 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-1 self-start border-none bg-gold-500 text-white text-body-sm font-semibold px-4.5 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

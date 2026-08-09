@@ -1,3 +1,95 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --surface: #ffffff;
+  --neutral-50: #f6f8f6;
+  --neutral-100: #f0f3f0;
+  --neutral-200: #e7eae6;
+  --neutral-300: #d7ded9;
+  --neutral-400: #8a9a93;
+  --neutral-500: #7c8c84;
+  --neutral-600: #4b5d55;
+  --neutral-900: #10231c;
+  --chart-enrollment: #12234a;
+  --chart-cursor: rgba(13, 25, 53, 0.04);
+}
+
+/* Dark theme is navy-tinted (not generic gray) to stay cohesive with the
+   TITAN brand — the sidebar is already this dark, this just extends it to
+   the rest of the shell when toggled on. */
+.dark {
+  --surface: #111c36;
+  --neutral-50: #0a1226;
+  --neutral-100: #16213f;
+  --neutral-200: #263150;
+  --neutral-300: #3a4569;
+  --neutral-400: #7c89a8;
+  --neutral-500: #93a0bd;
+  --neutral-600: #b7c0d8;
+  --neutral-900: #edf0f7;
+  --chart-enrollment: #6E8FE0;
+  --chart-cursor: rgba(255, 255, 255, 0.06);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Chrome/Edge autofill forces its own white/pale background + dark text on
+   inputs, which made the login page's dark navy fields look blank-white with
+   invisible text once a browser suggested/filled a saved credential. */
+.titan-dark-input:-webkit-autofill,
+.titan-dark-input:-webkit-autofill:hover,
+.titan-dark-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0px 1000px #0d1935 inset;
+  -webkit-box-shadow: 0 0 0px 1000px #0d1935 inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-id-card,
+  #printable-id-card * {
+    visibility: visible;
+  }
+  #printable-id-card {
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .no-print {
+    display: none !important;
+  }
+}

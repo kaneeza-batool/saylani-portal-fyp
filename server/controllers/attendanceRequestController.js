@@ -1,5 +1,6 @@
 const AttendanceRequest = require('../models/AttendanceRequest');
 const TrainerAttendance = require('../models/TrainerAttendance');
+const { sendMail } = require('../utils/mailer');
 
 exports.getRequests = async (req, res) => {
   try {
@@ -69,8 +70,33 @@ exports.resolveRequest = async (req, res) => {
       }
     }
 
+    notifyTrainer(request, status);
+
     return res.status(200).json({ item: request });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to resolve request', error: err.message });
   }
 };
+
+async function notifyTrainer(request, status) {
+  try {
+    const attendance = await TrainerAttendance.findById(request.trainerAttendance).populate('trainer', 'email');
+    const to = attendance?.trainer?.email;
+    if (!to) return;
+
+    const approved = status === 'approved';
+    await sendMail({
+      to,
+      subject: `TITAN — Attendance correction ${approved ? 'approved' : 'rejected'}`,
+      html: `<div style="font-family:sans-serif;padding:16px">
+        <h2 style="color:#12234A;margin:0 0 8px">Attendance Correction Request</h2>
+        <p style="color:#333;margin:0 0 6px">Hi ${request.trainerName},</p>
+        <p style="color:#333;margin:0 0 6px">Your attendance correction request for <strong>${request.schedule || 'your session'}</strong> at <strong>${request.campus || 'your campus'}</strong> has been
+        <strong style="color:${approved ? '#1B6B45' : '#C0392B'}">${approved ? 'approved' : 'rejected'}</strong>.</p>
+        <p style="color:#666;font-size:13px;margin:0">Reason given: ${request.reason}</p>
+      </div>`,
+    });
+  } catch (err) {
+    console.error('[attendanceRequestController] notifyTrainer failed:', err.message);
+  }
+}
