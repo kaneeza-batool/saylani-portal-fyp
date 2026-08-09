@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { NAV_LOOKUP, initialsOf } from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useCourseId } from '../hooks/useCourseId';
 import { getEnrolledCourses } from '../services/courseService';
+import { dropdownTransition } from '../lib/motionVariants';
 import NotificationBell from './NotificationBell';
 import FeedbackModal from './FeedbackModal';
-import ProfileMenu from './ProfileMenu';
 import { MenuIcon, FeedbackIcon, ChevronDownIcon } from './icons';
 
 function useBreadcrumb() {
@@ -16,6 +17,9 @@ function useBreadcrumb() {
   if (pathname === '/courses') return [{ label: 'Home' }];
   if (pathname === '/profile') return [{ label: 'Home', to: '/courses' }, { label: 'Profile' }];
   if (pathname === '/notifications') return [{ label: 'Home', to: '/courses' }, { label: 'Notifications' }];
+  if (pathname === '/feedback') return [{ label: 'Home', to: '/courses' }, { label: 'My Feedback' }];
+  if (pathname === '/agenda') return [{ label: 'Home', to: '/courses' }, { label: 'My Week' }];
+  if (pathname === '/skill-passport') return [{ label: 'Home', to: '/courses' }, { label: 'Skill Passport' }];
 
   // Route shape is /<base>/:courseId — the base segment maps to a nav label
   // regardless of which course is currently selected. Which course that is
@@ -24,7 +28,7 @@ function useBreadcrumb() {
   const base = '/' + pathname.split('/')[1];
   // Leaderboard isn't a Sidebar nav item (reached via the Dashboard card's
   // "View Full Leaderboard" button instead), so it isn't in NAV_LOOKUP.
-  const pageLabel = NAV_LOOKUP[base] ?? (base === '/leaderboard' ? 'Leaderboard' : 'Page');
+  const pageLabel = NAV_LOOKUP[base] ?? (base === '/leaderboard' ? 'Leaderboard' : base === '/certificate' ? 'Certificate' : 'Page');
   return [{ label: 'Home', to: '/courses' }, { label: pageLabel }];
 }
 
@@ -52,21 +56,31 @@ function CourseSwitcher({ courseName, courseId, courses }) {
   if (pathname === '/courses' || !courseId) return null;
 
   // Route shape is /<base>/:courseId — swap just the id segment so the
-  // student lands on the same page type for the newly-picked course.
+  // student lands on the same page type for the newly-picked course. Pages
+  // with no :courseId segment at all (Profile, Notifications — ['', base],
+  // length 2) have no "same page type" to preserve, so land on that
+  // course's Dashboard instead of building a bogus '/profile/<id>' URL
+  // that would just fall through to the catch-all redirect.
   const segments = pathname.split('/');
+  const isCourseScoped = segments.length >= 3;
 
   function switchTo(newCourseId) {
     setOpen(false);
     if (newCourseId === courseId) return;
+    if (!isCourseScoped) {
+      navigate(`/dashboard/${newCourseId}`);
+      return;
+    }
     segments[2] = newCourseId;
     navigate(segments.join('/'));
   }
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
+      <motion.button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        whileTap={{ scale: 0.97 }}
         title="Switch course"
         aria-haspopup="true"
         aria-expanded={open}
@@ -74,27 +88,35 @@ function CourseSwitcher({ courseName, courseId, courses }) {
       >
         Viewing: {courseName || 'Course'}
         <ChevronDownIcon className="w-3.5 h-3.5" />
-      </button>
+      </motion.button>
 
-      {open && (
-        <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-lg shadow-modal border border-neutral-200 overflow-hidden z-30">
-          {(courses || []).map((c) => (
-            <button
-              key={c._id}
-              type="button"
-              onClick={() => switchTo(c._id)}
-              className={`w-full text-left flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm transition-colors ${
-                c._id === courseId
-                  ? 'bg-primary-50 text-primary-800 font-semibold'
-                  : 'text-neutral-700 hover:bg-neutral-50 font-medium'
-              }`}
-            >
-              {c.name}
-              {c._id === courseId && <span className="text-xs">✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={dropdownTransition.initial}
+            animate={dropdownTransition.animate}
+            exit={dropdownTransition.exit}
+            transition={dropdownTransition.transition}
+            className="absolute left-0 top-full mt-2 w-56 bg-white rounded-lg shadow-modal border border-neutral-200 overflow-hidden z-30"
+          >
+            {(courses || []).map((c) => (
+              <button
+                key={c._id}
+                type="button"
+                onClick={() => switchTo(c._id)}
+                className={`w-full text-left flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm transition-colors ${
+                  c._id === courseId
+                    ? 'bg-primary-50 text-primary-800 font-semibold'
+                    : 'text-neutral-700 hover:bg-neutral-50 font-medium'
+                }`}
+              >
+                {c.name}
+                {c._id === courseId && <span className="text-xs">✓</span>}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -159,21 +181,25 @@ export default function TopBar({ onMenuClick }) {
 
         <NotificationBell />
 
-        <ProfileMenu
-          direction="down"
-          ariaLabel="Profile menu"
-          triggerClassName="shrink-0"
-          panelClassName="right-0 w-48"
-          trigger={
-            student?.avatarUrl ? (
-              <img src={student.avatarUrl} alt={student.fullName} className="w-9 h-9 rounded-pill object-cover" />
-            ) : (
-              <span className="w-9 h-9 rounded-pill bg-primary-800 text-white font-bold text-sm flex items-center justify-center">
-                {initialsOf(student?.fullName || '')}
-              </span>
-            )
-          }
-        />
+        {/* Direct navigation to Profile — deliberately NOT the dropdown
+            used elsewhere. The Sidebar's bottom avatar chip keeps the
+            Profile/Log out dropdown (see ProfileMenu there); this one is a
+            single-purpose shortcut since Log out already lives in that
+            other menu, and duplicating it here just adds an extra click
+            for the far more common "go to my profile" action. */}
+        <Link
+          to="/profile"
+          aria-label="Go to Profile"
+          className="shrink-0"
+        >
+          {student?.avatarUrl ? (
+            <img src={student.avatarUrl} alt={student.fullName} className="w-9 h-9 rounded-pill object-cover" />
+          ) : (
+            <span className="w-9 h-9 rounded-pill bg-primary-800 text-white font-bold text-sm flex items-center justify-center">
+              {initialsOf(student?.fullName || '')}
+            </span>
+          )}
+        </Link>
       </div>
 
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />

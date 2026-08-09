@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAssignments, getAssignmentSummary } from '../services/assignmentService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
-import Toast from '../components/Toast';
+import { staggerContainer } from '../lib/motionVariants';
 import AssignmentInfoModal from '../components/AssignmentInfoModal';
 import SubmitAssignmentModal from '../components/SubmitAssignmentModal';
 import { EyeIcon, UploadIcon, EditIcon, DownloadIcon } from '../components/icons';
@@ -107,10 +108,10 @@ function ActionIcons({ assignment, onView, onSubmit, onCertificate }) {
 
 export default function AssignmentPage() {
   const { courseId } = useParams();
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [infoModalId, setInfoModalId] = useState(null);
   const [submitModalId, setSubmitModalId] = useState(null);
-  const [toast, setToast] = useState(null);
 
   // Switching courses re-renders this page with a new courseId without
   // remounting it — reset to page 1 so we don't strand the student on a
@@ -137,18 +138,23 @@ export default function AssignmentPage() {
   const totalPages = assignments ? Math.max(1, Math.ceil(assignments.length / PAGE_SIZE)) : 1;
   const pageItems = assignments ? assignments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : [];
 
+  // The hackathon badge's "download certificate" icon points at the same
+  // verifiable course certificate as everywhere else in the app (Dashboard/
+  // Progress banners) — there's no separate per-assignment certificate,
+  // and this used to just show a "coming soon" toast even after that
+  // feature shipped.
   function handleCertificateClick() {
-    setToast({
-      icon: '🏆',
-      title: 'Coming soon',
-      message: 'Verifiable certificate downloads are on the way.',
-    });
-    setTimeout(() => setToast(null), 4000);
+    navigate(`/certificate/${courseId}`);
   }
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
         {summaryLoading ? (
           <>
             <StatCardSkeleton />
@@ -164,7 +170,7 @@ export default function AssignmentPage() {
             <StatCard label="Not Approved" value={summary.notApproved} tone="danger" />
           </>
         )}
-      </div>
+      </motion.div>
 
       <div className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
         <div className="px-4 sm:px-5 py-4 border-b border-neutral-200">
@@ -300,7 +306,6 @@ export default function AssignmentPage() {
 
       <AssignmentInfoModal courseId={courseId} assignmentId={infoModalId} onClose={() => setInfoModalId(null)} />
       <SubmitAssignmentModal courseId={courseId} assignmentId={submitModalId} onClose={() => setSubmitModalId(null)} />
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getNotifications, markNotificationRead, dismissNotification } from '../services/notificationService';
+import { dropdownTransition } from '../lib/motionVariants';
 import { BellIcon, CloseIcon } from './icons';
 
 function timeAgo(iso) {
@@ -62,8 +64,15 @@ export default function NotificationBell() {
         )}
       </button>
 
+      <AnimatePresence>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-w-[85vw] bg-white rounded-lg shadow-modal border border-neutral-200 overflow-hidden z-30">
+        <motion.div
+          initial={dropdownTransition.initial}
+          animate={dropdownTransition.animate}
+          exit={dropdownTransition.exit}
+          transition={dropdownTransition.transition}
+          className="absolute right-0 top-full mt-2 w-80 max-w-[85vw] bg-white rounded-lg shadow-modal border border-neutral-200 overflow-hidden z-30"
+        >
           <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
             <p className="text-sm font-bold text-neutral-900">Notifications</p>
             {unreadCount > 0 && <span className="text-xs text-neutral-400">{unreadCount} unread</span>}
@@ -119,8 +128,9 @@ export default function NotificationBell() {
           >
             View All Notifications
           </Link>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

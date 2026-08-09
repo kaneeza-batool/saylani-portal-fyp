@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import logo from '/images/logo/titan-logo-clean.png';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +18,9 @@ import {
   PaymentIcon,
   AssignmentIcon,
   QuizIcon,
+  BookOpenIcon,
+  MessageCircleIcon,
+  BriefcaseIcon,
   ChevronUpDownIcon,
   FlameIcon,
   CloseIcon,
@@ -26,6 +31,8 @@ const MILESTONES = [60, 30, 7];
 function highestMilestone(streak) {
   return MILESTONES.find((m) => streak >= m) || null;
 }
+
+const MotionNavLink = motion.create(NavLink);
 
 // `base` is the route segment before :courseId — actual links are built as
 // `${base}/${courseId}` once we know which course is in scope (see
@@ -41,6 +48,8 @@ export const NAV_ITEMS = [
   { label: 'Payment', base: '/fee', icon: PaymentIcon },
   { label: 'Assignment', base: '/assignment', icon: AssignmentIcon },
   { label: 'Quiz', base: '/quiz', icon: QuizIcon },
+  { label: 'Resources', base: '/resources', icon: BookOpenIcon },
+  { label: 'Ask a Doubt', base: '/doubts', icon: MessageCircleIcon },
 ];
 
 export const NAV_LOOKUP = NAV_ITEMS.reduce((acc, item) => {
@@ -99,24 +108,34 @@ export default function Sidebar({ open, onClose }) {
   useEffect(() => {
     if (!milestone || shownMilestones.current.has(milestone)) return;
     shownMilestones.current.add(milestone);
+    // `milestone` (7/30/60) only decides WHEN this fires (crossing a
+    // threshold tier) — the number actually shown must be the live
+    // `streak` value, same as the sidebar card and the confetti overlay
+    // below, so all three always agree for the current course.
     setToast({
       icon: '🔥',
-      title: `${milestone}-day streak!`,
-      message: `You've attended ${milestone} classes in a row. Keep the momentum going.`,
+      title: `${streak}-day streak!`,
+      message: `You've attended ${streak} classes in a row. Keep the momentum going.`,
     });
     const timer = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(timer);
-  }, [milestone]);
+  }, [milestone, streak]);
 
   return (
     <>
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
 
       <aside
         className={`w-[260px] shrink-0 h-screen bg-primary-900 flex flex-col fixed top-0 left-0 z-50 transform transition-transform duration-300 lg:sticky lg:translate-x-0 ${
@@ -142,9 +161,10 @@ export default function Sidebar({ open, onClose }) {
       <nav className="flex-1 px-3 flex flex-col gap-1">
         {/* "Home base" — always visible, always goes to /courses, regardless
             of which course (if any) is currently active. */}
-        <NavLink
+        <MotionNavLink
           to="/courses"
           onClick={onClose}
+          whileTap={{ scale: 0.97 }}
           className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
             onCoursesPage
               ? 'bg-accent-500 text-primary-900 font-semibold'
@@ -153,7 +173,24 @@ export default function Sidebar({ open, onClose }) {
         >
           <CoursesIcon className="w-5 h-5" />
           Courses
-        </NavLink>
+        </MotionNavLink>
+
+        {/* Lifetime, cross-course view — like Courses, never needs a
+            :courseId, so it lives up here rather than in the per-course
+            NAV_ITEMS list below. */}
+        <MotionNavLink
+          to="/skill-passport"
+          onClick={onClose}
+          whileTap={{ scale: 0.97 }}
+          className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+            pathname === '/skill-passport'
+              ? 'bg-accent-500 text-primary-900 font-semibold'
+              : 'text-white/60 hover:bg-white/5 hover:text-white'
+          }`}
+        >
+          <BriefcaseIcon className="w-5 h-5" />
+          Skill Passport
+        </MotionNavLink>
 
         <div className="h-px bg-white/10 my-1" />
 
@@ -175,10 +212,11 @@ export default function Sidebar({ open, onClose }) {
           // matching) so exactly one item lights up once a course is active.
           const isActive = pathname.startsWith(`${base}/`);
           return (
-            <NavLink
+            <MotionNavLink
               key={base}
               to={`${base}/${courseId}`}
               onClick={onClose}
+              whileTap={{ scale: 0.97 }}
               className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-accent-500 text-primary-900 font-semibold'
@@ -187,7 +225,7 @@ export default function Sidebar({ open, onClose }) {
             >
               <Icon className="w-5 h-5" />
               {label}
-            </NavLink>
+            </MotionNavLink>
           );
         })}
       </nav>
@@ -214,17 +252,23 @@ export default function Sidebar({ open, onClose }) {
         {celebrating && (
           <>
             <Confetti />
-            <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[81] pointer-events-none px-4 w-full flex justify-center">
-              <div
-                data-testid="streak-celebration"
-                className="bg-primary-900 text-white rounded-lg shadow-modal px-5 py-3 border border-accent-500/50 flex items-center gap-2.5"
-              >
-                <span className="text-2xl leading-none">🔥</span>
-                <p className="font-heading font-bold text-sm sm:text-base whitespace-nowrap">
-                  {streak} days strong! Keep it up
-                </p>
-              </div>
-            </div>
+            {/* Same containing-block issue as Confetti (the aside's
+                transform), so this also has to portal to document.body
+                rather than render as a normal fixed-position child here. */}
+            {createPortal(
+              <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[81] pointer-events-none px-4 w-full flex justify-center">
+                <div
+                  data-testid="streak-celebration"
+                  className="bg-primary-900 text-white rounded-lg shadow-modal px-5 py-3 border border-accent-500/50 flex items-center gap-2.5"
+                >
+                  <span className="text-2xl leading-none">🔥</span>
+                  <p className="font-heading font-bold text-sm sm:text-base whitespace-nowrap">
+                    {streak} days strong! Keep it up
+                  </p>
+                </div>
+              </div>,
+              document.body
+            )}
           </>
         )}
 

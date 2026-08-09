@@ -38,6 +38,25 @@ async function computeProgressStat(studentId, courseId) {
   return { totalTopics, completedTopics, percentage };
 }
 
+// Latest attempt per quiz in the course, averaged — same "latest attempt
+// counts, missing quiz = 0" rule as the leaderboard's inline version, just
+// factored out so certificateController can reuse it for finalGrade too.
+async function computeQuizAverage(studentId, courseId) {
+  const quizIds = (await Quiz.find({ courseId }, '_id')).map((q) => q._id);
+  if (quizIds.length === 0) return 0;
+
+  const attempts = await QuizAttempt.find({ student: studentId, quiz: { $in: quizIds } }).sort({
+    attemptNumber: -1,
+  });
+  const latestByQuiz = new Map();
+  for (const attempt of attempts) {
+    const key = attempt.quiz.toString();
+    if (!latestByQuiz.has(key)) latestByQuiz.set(key, attempt);
+  }
+  const scores = [...latestByQuiz.values()].map((a) => a.percentage);
+  return scores.length > 0 ? Math.round(scores.reduce((sum, v) => sum + v, 0) / scores.length) : 0;
+}
+
 // LIVE ONLY — must always query live across real Enrollment/CourseModule
 // records, never cache or hardcode the batch size or average. This is the
 // single source of truth for "batch average progress" used by the Progress
@@ -138,6 +157,7 @@ module.exports = {
   computeAttendanceStat,
   computeAssignmentStat,
   computeProgressStat,
+  computeQuizAverage,
   computeBatchProgressAverage,
   computeCourseLeaderboard,
 };

@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getFullLeaderboard } from '../services/leaderboardService';
 import { initialsOf } from '../components/Sidebar';
+import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { TrophyIcon } from '../components/icons';
 
 function RankBadge({ rank }) {
@@ -99,12 +101,18 @@ export default function LeaderboardPage() {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-neutral-100">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col divide-y divide-neutral-100"
+          >
             {data.students.map((s) => {
               const isYou = s.studentId === data.you;
               return (
-                <div
+                <motion.div
                   key={s.studentId}
+                  variants={fadeInUp}
                   className={`flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 ${isYou ? 'bg-accent-500/10' : ''}`}
                 >
                   <RankBadge rank={s.rank} />
@@ -141,10 +149,10 @@ export default function LeaderboardPage() {
                   <span className="w-14 sm:w-16 shrink-0 text-right font-bold text-neutral-900">
                     {s.combinedScore}
                   </span>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

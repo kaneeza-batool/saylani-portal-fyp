@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import logo from '/images/logo/titan-logo-clean.png';
 import { useAuth } from '../context/AuthContext';
 import * as authService from '../services/authService';
+import ForgotPasswordModal from '../components/ForgotPasswordModal';
 import { EyeIcon, EyeOffIcon } from '../components/icons';
 
 const inputClass =
@@ -50,6 +52,7 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -66,6 +69,11 @@ function LoginForm() {
   }
 
   return (
+    // Fragment, not a shared wrapper div — ForgotPasswordModal renders its
+    // own <form> internally, and nesting a <form> inside this one would be
+    // invalid HTML (React doesn't auto-correct that the way raw HTML
+    // parsing does), so it has to be a sibling of <form>, not a child.
+    <>
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <ErrorBanner message={error} />
       <div>
@@ -81,6 +89,13 @@ function LoginForm() {
       </div>
       <PasswordField label="Password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" />
       <button
+        type="button"
+        onClick={() => setForgotOpen(true)}
+        className="text-sm font-semibold text-primary-800 hover:text-primary-900 text-right -mt-2"
+      >
+        Forgot Password?
+      </button>
+      <button
         type="submit"
         disabled={submitting}
         className="w-full rounded-md px-5 py-2.5 text-sm font-semibold uppercase tracking-wide bg-primary-800 text-white transition-colors hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
@@ -94,6 +109,8 @@ function LoginForm() {
         Login as teacher
       </button>
     </form>
+    <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
+    </>
   );
 }
 
@@ -211,12 +228,21 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-neutral-50 px-4">
-      <div className="flex flex-col items-center gap-2">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="flex flex-col items-center gap-2"
+      >
         <img src={logo} alt="TITAN" className="w-16 h-16 object-contain" />
         <h1 className="font-heading text-xl font-bold text-primary-800">Student Portal</h1>
-      </div>
+      </motion.div>
 
-      <div className="w-full max-w-sm bg-white border border-neutral-200 rounded-lg shadow-card p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut', delay: 0.05 }}
+        className="w-full max-w-sm bg-white border border-neutral-200 rounded-lg shadow-card p-8">
         <div className="flex rounded-md bg-neutral-100 p-1 mb-6">
           <button
             type="button"
@@ -239,7 +265,7 @@ export default function LoginPage() {
         </div>
 
         {tab === 'login' ? <LoginForm /> : <CreatePasswordForm />}
-      </div>
+      </motion.div>
     </div>
   );
 }

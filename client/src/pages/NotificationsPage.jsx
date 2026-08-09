@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAllNotifications } from '../services/notificationService';
+import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { BellIcon } from '../components/icons';
 
 function formatTimestamp(iso) {
@@ -60,10 +62,16 @@ export default function NotificationsPage() {
             <p className="text-sm font-medium text-neutral-500">No notifications yet.</p>
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-neutral-100">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+            className="flex flex-col divide-y divide-neutral-100"
+          >
             {notifications.map((n) => (
-              <div
+              <motion.div
                 key={n._id}
+                variants={fadeInUp}
                 data-testid="notification-history-item"
                 data-read={n.isRead}
                 data-dismissed={n.isDismissed}
@@ -87,9 +95,9 @@ export default function NotificationsPage() {
                   <p className="text-sm text-neutral-500 mt-1">{n.message}</p>
                   <p className="text-xs text-neutral-400 mt-1.5">{formatTimestamp(n.createdAt)}</p>
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

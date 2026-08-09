@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 
 const COLORS = ['#D0A35B', '#162346', '#1A7F42', '#C0392B', '#1D5FB8'];
@@ -24,7 +25,15 @@ export default function Confetti({ count = 80 }) {
     [count]
   );
 
-  return (
+  // Rendered via a portal straight to document.body — a `position: fixed`
+  // element is only positioned relative to the viewport if none of its
+  // ancestors set a `transform` (or a few other properties), which creates
+  // a new containing block. Sidebar's slide-in/out animation applies
+  // `transform`, so mounting Confetti as a normal child there clipped it to
+  // the sidebar's own box. Portaling out from under any such ancestor is
+  // what makes this reliably full-viewport no matter which component
+  // triggers it.
+  return createPortal(
     <div className="fixed inset-0 z-[80] overflow-hidden pointer-events-none" aria-hidden="true">
       {pieces.map((p) => (
         <motion.span
@@ -43,6 +52,7 @@ export default function Confetti({ count = 80 }) {
           }}
         />
       ))}
-    </div>
+    </div>,
+    document.body
   );
 }

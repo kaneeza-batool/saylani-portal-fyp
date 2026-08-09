@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getDashboard, getProgressInsight, getLeaderboardPosition } from '../services/dashboardService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
-import { CalendarIcon, TrophyIcon, ClockIcon } from '../components/icons';
+import { fadeInUp, staggerContainer } from '../lib/motionVariants';
+import { CalendarIcon, TrophyIcon, ClockIcon, CertificateIcon } from '../components/icons';
 
 const WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TABS = [
@@ -55,7 +57,8 @@ function ProgressInsightCard({ insight, isLoading }) {
 
   const isAhead = insight.tone === 'ahead';
   return (
-    <div
+    <motion.div
+      variants={fadeInUp}
       className={`rounded-lg shadow-card p-4 sm:p-5 h-full border flex flex-col justify-center gap-3 ${
         isAhead ? 'bg-success-bg border-success-text/20' : 'bg-accent-500/10 border-accent-500/30'
       }`}
@@ -66,7 +69,7 @@ function ProgressInsightCard({ insight, isLoading }) {
       <p className={`text-sm font-bold leading-snug ${isAhead ? 'text-success-text' : 'text-primary-800'}`}>
         {insight.message}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -89,7 +92,10 @@ function LeaderboardCard({ leaderboard, isLoading, courseId }) {
   const { you, batchSize } = leaderboard;
 
   return (
-    <div className="rounded-lg shadow-card p-4 sm:p-5 h-full border border-primary-700 bg-primary-900 text-white flex flex-col justify-center gap-2">
+    <motion.div
+      variants={fadeInUp}
+      className="rounded-lg shadow-card p-4 sm:p-5 h-full border border-primary-700 bg-primary-900 text-white flex flex-col justify-center gap-2"
+    >
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Batch Leaderboard</p>
         <TrophyIcon className="w-4 h-4 text-accent-400" />
@@ -109,7 +115,32 @@ function LeaderboardCard({ leaderboard, isLoading, courseId }) {
       >
         View Full Leaderboard →
       </Link>
-    </div>
+    </motion.div>
+  );
+}
+
+// Shown once this course's Progress has reached 100% — Enrollment's
+// progressPercent cache is already fetched as part of the dashboard call,
+// so this reads that directly rather than firing a separate eligibility
+// request just to decide whether to show a link.
+function CertificateBanner({ courseId, courseName }) {
+  return (
+    <Link
+      to={`/certificate/${courseId}`}
+      data-testid="certificate-banner"
+      className="flex items-center justify-between gap-3 rounded-lg shadow-card px-5 py-4 bg-primary-900 border border-accent-500/40 text-white hover:bg-primary-800 transition-colors"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <CertificateIcon className="w-5 h-5 text-accent-400 shrink-0" />
+        <div className="min-w-0">
+          <p className="font-heading text-sm sm:text-base font-bold">Certificate Ready 🎓</p>
+          <p className="text-xs text-white/60 truncate">
+            You've completed {courseName} — your verified certificate is ready.
+          </p>
+        </div>
+      </div>
+      <span className="text-xs sm:text-sm font-semibold text-accent-400 shrink-0">View Certificate →</span>
+    </Link>
   );
 }
 
@@ -118,7 +149,12 @@ function ActiveCourseCard({ course, classDays, isLoading }) {
   if (!course) return null;
 
   return (
-    <div className="lg:col-span-2 bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex flex-col gap-4">
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+      className="lg:col-span-2 bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex flex-col gap-4"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="inline-flex items-center rounded-pill px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-primary-100 text-primary-800">
@@ -175,7 +211,7 @@ function ActiveCourseCard({ course, classDays, isLoading }) {
           <p className="font-medium text-neutral-800 truncate">{course.city}</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -186,7 +222,12 @@ function ClassScheduleCard({ classDays, isLoading }) {
   const activeDays = new Set(classDays || []);
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex flex-col gap-4">
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+      className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex flex-col gap-4"
+    >
       <div className="flex items-center gap-2">
         <CalendarIcon className="w-4 h-4 text-neutral-400" />
         <h3 className="font-heading text-base font-bold text-neutral-900">Class Schedule</h3>
@@ -214,13 +255,18 @@ function ClassScheduleCard({ classDays, isLoading }) {
       <p className="text-xs text-neutral-400">
         {activeDays.size > 0 ? `Classes on ${[...activeDays].join(', ')}.` : 'No class days set for this course yet.'}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
 function FeeTable({ vouchers, courseId, isLoading }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden flex flex-col">
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+      className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden flex flex-col"
+    >
       <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-neutral-200">
         <h3 className="font-heading text-lg font-bold text-neutral-900">Fee History</h3>
         <Link to={`/fee/${courseId}`} className="text-sm font-semibold text-primary-800 hover:text-primary-900">
@@ -260,7 +306,7 @@ function FeeTable({ vouchers, courseId, isLoading }) {
           ))}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -274,7 +320,12 @@ function TabsPanel({ courseId, tabs, isLoading }) {
   }, [courseId]);
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden flex flex-col">
+    <motion.div
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+      className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden flex flex-col"
+    >
       <div className="flex items-center gap-1 px-3 pt-3 border-b border-neutral-200">
         {TABS.map((tab) => (
           <button
@@ -346,7 +397,7 @@ function TabsPanel({ courseId, tabs, isLoading }) {
           <p className="text-sm text-neutral-500 text-center py-10">No upcoming events.</p>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -390,7 +441,23 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="flex justify-end">
+        <Link
+          to="/agenda"
+          data-testid="my-week-link"
+          className="inline-flex items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-xs sm:text-sm font-semibold bg-white text-primary-800 border border-neutral-200 hover:bg-neutral-50 transition-colors"
+        >
+          <CalendarIcon className="w-4 h-4" />
+          My Week →
+        </Link>
+      </div>
+
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
         {dashboardLoading ? (
           <>
             <StatCardSkeleton />
@@ -408,7 +475,11 @@ export default function DashboardPage() {
         )}
         <ProgressInsightCard insight={insight} isLoading={insightLoading} />
         <LeaderboardCard leaderboard={leaderboard} isLoading={leaderboardLoading} courseId={courseId} />
-      </div>
+      </motion.div>
+
+      {dashboard?.activeCourse?.progressPercent === 100 && (
+        <CertificateBanner courseId={courseId} courseName={dashboard.activeCourse.name} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <ActiveCourseCard course={dashboard?.activeCourse} classDays={dashboard?.classDays} isLoading={dashboardLoading} />

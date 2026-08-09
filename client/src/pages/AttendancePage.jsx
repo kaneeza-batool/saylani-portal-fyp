@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAttendanceSummary, getAttendanceByMonth } from '../services/attendanceService';
+import { getProgress } from '../services/progressService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
+import { staggerContainer } from '../lib/motionVariants';
 
 const STATUS_STYLE = {
   present: 'bg-success-bg text-success-text',
@@ -26,7 +29,10 @@ function dateLabel(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function attendanceMessage(percentage) {
+function attendanceMessage(percentage, isCourseComplete) {
+  // A finished course reads in the past tense — "keep it up" doesn't make
+  // sense once there's nothing left to keep attending.
+  if (isCourseComplete) return { text: `🎓 Course completed with ${percentage}% attendance.`, tone: 'success' };
   if (percentage >= 85) return { text: 'Excellent attendance! Keep it up.', tone: 'success' };
   if (percentage >= 70) return { text: 'Your attendance is good, keep it up!', tone: 'success' };
   if (percentage >= 50) return { text: 'Your attendance needs improvement.', tone: 'warning' };
@@ -67,6 +73,11 @@ export default function AttendancePage() {
     queryFn: () => getAttendanceByMonth(courseId, selectedMonth),
   });
 
+  const { data: progress } = useQuery({
+    queryKey: ['progress', courseId],
+    queryFn: () => getProgress(courseId),
+  });
+
   // Switching courses (via the breadcrumb switcher) re-renders this page
   // with a new courseId but doesn't remount it, so reset the month picker —
   // otherwise a month that only exists in the old course's history would
@@ -79,7 +90,7 @@ export default function AttendancePage() {
     if (!selectedMonth && monthly?.month) setSelectedMonth(monthly.month);
   }, [monthly, selectedMonth]);
 
-  const message = summary ? attendanceMessage(summary.percentage) : null;
+  const message = summary ? attendanceMessage(summary.percentage, progress?.overallPercentage === 100) : null;
   const bannerClass = {
     success: 'bg-success-bg text-success-text',
     warning: 'bg-warning-bg text-warning-text',
@@ -88,7 +99,12 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
         {summaryLoading ? (
           <>
             <StatCardSkeleton />
@@ -104,7 +120,7 @@ export default function AttendancePage() {
             <StatCard label="Absent" value={summary.absent} tone="danger" />
           </>
         )}
-      </div>
+      </motion.div>
 
       <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4 sm:p-6">
         {summaryLoading ? (

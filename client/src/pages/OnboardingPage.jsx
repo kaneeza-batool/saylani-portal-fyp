@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
 import logo from '/images/logo/titan-logo-clean.png';
 import { uploadAvatar } from '../services/studentService';
@@ -57,12 +58,22 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-neutral-50 px-4">
-      <div className="flex flex-col items-center gap-2">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="flex flex-col items-center gap-2"
+      >
         <img src={logo} alt="TITAN" className="w-16 h-16 object-contain" />
         <h1 className="font-heading text-xl font-bold text-primary-800">Student Portal</h1>
-      </div>
+      </motion.div>
 
-      <div className="w-full max-w-sm bg-white border border-neutral-200 rounded-lg shadow-card p-8 flex flex-col items-center gap-5 text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut', delay: 0.05 }}
+        className="w-full max-w-sm bg-white border border-neutral-200 rounded-lg shadow-card p-8 flex flex-col items-center gap-5 text-center"
+      >
         <div>
           <h2 className="font-heading text-lg font-bold text-neutral-900">
             Welcome{student?.fullName ? `, ${student.fullName.split(' ')[0]}` : ''}!
@@ -70,7 +81,10 @@ export default function OnboardingPage() {
           <p className="text-sm text-neutral-500 mt-1">Please upload a profile picture to continue.</p>
         </div>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
           type="button"
           onClick={() => fileInputRef.current?.click()}
           aria-label="Upload profile picture"
@@ -81,7 +95,7 @@ export default function OnboardingPage() {
           ) : (
             <CameraIcon className="w-8 h-8 text-neutral-400" />
           )}
-        </button>
+        </motion.button>
         <input
           ref={fileInputRef}
           type="file"
@@ -97,15 +111,16 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <button
+        <motion.button
+          whileTap={!imageBase64 || mutation.isPending ? undefined : { scale: 0.97 }}
           type="button"
           onClick={handleContinue}
           disabled={!imageBase64 || mutation.isPending}
           className="w-full rounded-md px-5 py-2.5 text-sm font-semibold uppercase tracking-wide bg-primary-800 text-white transition-colors hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {mutation.isPending ? 'Uploading...' : 'Continue'}
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import Modal from './Modal';
 import { submitFeedback } from '../services/feedbackService';
@@ -104,13 +105,22 @@ export default function FeedbackModal({ open, onClose }) {
           <p className="text-sm text-neutral-500">
             We've received your {selectedLabel} report and will take a look.
           </p>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="mt-2 rounded-md px-5 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-3 mt-2">
+            <Link
+              to="/feedback"
+              onClick={handleClose}
+              className="rounded-md px-5 py-2.5 text-sm font-semibold bg-transparent text-primary-800 hover:bg-primary-50"
+            >
+              View My Feedback
+            </Link>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="rounded-md px-5 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900"
+            >
+              Close
+            </button>
+          </div>
         </div>
       ) : (
         <form id="feedback-form" onSubmit={handleSubmit} className="flex flex-col gap-4">

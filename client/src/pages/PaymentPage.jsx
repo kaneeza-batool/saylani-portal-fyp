@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getFeeHistory } from '../services/feeService';
+import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { CopyIcon, PlayIcon, RefreshIcon } from '../components/icons';
 
 const STEPS = [
@@ -199,9 +201,14 @@ export default function PaymentPage() {
         ) : (
           <>
             {/* Mobile: stacked cards */}
-            <div className="sm:hidden flex flex-col divide-y divide-neutral-100">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="sm:hidden flex flex-col divide-y divide-neutral-100"
+            >
               {vouchers.map((v) => (
-                <div key={v._id} className="p-4 flex flex-col gap-2">
+                <motion.div key={v._id} variants={fadeInUp} className="p-4 flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-neutral-900">{v.month}</p>
                     <StatusPill status={v.status} />
@@ -214,9 +221,9 @@ export default function PaymentPage() {
                     <span className="text-xs font-mono text-neutral-600">{v.voucherId}</span>
                     <CopyVoucherButton voucherId={v.voucherId} />
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {/* Tablet/desktop: table, horizontally scrollable if the viewport is tight */}
             <div className="hidden sm:block overflow-x-auto">
@@ -229,9 +236,11 @@ export default function PaymentPage() {
                   <span className="flex-1">Voucher ID</span>
                   <span className="w-20 shrink-0 text-right">Status</span>
                 </div>
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible">
                 {vouchers.map((v) => (
-                  <div
+                  <motion.div
                     key={v._id}
+                    variants={fadeInUp}
                     className="flex items-center gap-3 px-4 py-4 border-b border-neutral-100 last:border-b-0 text-sm"
                   >
                     <span className="w-24 shrink-0 font-medium text-neutral-800">{v.month}</span>
@@ -245,8 +254,9 @@ export default function PaymentPage() {
                     <span className="w-20 shrink-0 text-right">
                       <StatusPill status={v.status} />
                     </span>
-                  </div>
+                  </motion.div>
                 ))}
+                </motion.div>
               </div>
             </div>
           </>

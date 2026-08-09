@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { getQuizForTaking, startAttempt, submitAttempt } from '../services/quizService';
 import Modal from '../components/Modal';
 import { WarningIcon, LockIcon } from '../components/icons';
@@ -299,10 +300,11 @@ export default function QuizTakingPage() {
             {question.options.map((option, i) => {
               const selected = answers[currentIndex] === i;
               return (
-                <button
+                <motion.button
                   key={i}
                   type="button"
                   disabled={isLocked}
+                  whileTap={isLocked ? undefined : { scale: 0.98 }}
                   onClick={() => selectOption(i)}
                   className={`text-left rounded-lg border-2 px-4 py-3.5 text-sm font-medium transition-colors ${
                     selected
@@ -320,38 +322,41 @@ export default function QuizTakingPage() {
                     {String.fromCharCode(65 + i)}
                   </span>
                   {option}
-                </button>
+                </motion.button>
               );
             })}
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <button
+            <motion.button
               type="button"
               disabled={currentIndex === 0}
+              whileTap={currentIndex === 0 ? undefined : { scale: 0.97 }}
               onClick={() => goToQuestion(Math.max(0, currentIndex - 1))}
               className="rounded-md px-4 py-2 text-sm font-medium border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Previous
-            </button>
+            </motion.button>
             {isLast ? (
-              <button
+              <motion.button
                 type="button"
                 disabled={unansweredCount > 0}
+                whileTap={unansweredCount > 0 ? undefined : { scale: 0.97 }}
                 onClick={() => setConfirmOpen(true)}
                 className="rounded-md px-5 py-2 text-sm font-semibold bg-accent-500 text-primary-900 hover:bg-accent-400 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-accent-500"
               >
                 Submit Quiz
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
                 type="button"
                 disabled={answers[currentIndex] === null}
+                whileTap={answers[currentIndex] === null ? undefined : { scale: 0.97 }}
                 onClick={() => goToQuestion(Math.min(quiz.questions.length - 1, currentIndex + 1))}
                 className="rounded-md px-5 py-2 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-primary-800"
               >
                 Next
-              </button>
+              </motion.button>
             )}
           </div>
           {!isLocked && answers[currentIndex] === null && (
@@ -418,23 +423,36 @@ export default function QuizTakingPage() {
         <p className="text-sm text-neutral-600 mt-2">Once submitted, you cannot change your answers.</p>
       </Modal>
 
-      {(submitting || autoSubmitReason) && (
-        <div className="fixed inset-0 z-[60] bg-primary-900/90 flex items-center justify-center px-4">
-          <div className="bg-white rounded-lg shadow-modal p-6 max-w-sm text-center flex flex-col gap-2">
-            <p className="font-heading font-bold text-neutral-900">
-              {autoSubmitReason === 'timer' && "Time's up!"}
-              {autoSubmitReason === 'integrity' && 'Quiz auto-submitted'}
-              {!autoSubmitReason && 'Submitting your quiz...'}
-            </p>
-            <p className="text-sm text-neutral-500">
-              {autoSubmitReason === 'timer' && 'Your quiz was submitted automatically because the timer reached zero.'}
-              {autoSubmitReason === 'integrity' &&
-                `Your quiz was submitted automatically after ${VIOLATION_THRESHOLD}+ tab-switch/fullscreen violations were logged.`}
-              {!autoSubmitReason && 'Please wait a moment.'}
-            </p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {(submitting || autoSubmitReason) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed inset-0 z-[60] bg-primary-900/90 flex items-center justify-center px-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="bg-white rounded-lg shadow-modal p-6 max-w-sm text-center flex flex-col gap-2"
+            >
+              <p className="font-heading font-bold text-neutral-900">
+                {autoSubmitReason === 'timer' && "Time's up!"}
+                {autoSubmitReason === 'integrity' && 'Quiz auto-submitted'}
+                {!autoSubmitReason && 'Submitting your quiz...'}
+              </p>
+              <p className="text-sm text-neutral-500">
+                {autoSubmitReason === 'timer' && 'Your quiz was submitted automatically because the timer reached zero.'}
+                {autoSubmitReason === 'integrity' &&
+                  `Your quiz was submitted automatically after ${VIOLATION_THRESHOLD}+ tab-switch/fullscreen violations were logged.`}
+                {!autoSubmitReason && 'Please wait a moment.'}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

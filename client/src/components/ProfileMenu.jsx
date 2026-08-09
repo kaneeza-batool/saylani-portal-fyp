@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { ProfileIcon, LogOutIcon } from './icons';
 
@@ -40,41 +41,53 @@ export default function ProfileMenu({
     navigate('/login');
   }
 
+  // Panel grows away from the trigger — "up" slides up from below it,
+  // "down" slides down from above it — rather than one generic direction
+  // for both.
+  const offsetY = direction === 'up' ? 6 : -6;
+
   return (
     <div className="relative" ref={containerRef}>
-      {open && (
-        <div
-          className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} bg-white rounded-lg shadow-modal border border-neutral-200 overflow-hidden z-30 ${panelClassName}`}
-        >
-          <NavLink
-            to="/profile"
-            onClick={closeMenu}
-            className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: offsetY, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: offsetY, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className={`absolute ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'} bg-white rounded-lg shadow-modal border border-neutral-200 overflow-hidden z-30 ${panelClassName}`}
           >
-            <ProfileIcon className="w-4 h-4" />
-            Profile
-          </NavLink>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-danger-text hover:bg-danger-bg"
-          >
-            <LogOutIcon className="w-4 h-4" />
-            Log out
-          </button>
-        </div>
-      )}
+            <NavLink
+              to="/profile"
+              onClick={closeMenu}
+              className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+            >
+              <ProfileIcon className="w-4 h-4" />
+              Profile
+            </NavLink>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-danger-text hover:bg-danger-bg transition-colors"
+            >
+              <LogOutIcon className="w-4 h-4" />
+              Log out
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <button
+      <motion.button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        whileTap={{ scale: 0.97 }}
         className={triggerClassName}
         aria-haspopup="true"
         aria-expanded={open}
         aria-label={ariaLabel}
       >
         {trigger}
-      </button>
+      </motion.button>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getQuizzes } from '../services/quizService';
+import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { WarningIcon, InfoIcon, ClockIcon } from '../components/icons';
 
 const IMPORTANT_INFO = [
@@ -138,9 +140,14 @@ export default function QuizListPage() {
         ) : (
           <>
             {/* Mobile: stacked cards */}
-            <div className="sm:hidden flex flex-col divide-y divide-neutral-100">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="sm:hidden flex flex-col divide-y divide-neutral-100"
+            >
               {quizzes.map((q) => (
-                <div key={q._id} className="p-4 flex flex-col gap-2">
+                <motion.div key={q._id} variants={fadeInUp} className="p-4 flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-neutral-900">{q.title}</p>
@@ -163,9 +170,9 @@ export default function QuizListPage() {
                     <StatusPill status={q.status} />
                     <ActionCell quiz={q} onStart={handleStart} onReview={handleReview} />
                   </div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {/* Tablet/desktop: table, horizontally scrollable if the viewport is tight.
                 Title uses an explicit min-width (not just flex-1) — flex-1 combined
@@ -181,9 +188,11 @@ export default function QuizListPage() {
                   <span className="w-24 shrink-0">Status</span>
                   <span className="w-20 shrink-0 text-right">Action</span>
                 </div>
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible">
                 {quizzes.map((q) => (
-                  <div
+                  <motion.div
                     key={q._id}
+                    variants={fadeInUp}
                     className="flex items-center gap-2 px-4 py-4 border-b border-neutral-100 last:border-b-0 text-sm"
                   >
                     <span className="w-28 shrink-0 text-neutral-500 truncate">{q.module}</span>
@@ -203,8 +212,9 @@ export default function QuizListPage() {
                     <span className="w-20 shrink-0 flex justify-end">
                       <ActionCell quiz={q} onStart={handleStart} onReview={handleReview} />
                     </span>
-                  </div>
+                  </motion.div>
                 ))}
+                </motion.div>
               </div>
             </div>
           </>

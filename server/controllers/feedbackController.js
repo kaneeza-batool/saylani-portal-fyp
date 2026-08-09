@@ -51,3 +51,25 @@ exports.submitFeedback = async (req, res) => {
     return res.status(500).json({ message: 'Failed to submit feedback', error: err.message });
   }
 };
+
+// Every record's status reads "Submitted" for now — there's no Super Admin
+// portal connected yet to review/triage these, so nothing ever transitions
+// a record past that. Once that review flow exists, this should read a
+// real status field (e.g. reviewed/actioned) instead of a hardcoded label.
+exports.getMyFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.find({ student: req.student._id }).sort({ createdAt: -1 });
+    return res.status(200).json({
+      feedback: feedback.map((f) => ({
+        _id: f._id,
+        type: f.type,
+        text: f.text,
+        imageUrl: f.imageUrl,
+        status: 'Submitted',
+        createdAt: f.createdAt,
+      })),
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load feedback history', error: err.message });
+  }
+};

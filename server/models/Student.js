@@ -13,6 +13,10 @@ const studentSchema = new mongoose.Schema(
       match: [/^\d{13}$/, 'CNIC must be 13 digits'],
     },
     password: { type: String, minlength: 8, select: false },
+    // Forgot-password flow — hashed (never store the raw token, same
+    // reasoning as the password itself) with an expiry, cleared once used.
+    resetPasswordTokenHash: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
     phone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     address: { type: String, trim: true, default: '' },

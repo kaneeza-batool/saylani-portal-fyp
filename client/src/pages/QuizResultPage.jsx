@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAttemptResult } from '../services/quizService';
+import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { CheckCircleIcon, XCircleIcon, WarningIcon } from '../components/icons';
 import Confetti from '../components/Confetti';
 
@@ -94,19 +96,25 @@ export default function QuizResultPage() {
     <div className="min-h-screen bg-neutral-50 flex justify-center px-4 py-10">
       {showConfetti && <Confetti />}
 
-      <div className="w-full max-w-2xl flex flex-col gap-6">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="w-full max-w-2xl flex flex-col gap-6"
+      >
         {passed && (
-          <div
+          <motion.div
+            variants={fadeInUp}
             data-testid="pass-celebration"
             className="w-full max-w-lg mx-auto rounded-xl shadow-card px-5 py-4 text-center bg-gradient-to-r from-accent-500 to-accent-400"
           >
             <p className="font-heading font-bold text-base sm:text-lg text-primary-900">
               🎉 Great job! You passed {quiz.title}
             </p>
-          </div>
+          </motion.div>
         )}
 
-        <div className="w-full max-w-lg mx-auto bg-white border border-neutral-200 rounded-xl shadow-card p-6 sm:p-8 flex flex-col gap-6">
+        <motion.div variants={fadeInUp} className="w-full max-w-lg mx-auto bg-white border border-neutral-200 rounded-xl shadow-card p-6 sm:p-8 flex flex-col gap-6">
           <div className="text-center">
             <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">{quiz.module}</p>
             <h1 className="font-heading text-xl font-bold text-neutral-900 mt-1">{quiz.title}</h1>
@@ -160,10 +168,10 @@ export default function QuizResultPage() {
             </div>
             <p className="text-xs text-neutral-400 mt-2">This is visible to your trainer along with your score.</p>
           </div>
-        </div>
+        </motion.div>
 
         {quiz.questions?.length > 0 && (
-          <div className="bg-white border border-neutral-200 rounded-xl shadow-card p-5 sm:p-6">
+          <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl shadow-card p-5 sm:p-6">
             <h2 className="font-heading text-lg font-bold text-neutral-900">Question Review</h2>
             <p className="text-xs text-neutral-400 mt-0.5 mb-1">
               Explanations are shown below for anything you missed.
@@ -173,17 +181,19 @@ export default function QuizResultPage() {
                 <QuestionReviewItem key={i} q={q} index={i} />
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
-        <button
+        <motion.button
+          variants={fadeInUp}
           type="button"
+          whileTap={{ scale: 0.97 }}
           onClick={() => navigate(`/quiz/${courseId}`)}
           className="rounded-md px-5 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 w-full max-w-lg mx-auto"
         >
           Back to Quizzes
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </div>
   );
 }

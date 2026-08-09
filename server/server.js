@@ -17,6 +17,11 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const certificateRoutes = require('./routes/certificateRoutes');
+const agendaRoutes = require('./routes/agendaRoutes');
+const resourceRoutes = require('./routes/resourceRoutes');
+const skillPassportRoutes = require('./routes/skillPassportRoutes');
+const questionRoutes = require('./routes/questionRoutes');
 
 const app = express();
 
@@ -39,6 +44,11 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/agenda', agendaRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/skill-passport', skillPassportRoutes);
+app.use('/api/questions', questionRoutes);
 
 const PORT = process.env.PORT || 5001;
 

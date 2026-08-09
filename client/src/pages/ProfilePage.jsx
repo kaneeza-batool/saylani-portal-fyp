@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getProfile, updateProfile, uploadAvatar } from '../services/studentService';
 import { getEnrolledCourses } from '../services/courseService';
 import { useAuth } from '../context/AuthContext';
 import { initialsOf } from '../components/Sidebar';
 import Toast from '../components/Toast';
-import { CameraIcon, EditIcon, LogOutIcon } from '../components/icons';
+import { fadeInUp, staggerContainer, cardInteraction } from '../lib/motionVariants';
+import { CameraIcon, EditIcon, LogOutIcon, MailIcon, ProfileIcon, CoursesIcon, RefreshIcon } from '../components/icons';
 
 const inputClass =
   'w-full rounded-md border border-neutral-300 px-3.5 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500';
@@ -30,12 +32,32 @@ function capitalize(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function InfoCard({ title, children }) {
+function InfoCard({ title, icon: Icon, badge, animKey, children }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6">
-      <h3 className="font-heading text-base font-bold text-neutral-900 mb-4">{title}</h3>
-      <div className="flex flex-col gap-4">{children}</div>
-    </div>
+    <motion.div
+      variants={fadeInUp}
+      className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden"
+    >
+      <div className="flex items-center gap-2 px-5 sm:px-6 py-4 border-b border-neutral-200">
+        {Icon && <Icon className="w-4 h-4 text-primary-800 shrink-0" />}
+        <h3 className="font-heading text-base font-bold text-neutral-900 flex-1">{title}</h3>
+        {badge}
+      </div>
+      <div className="p-5 sm:p-6">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={animKey}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="flex flex-col gap-4"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
 
@@ -160,8 +182,8 @@ export default function ProfilePage() {
     return (
       <div className="flex flex-col gap-4 sm:gap-6 animate-pulse">
         <div className="rounded-lg overflow-hidden bg-white border border-neutral-200 shadow-card">
-          <div className="h-28 sm:h-36 bg-neutral-200" />
-          <div className="px-5 sm:px-8 pb-6 -mt-10 flex flex-col items-start gap-3">
+          <div className="h-32 sm:h-40 bg-neutral-200" />
+          <div className="px-5 sm:px-8 pb-6 -mt-10 sm:-mt-12 flex flex-col items-start gap-3">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-neutral-300 border-4 border-white" />
             <div className="h-5 w-40 bg-neutral-200 rounded" />
             <div className="h-4 w-24 bg-neutral-200 rounded" />
@@ -192,14 +214,19 @@ export default function ProfilePage() {
   const saving = updateMutation.isPending || avatarMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6">
-      <div className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-4 sm:gap-6"
+    >
+      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
         {/* Solid navy backdrop with a subtle gold corner glow + hairline
             diagonal pattern — deliberately not a literal color gradient
             blend, which read as muddy. This is a backdrop for the avatar/
             name below, not a focal point, so both effects stay low-opacity. */}
         <div
-          className="h-28 sm:h-36 bg-primary-900"
+          className="h-32 sm:h-40 bg-primary-900"
           style={{
             backgroundImage:
               'radial-gradient(circle at 12% 15%, rgba(208,163,91,0.28) 0%, rgba(208,163,91,0) 42%), repeating-linear-gradient(135deg, rgba(208,163,91,0.07) 0px, rgba(208,163,91,0.07) 1px, transparent 1px, transparent 13px)',
@@ -210,91 +237,138 @@ export default function ProfilePage() {
           <div className="flex items-end justify-between -mt-10 sm:-mt-12">
             <div className="relative">
               {displayAvatar ? (
-                <img
+                <motion.img
+                  whileHover={isEditing ? { scale: 1.04 } : undefined}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
                   src={displayAvatar}
                   alt={student.fullName}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-card"
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-[0_0_0_3px_rgba(208,163,91,0.25),0_4px_10px_rgba(15,23,47,0.18)] ${isEditing ? 'cursor-pointer' : ''}`}
+                  onClick={isEditing ? () => fileInputRef.current?.click() : undefined}
                 />
               ) : (
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-accent-500 text-primary-900 font-bold text-2xl flex items-center justify-center border-4 border-white shadow-card">
+                <motion.div
+                  whileHover={isEditing ? { scale: 1.04 } : undefined}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-accent-500 text-primary-900 font-bold text-2xl flex items-center justify-center border-4 border-white shadow-[0_0_0_3px_rgba(208,163,91,0.25),0_4px_10px_rgba(15,23,47,0.18)] ${isEditing ? 'cursor-pointer' : ''}`}
+                  onClick={isEditing ? () => fileInputRef.current?.click() : undefined}
+                >
                   {initialsOf(student.fullName)}
-                </div>
+                </motion.div>
               )}
-              {isEditing && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    aria-label="Change avatar"
-                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary-800 text-white flex items-center justify-center border-2 border-white hover:bg-primary-900 transition-colors"
-                  >
-                    <CameraIcon className="w-4 h-4" />
-                  </button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp"
-                    onChange={handleAvatarPick}
-                    className="hidden"
-                    data-testid="avatar-file-input"
-                  />
-                </>
-              )}
+              <AnimatePresence>
+                {isEditing && (
+                  <>
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.6 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.92 }}
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      aria-label="Change avatar"
+                      className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary-800 text-white flex items-center justify-center border-2 border-white hover:bg-primary-900 transition-colors"
+                    >
+                      <CameraIcon className="w-4 h-4" />
+                    </motion.button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={handleAvatarPick}
+                      className="hidden"
+                      data-testid="avatar-file-input"
+                    />
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
-            {!isEditing ? (
-              <button
-                type="button"
-                onClick={startEditing}
-                className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
-              >
-                <EditIcon className="w-4 h-4" />
-                Edit Profile
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
+            <AnimatePresence mode="wait" initial={false}>
+              {!isEditing ? (
+                <motion.button
+                  key="edit"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.96 }}
                   type="button"
-                  onClick={cancelEditing}
-                  disabled={saving}
-                  className="rounded-md px-4 py-2 text-sm font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                  onClick={startEditing}
+                  className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="rounded-md px-4 py-2 text-sm font-semibold bg-accent-500 text-primary-900 hover:bg-accent-400 disabled:opacity-50"
+                  <EditIcon className="w-4 h-4" />
+                  Edit Profile
+                </motion.button>
+              ) : (
+                <motion.div
+                  key="editing"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  className="flex items-center gap-2"
                 >
-                  {saving ? 'Saving…' : 'Save Changes'}
-                </button>
-              </div>
-            )}
+                  <motion.button
+                    whileTap={saving ? undefined : { scale: 0.96 }}
+                    type="button"
+                    onClick={cancelEditing}
+                    disabled={saving}
+                    className="rounded-md px-4 py-2 text-sm font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </motion.button>
+                  <motion.button
+                    whileTap={saving ? undefined : { scale: 0.96 }}
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold bg-accent-500 text-primary-900 hover:bg-accent-400 disabled:opacity-50"
+                  >
+                    {saving && <RefreshIcon className="w-3.5 h-3.5 animate-spin" />}
+                    {saving ? 'Saving…' : 'Save Changes'}
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-4">
             <h1 className="font-heading text-xl sm:text-2xl font-bold text-neutral-900">{student.fullName}</h1>
             <span className="inline-flex items-center mt-1.5 rounded-pill px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-800">
               Student
             </span>
           </div>
 
-          {error && (
-            <div className="mt-4 rounded-md bg-danger-bg text-danger-text text-sm font-medium px-3.5 py-2.5">
-              {error}
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="overflow-hidden"
+              >
+                <div className="rounded-md bg-danger-bg text-danger-text text-sm font-medium px-3.5 py-2.5">
+                  {error}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
-      <InfoCard title="Contact Info">
+      <InfoCard title="Contact Info" icon={MailIcon} animKey={isEditing ? 'edit' : 'view'}>
         {!isEditing ? (
-          <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ViewField label="Email" value={student.email} />
             <ViewField label="Phone" value={student.phone} />
-            <ViewField label="Address" value={student.address} />
-          </>
+            <div className="sm:col-span-2">
+              <ViewField label="Address" value={student.address} />
+            </div>
+          </div>
         ) : (
           <>
             <div>
@@ -328,7 +402,7 @@ export default function ProfilePage() {
         )}
       </InfoCard>
 
-      <InfoCard title="Personal Information">
+      <InfoCard title="Personal Information" icon={ProfileIcon} animKey={isEditing ? 'edit' : 'view'}>
         {!isEditing ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ViewField label="Gender" value={capitalize(student.gender)} />
@@ -383,21 +457,30 @@ export default function ProfilePage() {
         )}
       </InfoCard>
 
-      <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="font-heading text-base font-bold text-neutral-900">Enrolled Courses</h3>
+      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
+        <div className="flex items-center gap-2 px-5 sm:px-6 py-4 border-b border-neutral-200">
+          <CoursesIcon className="w-4 h-4 text-primary-800 shrink-0" />
+          <h3 className="font-heading text-base font-bold text-neutral-900 flex-1">Enrolled Courses</h3>
           <span className="inline-flex items-center justify-center rounded-pill w-5 h-5 text-[11px] font-bold bg-neutral-100 text-neutral-500">
             {courses?.length || 0}
           </span>
         </div>
-        <div className="flex flex-col gap-2.5">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col gap-2.5 p-5 sm:p-6"
+        >
           {courses?.length > 0 ? (
             courses.map((course) => (
-              <button
+              <motion.button
                 key={course._id}
+                variants={fadeInUp}
+                whileHover={cardInteraction.whileHover}
+                whileTap={cardInteraction.whileTap}
                 type="button"
                 onClick={() => navigate(`/dashboard/${course._id}`)}
-                className="flex items-center justify-between gap-3 rounded-md border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50 transition-colors"
+                className="flex items-center justify-between gap-3 rounded-md border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
               >
                 <span className="min-w-0">
                   <span className="text-sm font-medium text-neutral-800 block truncate">{course.name}</span>
@@ -408,24 +491,26 @@ export default function ProfilePage() {
                 <span className="inline-flex items-center rounded-pill px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-success-bg text-success-text shrink-0">
                   Enrolled
                 </span>
-              </button>
+              </motion.button>
             ))
           ) : (
             <p className="text-sm text-neutral-500">No courses enrolled yet.</p>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <button
+      <motion.button
+        variants={fadeInUp}
+        whileTap={{ scale: 0.97 }}
         type="button"
         onClick={handleLogout}
         className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold border border-danger-text/30 text-danger-text hover:bg-danger-bg transition-colors sm:self-start"
       >
         <LogOutIcon className="w-4 h-4" />
         Log out
-      </button>
+      </motion.button>
 
       <Toast toast={toast} onDismiss={() => setToast(null)} />
-    </div>
+    </motion.div>
   );
 }

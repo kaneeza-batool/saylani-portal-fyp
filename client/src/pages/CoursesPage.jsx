@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getEnrolledCourses } from '../services/courseService';
+import { fadeInUp, staggerContainer, cardInteraction } from '../lib/motionVariants';
 import { SearchIcon } from '../components/icons';
-
-const FILTERS = ['All', 'Enrolled'];
 
 function CourseCardSkeleton() {
   return (
@@ -25,7 +25,11 @@ function CourseCardSkeleton() {
 
 function CourseCard({ course, onViewDetails }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex flex-col gap-4">
+    <motion.div
+      variants={fadeInUp}
+      whileHover={cardInteraction.whileHover}
+      className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex flex-col gap-4"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <span className="inline-flex items-center rounded-pill px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide bg-primary-100 text-primary-800">
@@ -70,20 +74,20 @@ function CourseCard({ course, onViewDetails }) {
         </div>
       </div>
 
-      <button
+      <motion.button
         type="button"
         onClick={() => onViewDetails(course._id)}
+        whileTap={{ scale: 0.97 }}
         className="mt-1 rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
       >
         View Details
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   );
 }
 
 export default function CoursesPage() {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('All');
   const navigate = useNavigate();
 
   const {
@@ -96,11 +100,7 @@ export default function CoursesPage() {
     queryFn: getEnrolledCourses,
   });
 
-  const filtered = (courses || []).filter((c) => {
-    const matchesSearch = c.name.toLowerCase().includes(search.trim().toLowerCase());
-    const matchesFilter = filter === 'All' || c.status === 'enrolled';
-    return matchesSearch && matchesFilter;
-  });
+  const filtered = (courses || []).filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
 
   function handleViewDetails(courseId) {
     navigate(`/dashboard/${courseId}`);
@@ -118,20 +118,6 @@ export default function CoursesPage() {
             placeholder="Search courses..."
             className="w-full rounded-md border border-neutral-300 pl-10 pr-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
           />
-        </div>
-        <div className="flex rounded-md bg-neutral-100 p-1 shrink-0 self-start sm:self-auto">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
-                filter === f ? 'bg-primary-800 text-white' : 'text-neutral-500 hover:text-neutral-700'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -158,11 +144,16 @@ export default function CoursesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+        >
           {filtered.map((course) => (
             <CourseCard key={course._id} course={course} onViewDetails={handleViewDetails} />
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

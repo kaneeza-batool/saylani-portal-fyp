@@ -142,16 +142,19 @@ Full example:
 
 ## Sidebar nav item
 
-Sidebar container: `bg-white border-r border-neutral-200` — light chrome, matching the portal's warm/personal tone (not a dark operational sidebar).
+Sidebar container: `bg-primary-900` — a solid navy field (not a light chrome
+sidebar). This superseded the original light-sidebar mockup once the
+brand's navy/gold identity was applied throughout; nav items sit on white/
+translucent text instead of `neutral-500`/`neutral-900`.
 
 ```html
 <!-- default -->
-<a class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900" href="#">
+<a class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white" href="#">
   Dashboard
 </a>
 
 <!-- active -->
-<a class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-white bg-primary-800" href="#">
+<a class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-primary-900 bg-accent-500" href="#">
   Dashboard
 </a>
 ```

@@ -347,6 +347,84 @@ export function TrophyIcon(props) {
   );
 }
 
+export function ShareIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="18" cy="5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="19" r="2.5" />
+      <path d="m8.2 10.7 7.6-4.4" />
+      <path d="m8.2 13.3 7.6 4.4" />
+    </svg>
+  );
+}
+
+export function CertificateIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="3.5" width="18" height="12" rx="2" />
+      <path d="M7 8h10" />
+      <path d="M7 11.5h6" />
+      <path d="M9 15.5v5l3-1.6 3 1.6v-5" />
+    </svg>
+  );
+}
+
+export function ExternalLinkIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+      <path d="M14 4h6v6" />
+      <path d="M10 14 20 4" />
+    </svg>
+  );
+}
+
+export function BookOpenIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 5.5c2.5-1.3 5-1.3 8 0v13c-3-1.3-5.5-1.3-8 0v-13Z" />
+      <path d="M20 5.5c-2.5-1.3-5-1.3-8 0v13c3-1.3 5.5-1.3 8 0v-13Z" />
+    </svg>
+  );
+}
+
+export function ThumbsUpIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3Z" />
+      <path d="M7 11l4-7a2 2 0 0 1 2 2v3h5.5a2 2 0 0 1 1.94 2.5l-1.5 6A2 2 0 0 1 16.9 20H10a3 3 0 0 1-3-3v-6Z" />
+    </svg>
+  );
+}
+
+export function MessageCircleIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.4-3.5A7.96 7.96 0 0 1 4 12Z" />
+    </svg>
+  );
+}
+
+export function CheckBadgeIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m9 12 2 2 4-4" />
+      <circle cx="12" cy="12" r="9" />
+    </svg>
+  );
+}
+
+export function BriefcaseIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="7.5" width="18" height="12" rx="2" />
+      <path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5" />
+      <path d="M3 12.5h18" />
+    </svg>
+  );
+}
+
 export function MaximizeIcon(props) {
   return (
     <svg {...base} {...props}>
@@ -354,6 +432,15 @@ export function MaximizeIcon(props) {
       <path d="M16 3h4v4" />
       <path d="M8 21H4v-4" />
       <path d="M16 21h4v-4" />
+    </svg>
+  );
+}
+
+export function MailIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m4 6.5 8 6 8-6" />
     </svg>
   );
 }

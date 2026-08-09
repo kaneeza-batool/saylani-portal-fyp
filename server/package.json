@@ -16,7 +16,9 @@
     "seed:batch-students": "node utils/seedBatchStudents.js",
     "seed:champion": "node utils/seedChampionStudent.js",
     "seed:notifications": "node utils/seedNotifications.js",
-    "seed:clear-onboarding": "node utils/seedClearOnboardingTest.js"
+    "seed:clear-onboarding": "node utils/seedClearOnboardingTest.js",
+    "seed:complete-webdev": "node utils/seedCompleteWebDevProgress.js",
+    "seed:doubts": "node utils/seedDoubts.js"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +31,8 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.9.1"
+    "mongoose": "^9.9.1",
+    "nodemailer": "^9.0.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import StudentLayout from './layouts/StudentLayout';
 import LoginPage from './pages/LoginPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import CoursesPage from './pages/CoursesPage';
 import DashboardPage from './pages/DashboardPage';
 import ProgressPage from './pages/ProgressPage';
@@ -16,7 +17,15 @@ import QuizResultPage from './pages/QuizResultPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
+import CertificatePage from './pages/CertificatePage';
+import PublicVerifyPage from './pages/PublicVerifyPage';
+import MyFeedbackPage from './pages/MyFeedbackPage';
 import OnboardingPage from './pages/OnboardingPage';
+import AgendaPage from './pages/AgendaPage';
+import ResourceLibraryPage from './pages/ResourceLibraryPage';
+import SkillPassportPage from './pages/SkillPassportPage';
+import DoubtsListPage from './pages/DoubtsListPage';
+import DoubtDetailPage from './pages/DoubtDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +43,12 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+            {/* PUBLIC — no auth, no Sidebar/TopBar. Anyone with the link
+                (e.g. an employer) must be able to open this while logged
+                out, so it lives entirely outside ProtectedRoute. */}
+            <Route path="/verify/:certificateId" element={<PublicVerifyPage />} />
 
             <Route element={<ProtectedRoute />}>
               {/* Mandatory profile-picture step — standalone, no Sidebar/TopBar,
@@ -50,8 +65,15 @@ function App() {
                 <Route path="/assignment/:courseId" element={<AssignmentPage />} />
                 <Route path="/quiz/:courseId" element={<QuizListPage />} />
                 <Route path="/leaderboard/:courseId" element={<LeaderboardPage />} />
+                <Route path="/certificate/:courseId" element={<CertificatePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/feedback" element={<MyFeedbackPage />} />
+                <Route path="/agenda" element={<AgendaPage />} />
+                <Route path="/resources/:courseId" element={<ResourceLibraryPage />} />
+                <Route path="/skill-passport" element={<SkillPassportPage />} />
+                <Route path="/doubts/:courseId" element={<DoubtsListPage />} />
+                <Route path="/doubts/:courseId/:questionId" element={<DoubtDetailPage />} />
               </Route>
 
               {/* Quiz-taking runs outside the sidebar shell — distraction-free
