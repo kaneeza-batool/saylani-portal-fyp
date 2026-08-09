@@ -1,9 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { getRoleHome } from './utils/roleHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
+import SubAdminLayout from './layouts/SubAdminLayout';
 import DashboardPage from './portals/super-admin/DashboardPage';
 import StudentsPage from './portals/super-admin/StudentsPage';
 import CampusesPage from './portals/super-admin/CampusesPage';
@@ -35,6 +38,16 @@ const queryClient = new QueryClient({
   },
 });
 
+// Same hardcoded-fallback problem this whole fix addresses, just at the
+// catch-all level — route unmatched paths by the current user's role
+// instead of always assuming /admin/dashboard.
+function CatchAll() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={getRoleHome(user.role) || '/unauthorized'} replace />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -42,6 +55,7 @@ function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
               <Route path="/admin" element={<SuperAdminLayout />}>
@@ -70,7 +84,13 @@ function App() {
               </Route>
             </Route>
 
-            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route element={<ProtectedRoute allowedRoles={['sub_admin']} />}>
+              <Route path="/sub-admin" element={<SubAdminLayout />}>
+                <Route path="dashboard" element={<div>Sub-Admin Dashboard — coming soon</div>} />
+              </Route>
+            </Route>
+
+            <Route path="*" element={<CatchAll />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>

@@ -229,7 +229,7 @@ export default function StudentsPage() {
                   </div>
                   <span className="text-body-sm text-neutral-600">{s.phone}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{s.campus}</span>
+                  <span className="text-body-sm text-neutral-600 truncate">{s.campus?.name}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}>{statusStyle.label}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${paymentStyle.className}`}>{paymentStyle.label}</span>
                   <div className="flex gap-1.5 justify-end">

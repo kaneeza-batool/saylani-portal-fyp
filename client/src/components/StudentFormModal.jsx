@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { fetchCampuses } from '../services/campusService';
 
 const COURSES = [
   'Web Development',
@@ -8,15 +10,6 @@ const COURSES = [
   'Digital Marketing',
   'UI/UX Design',
   'Cybersecurity Fundamentals',
-];
-
-const CAMPUSES = [
-  'Karachi Gulshan Campus',
-  'Lahore Model Town Campus',
-  'Sukkur TITAN Campus',
-  'Islamabad G-9 Campus',
-  'Multan Campus',
-  'Peshawar Campus',
 ];
 
 const STATUS_OPTIONS = [
@@ -33,7 +26,7 @@ const EMPTY_FORM = {
   phone: '',
   email: '',
   course: COURSES[0],
-  campus: CAMPUSES[0],
+  campus: '',
   status: 'enrolled',
   address: '',
 };
@@ -43,13 +36,32 @@ const inputClass =
 const labelClass = 'text-caption font-semibold text-neutral-600';
 
 export default function StudentFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
+  const { user } = useAuth();
+  const isCampusLocked = user?.role === 'sub_admin';
+
   const [form, setForm] = useState(EMPTY_FORM);
+  const [campuses, setCampuses] = useState([]);
 
   useEffect(() => {
-    if (open) {
-      setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
-    }
-  }, [open, initialValues]);
+    if (!open) return;
+    fetchCampuses({ status: 'active', limit: 100 })
+      .then((data) => setCampuses(data.items ?? []))
+      .catch(() => setCampuses([]));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const lockedCampus = isCampusLocked ? user?.campus_id ?? '' : undefined;
+    // initialValues.campus comes populated ({_id, name, city}) from the students
+    // list/detail endpoints — normalize to the plain id the <select> and submit
+    // payload expect. Falls back to a bare string in case a caller ever passes one.
+    const editCampus = initialValues?.campus?._id ?? initialValues?.campus ?? '';
+    setForm(
+      initialValues
+        ? { ...EMPTY_FORM, ...initialValues, campus: lockedCampus ?? editCampus }
+        : { ...EMPTY_FORM, campus: lockedCampus ?? campuses[0]?._id ?? '' }
+    );
+  }, [open, initialValues, isCampusLocked, user, campuses]);
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -167,10 +179,17 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
               <label className={labelClass} htmlFor="student-campus">
                 Campus
               </label>
-              <select id="student-campus" value={form.campus} onChange={setField('campus')} className={`${inputClass} bg-white`}>
-                {CAMPUSES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+              <select
+                id="student-campus"
+                required
+                value={form.campus}
+                onChange={setField('campus')}
+                disabled={isCampusLocked}
+                className={`${inputClass} bg-white ${isCampusLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                {campuses.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
                   </option>
                 ))}
               </select>

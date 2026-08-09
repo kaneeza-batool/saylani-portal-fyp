@@ -7,7 +7,7 @@ function startOfToday() {
 
 exports.lookupStudent = async (req, res) => {
   try {
-    const student = await Student.findOne({ rollNumber: req.params.rollNumber });
+    const student = await Student.findOne({ rollNumber: req.params.rollNumber }).populate('campus', 'name city');
     if (!student) return res.status(404).json({ message: 'No student found with that roll number' });
 
     if (student.status === 'dropout') {
@@ -26,7 +26,7 @@ exports.lookupStudent = async (req, res) => {
 exports.markAttendance = async (req, res) => {
   try {
     const { rollNumber, status } = req.body;
-    const student = await Student.findOne({ rollNumber });
+    const student = await Student.findOne({ rollNumber }).populate('campus', 'name');
     if (!student) return res.status(404).json({ message: 'No student found with that roll number' });
     if (student.status === 'dropout') {
       return res.status(409).json({ message: `The student exists, but their status is invalid: '${student.status}'` });
@@ -40,7 +40,7 @@ exports.markAttendance = async (req, res) => {
       studentName: student.name,
       rollNumber: student.rollNumber,
       course: student.course,
-      campus: student.campus,
+      campus: student.campus?.name || '',
       date: startOfToday(),
       status: status || 'present',
     });
@@ -58,7 +58,7 @@ exports.markMultiple = async (req, res) => {
       return res.status(400).json({ message: 'rollNumbers must be a non-empty array' });
     }
 
-    const students = await Student.find({ rollNumber: { $in: rollNumbers } });
+    const students = await Student.find({ rollNumber: { $in: rollNumbers } }).populate('campus', 'name');
     const today = startOfToday();
     const existing = await StudentAttendance.find({ student: { $in: students.map((s) => s._id) }, date: today });
     const alreadyMarked = new Set(existing.map((e) => String(e.student)));
@@ -70,7 +70,7 @@ exports.markMultiple = async (req, res) => {
         studentName: s.name,
         rollNumber: s.rollNumber,
         course: s.course,
-        campus: s.campus,
+        campus: s.campus?.name || '',
         date: today,
         status: status || 'present',
       }));
@@ -96,6 +96,8 @@ exports.getAttendance = async (req, res) => {
     const filter = {};
     if (status && status !== 'all') filter.status = status;
     if (search && search.trim()) {
+      // campus here is StudentAttendance's own cached-name String (snapshotted
+      // at mark time above), not a ref — safe to regex-match directly.
       filter.$or = [
         { studentName: new RegExp(search.trim(), 'i') },
         { campus: new RegExp(search.trim(), 'i') },

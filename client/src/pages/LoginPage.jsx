@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getRoleHome } from '../utils/roleHome';
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -13,7 +14,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && user) {
-    const redirectTo = location.state?.from?.pathname || '/admin/dashboard';
+    const redirectTo = location.state?.from?.pathname || getRoleHome(user.role) || '/unauthorized';
     return <Navigate to={redirectTo} replace />;
   }
 
@@ -22,8 +23,8 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate(location.state?.from?.pathname || '/admin/dashboard', { replace: true });
+      const loggedInUser = await login(email, password);
+      navigate(location.state?.from?.pathname || getRoleHome(loggedInUser.role) || '/unauthorized', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {

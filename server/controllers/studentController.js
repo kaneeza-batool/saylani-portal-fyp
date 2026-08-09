@@ -11,7 +11,7 @@ exports.getStudents = async (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10));
     const { search, status } = req.query;
 
-    const filter = {};
+    const filter = { ...req.campusFilter };
     if (status && status !== 'all') {
       filter.status = status;
     }
@@ -22,6 +22,7 @@ exports.getStudents = async (req, res) => {
 
     const [students, total] = await Promise.all([
       Student.find(filter)
+        .populate('campus', 'name city')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
@@ -42,7 +43,7 @@ exports.getStudents = async (req, res) => {
 
 exports.getStudent = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id);
+    const student = await Student.findById(req.params.id).populate('campus', 'name city');
     if (!student) return res.status(404).json({ message: 'Student not found' });
     return res.status(200).json({ student });
   } catch (err) {

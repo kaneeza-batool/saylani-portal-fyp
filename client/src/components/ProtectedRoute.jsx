@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getRoleHome } from '../utils/roleHome';
 
 export default function ProtectedRoute({ allowedRoles }) {
   const { user, loading } = useAuth();
@@ -18,7 +19,11 @@ export default function ProtectedRoute({ allowedRoles }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/login" replace />;
+    // Wrong portal for this role, not "not logged in" — sending them back to
+    // /login would bounce straight back here (LoginPage redirects an
+    // authenticated user away from /login), looping forever. Send them to
+    // their own portal instead, or a dead-end page if they don't have one.
+    return <Navigate to={getRoleHome(user.role) || '/unauthorized'} replace />;
   }
 
   return <Outlet />;
