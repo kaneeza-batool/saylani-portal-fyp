@@ -1,6 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { NAV_LOOKUP } from './Sidebar';
+import { NAV_LOOKUP as ADMIN_NAV_LOOKUP } from './Sidebar';
+import { NAV_LOOKUP as TRAINER_NAV_LOOKUP } from './TrainerSidebar';
 import { useAuth } from '../context/AuthContext';
+
+const NAV_LOOKUP = { ...ADMIN_NAV_LOOKUP, ...TRAINER_NAV_LOOKUP };
 
 function useViewTitle() {
   const { pathname } = useLocation();

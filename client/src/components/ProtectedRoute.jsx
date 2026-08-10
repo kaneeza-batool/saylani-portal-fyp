@@ -23,3 +23,4 @@ export default function ProtectedRoute({ allowedRoles }) {
 
   return <Outlet />;
 }
+

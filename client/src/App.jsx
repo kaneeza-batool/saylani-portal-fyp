@@ -25,6 +25,13 @@ import AuditLog from './portals/super-admin/AuditLog';
 import Updation from './portals/super-admin/Updation';
 import Settings from './portals/super-admin/Settings';
 import Profile from './portals/super-admin/Profile';
+import TrainerLayout from './layouts/TrainerLayout';
+import TrainerDashboardPage from './portals/trainer/DashboardPage';
+import TrainerBatchesPage from './portals/trainer/BatchesPage';
+import TrainerAttendancePage from './portals/trainer/AttendancePage';
+import TrainerQuizzesPage from './portals/trainer/QuizzesPage';
+import TrainerStudentsPage from './portals/trainer/StudentsPage';
+import TrainerProfilePage from './portals/trainer/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,6 +74,18 @@ function App() {
                 <Route path="updation" element={<Updation />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="profile" element={<Profile />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['trainer']} />}>
+              <Route path="/trainer" element={<TrainerLayout />}>
+                <Route index element={<Navigate to="/trainer/dashboard" replace />} />
+                <Route path="dashboard" element={<TrainerDashboardPage />} />
+                <Route path="batches" element={<TrainerBatchesPage />} />
+                <Route path="attendance" element={<TrainerAttendancePage />} />
+                <Route path="quizzes" element={<TrainerQuizzesPage />} />
+                <Route path="students" element={<TrainerStudentsPage />} />
+                <Route path="profile" element={<TrainerProfilePage />} />
               </Route>
             </Route>
 
