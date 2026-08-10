@@ -43,7 +43,7 @@ export default function AuditLogList({ fixedAction = null, emptyText }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-royal-500 transition-colors">
+        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" />
@@ -60,7 +60,7 @@ export default function AuditLogList({ fixedAction = null, emptyText }) {
           <select
             value={action}
             onChange={(e) => setAction(e.target.value)}
-            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="all">All actions</option>
             <option value="create">Created</option>
@@ -70,7 +70,7 @@ export default function AuditLogList({ fixedAction = null, emptyText }) {
         )}
       </div>
 
-      <motion.div variants={fadeInUp} initial="hidden" animate="show" className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <motion.div variants={fadeInUp} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col">
             {[0, 1, 2, 3, 4].map((i) => (
@@ -118,7 +118,7 @@ export default function AuditLogList({ fixedAction = null, emptyText }) {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Previous
             </button>
@@ -126,7 +126,7 @@ export default function AuditLogList({ fixedAction = null, emptyText }) {
               type="button"
               disabled={page >= pages}
               onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Next
             </button>

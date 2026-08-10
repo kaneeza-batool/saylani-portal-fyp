@@ -77,7 +77,7 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
           <label className={labelClass} htmlFor="trainer-status">
             Status
           </label>
-          <select id="trainer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+          <select id="trainer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>

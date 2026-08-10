@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { createQuiz, deleteQuiz, fetchQuizzes, updateQuiz } from '../../services/quizService';
 import QuizFormModal from '../../components/QuizFormModal';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 const STATUS_STYLE = {
   Scheduled: { label: 'Scheduled', className: 'bg-warning-bg text-warning-text' },
@@ -31,6 +32,7 @@ export default function QuizzesPage() {
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState({ open: false, mode: 'add', item: null });
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -68,7 +70,13 @@ export default function QuizzesPage() {
     onError: (err) => setFormError(err.response?.data?.message || 'Failed to update quiz.'),
   });
 
-  const deleteMutation = useMutation({ mutationFn: deleteQuiz, onSuccess: invalidate });
+  const deleteMutation = useMutation({
+    mutationFn: deleteQuiz,
+    onSuccess: () => {
+      invalidate();
+      setDeleteTarget(null);
+    },
+  });
 
   const openAdd = () => {
     setFormError('');
@@ -85,8 +93,9 @@ export default function QuizzesPage() {
     else updateMutation.mutate({ id: modal.item._id, payload: values });
   };
 
-  const handleDelete = (item) => {
-    if (window.confirm(`Delete "${item.title}"? This can't be undone.`)) deleteMutation.mutate(item._id);
+  const handleDelete = (item) => setDeleteTarget(item);
+  const confirmDelete = () => {
+    if (deleteTarget) deleteMutation.mutate(deleteTarget._id);
   };
 
   const items = data?.items ?? [];
@@ -98,7 +107,7 @@ export default function QuizzesPage() {
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-royal-500 transition-colors">
+          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-gold-500 transition-colors">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.3-4.3" />
@@ -114,7 +123,7 @@ export default function QuizzesPage() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="all">All statuses</option>
             <option value="Scheduled">Scheduled</option>
@@ -126,7 +135,7 @@ export default function QuizzesPage() {
         <button
           type="button"
           onClick={openAdd}
-          className="border-none bg-royal-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-royal-600"
+          className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -135,7 +144,7 @@ export default function QuizzesPage() {
         </button>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Quiz', 'Course', 'Campus', 'Attempts', 'Avg', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
@@ -172,7 +181,7 @@ export default function QuizzesPage() {
                       type="button"
                       onClick={() => openEdit(q)}
                       title="Edit"
-                      className="w-[30px] h-[30px] border border-neutral-200 bg-white rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 20h9" />
@@ -183,7 +192,7 @@ export default function QuizzesPage() {
                       type="button"
                       onClick={() => handleDelete(q)}
                       title="Delete"
-                      className="w-[30px] h-[30px] border border-neutral-200 bg-white rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 6h18" />
@@ -209,7 +218,7 @@ export default function QuizzesPage() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Previous
             </button>
@@ -217,7 +226,7 @@ export default function QuizzesPage() {
               type="button"
               disabled={page >= pages}
               onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Next
             </button>
@@ -233,6 +242,15 @@ export default function QuizzesPage() {
         onSubmit={handleSubmit}
         submitting={submitting}
         error={formError}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete quiz"
+        message={deleteTarget ? `Delete "${deleteTarget.title}"? This can't be undone.` : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        loading={deleteMutation.isPending}
       />
     </motion.div>
   );

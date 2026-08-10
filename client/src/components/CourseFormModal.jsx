@@ -62,7 +62,7 @@ export default function CourseFormModal({ open, mode = 'add', initialValues, onC
             <label className={labelClass} htmlFor="course-status">
               Status
             </label>
-            <select id="course-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+            <select id="course-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>

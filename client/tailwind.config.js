@@ -38,15 +38,31 @@ export default {
         },
 
         // ---- Neutral — Paper & Ink ----
+        // Values are CSS custom properties (see index.css :root / .dark) so
+        // every existing bg-neutral-*/text-neutral-* class in the app
+        // automatically responds to the dark-mode toggle with zero
+        // per-component edits — that's the whole point of routing through
+        // vars instead of static hex here.
         neutral: {
-          50: '#F6F8F6', // page background (also covers #F7F9F7 / #FAFBFA)
-          100: '#F0F3F0', // hover surfaces / progress track (also covers #F1F4F1 / #EDF1ED / #EEF2EE)
-          200: '#E7EAE6', // card border / hairline
-          300: '#D7DED9', // scrollbar thumb / strong border
-          400: '#8A9A93', // secondary/dim text (e.g. role label under a name)
-          500: '#7C8C84', // overline / uppercase label text, KPI labels
-          600: '#4B5D55', // icon stroke, muted body text
-          900: '#10231C', // ink — primary heading & body text
+          50: 'var(--neutral-50)', // page background
+          100: 'var(--neutral-100)', // hover surfaces / progress track
+          200: 'var(--neutral-200)', // card border / hairline
+          300: 'var(--neutral-300)', // scrollbar thumb / strong border
+          400: 'var(--neutral-400)', // secondary/dim text (e.g. role label under a name)
+          500: 'var(--neutral-500)', // overline / uppercase label text, KPI labels
+          600: 'var(--neutral-600)', // icon stroke, muted body text
+          900: 'var(--neutral-900)', // ink — primary heading & body text
+        },
+        // Card/panel/modal/topbar backgrounds — was literal `white`, split
+        // out so button/badge text can stay literally white in both themes
+        // while surfaces themselves go dark.
+        surface: 'var(--surface)',
+
+        // Enrollment bar/legend color for the dashboard trend chart — a
+        // fixed navy hex was nearly invisible against the dark-mode card
+        // surface, so this is themed too (lighter blue in dark mode).
+        chart: {
+          enrollment: 'var(--chart-enrollment)',
         },
 
         // ---- Semantic status — bg/text pairs, reused verbatim across
@@ -78,28 +94,42 @@ export default {
           subtext: '#9CB8AA', // wordmark subtitle ("Super Admin") under the logo
         },
 
-        // ---- Saylani admin theme — royal blue / parrot green / white ----
-        // Approximated by eye from screenshots of the live admin.saylanimit.com
-        // app (no source file to decode this time, unlike the `primary`/`chrome`
-        // tokens above). Treat these as a starting point, not verified hex
-        // values — re-check against the real app once it's up next to this.
-        royal: {
-          50: '#EFF5FF', // notification/info tint backgrounds
-          500: '#2F6FE4', // primary buttons, links, active form focus (Search, Export, Submit, Login)
-          600: '#1D56C4', // primary button hover/pressed
-          700: '#173F91',
+        // ---- TITAN theme — navy / gold / white ----
+        // Taj Institute of Technology & Applied Networks. Sourced from the
+        // crest logo: deep navy shield, gold heraldic outline/wordmark,
+        // white book+globe mark. Supersedes the earlier Saylani royal/
+        // parrot palette (kept nowhere — fully replaced).
+        navy: {
+          50: '#EEF1F7',
+          100: '#D7DEEA',
+          200: '#A9B8D2',
+          300: '#7A91BA',
+          400: '#4C6AA2',
+          500: '#2C4680',
+          600: '#1A2F5E',
+          700: '#12234A',
+          800: '#0D1935', // sidebar / crest shield surface
+          900: '#080F22', // deepest — text on gold
         },
-        parrot: {
-          50: '#F1F8E9',
-          500: '#7CB342', // logo leaf mark, bright accents
-          600: '#5C9427',
+        gold: {
+          50: '#FBF3DF',
+          100: '#F5E6BE',
+          200: '#EAD08A',
+          300: '#DFBB5C',
+          400: '#D4AF37', // heraldic gold accent
+          500: '#C9A227', // primary gold — CTAs, active states
+          600: '#A9821C', // button hover/pressed (best contrast w/ white text)
+          700: '#8A6816',
+          800: '#6B4F10',
+          900: '#4D390A',
         },
-        saylani: {
-          sidebar: '#1D56C4', // vivid royal blue sidebar surface (was near-black — corrected per feedback)
-          'sidebar-active': '#5C9427', // parrot green active nav item background (blue + green pairing)
-          'sidebar-hover': 'rgba(255,255,255,0.12)',
-          'sidebar-text': '#DCE7FB', // soft blue-white for default nav label
-          'sidebar-text-active': '#FFFFFF',
+        titan: {
+          sidebar: '#0D1935', // navy-800 — sidebar surface
+          'sidebar-hover': 'rgba(255,255,255,0.08)',
+          'sidebar-active': '#C9A227', // gold-500 — solid pill for the selected nav item
+          'sidebar-text': '#AAB7D6', // muted navy-white, default nav label
+          'sidebar-text-hover': '#FFFFFF',
+          'sidebar-text-active': '#080F22', // navy-900 — dark text on the gold active pill
         },
       },
 
@@ -134,11 +164,12 @@ export default {
         pill: '9999px', // status badges, progress bar, avatars
       },
 
-      // Only two shadows appear in the source file; both carry the
-      // brand-dark tint (rgba(16,35,28,*)) rather than pure black.
+      // Shadows carry a navy tint (rgba(13,25,53,*) = navy-800) rather than
+      // pure black, matching the crest theme.
       boxShadow: {
-        card: '0 12px 26px rgba(16,35,28,0.10)', // KPI/list card, on hover
-        panel: '-8px 0 30px rgba(16,35,28,0.14)', // right-side slide-over panel
+        card: '0 12px 26px rgba(13,25,53,0.10)', // KPI/list card, on hover
+        panel: '-8px 0 30px rgba(13,25,53,0.16)', // right-side slide-over panel
+        gold: '0 8px 24px rgba(201,162,39,0.35)', // gold glow — primary CTAs, active states
       },
     },
   },

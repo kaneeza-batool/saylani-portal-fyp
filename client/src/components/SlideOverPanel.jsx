@@ -8,12 +8,12 @@ export default function SlideOverPanel({ open, title, onClose, formId, saveLabel
     <>
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-[rgba(11,42,32,0.35)] z-20 transition-opacity duration-300"
+        className="fixed inset-0 bg-[rgba(13,25,53,0.35)] z-20 transition-opacity duration-300"
         style={{ opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none' }}
       />
 
       <div
-        className="fixed top-0 right-0 h-screen w-[460px] bg-white shadow-panel z-30 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed top-0 right-0 h-screen w-[460px] bg-surface shadow-panel z-30 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: open ? 'translateX(0%)' : 'translateX(100%)', pointerEvents: open ? 'auto' : 'none' }}
       >
         <div className="px-6 py-[22px] border-b border-neutral-200 flex items-center justify-between">
@@ -40,7 +40,7 @@ export default function SlideOverPanel({ open, title, onClose, formId, saveLabel
           <button
             type="button"
             onClick={onClose}
-            className="border border-neutral-200 bg-white text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
+            className="border border-neutral-200 bg-surface text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
           >
             Cancel
           </button>
@@ -48,7 +48,7 @@ export default function SlideOverPanel({ open, title, onClose, formId, saveLabel
             type="submit"
             form={formId}
             disabled={submitting}
-            className="border-none bg-royal-500 text-white text-body-sm font-semibold px-4.5 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4.5 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Saving...' : saveLabel}
           </button>

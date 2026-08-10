@@ -82,7 +82,7 @@ export default function SubAdminFormModal({ open, mode = 'add', initialValues, o
             <label className={labelClass} htmlFor="subadmin-campus">
               Campus
             </label>
-            <select id="subadmin-campus" value={form.campus_id} onChange={setField('campus_id')} className={`${inputClass} bg-white`}>
+            <select id="subadmin-campus" value={form.campus_id} onChange={setField('campus_id')} className={`${inputClass} bg-surface`}>
               <option value="">Unassigned</option>
               {campuses.map((c) => (
                 <option key={c._id} value={c._id}>
@@ -95,7 +95,7 @@ export default function SubAdminFormModal({ open, mode = 'add', initialValues, o
             <label className={labelClass} htmlFor="subadmin-status">
               Status
             </label>
-            <select id="subadmin-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+            <select id="subadmin-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="suspended">Suspended</option>

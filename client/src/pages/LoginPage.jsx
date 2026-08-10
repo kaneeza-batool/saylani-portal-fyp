@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -32,35 +33,55 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 font-sans px-4">
-      <div className="w-full max-w-[380px] bg-white border border-neutral-200 rounded-xl p-[30px] flex flex-col gap-6">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-[52px] h-[52px] rounded-full bg-white border border-neutral-200 flex items-center justify-center">
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-parrot-500"
-            >
-              <path d="M12 3c4 2 6 5 6 9a6 6 0 0 1-12 0c0-4 2-7 6-9z" />
-              <path d="M12 9v9" />
-            </svg>
-          </div>
-          <div className="font-heading font-bold text-h5">
-            <span className="text-parrot-500">Sayl</span>
-            <span className="text-royal-500">ani</span>
-          </div>
-          <div className="text-body-sm text-neutral-400 -mt-2">Sign in to the admin portal</div>
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-navy-900 font-sans px-4 overflow-hidden">
+      {/* Ambient navy backdrop with a slow-drifting gold glow — subtle, not distracting */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#12234A_0%,_#080F22_70%)]" />
+        <motion.div
+          className="absolute -top-40 -left-40 w-[560px] h-[560px] rounded-full bg-gold-500/10 blur-[120px]"
+          animate={{ x: [0, 60, 0], y: [0, 40, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -right-40 w-[560px] h-[560px] rounded-full bg-navy-500/20 blur-[120px]"
+          animate={{ x: [0, -50, 0], y: [0, -30, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'linear-gradient(#C9A227 1px, transparent 1px), linear-gradient(90deg, #C9A227 1px, transparent 1px)',
+            backgroundSize: '44px 44px',
+          }}
+        />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="relative w-full max-w-[400px] bg-white/[0.03] backdrop-blur-xl border border-gold-500/20 rounded-xl p-[34px] flex flex-col gap-7 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+      >
+        <div className="flex flex-col items-center gap-2">
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+            className="w-[180px]"
+          >
+            <img
+              src="/logo.png"
+              alt="TITAN — Taj Institute of Technology &amp; Applied Networks"
+              className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(201,162,39,0.45)]"
+            />
+          </motion.div>
+          <div className="text-caption text-navy-300 font-normal mt-1">Super Admin Portal</div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-caption font-semibold text-neutral-600">
+            <label htmlFor="email" className="text-caption font-semibold text-navy-100">
               Email
             </label>
             <input
@@ -70,13 +91,13 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@saylani.org"
-              className="border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-royal-500 transition-colors"
+              placeholder="you@titan.edu"
+              className="titan-dark-input border border-white/15 bg-white/[0.04] text-white placeholder:text-navy-300 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-caption font-semibold text-neutral-600">
+            <label htmlFor="password" className="text-caption font-semibold text-navy-100">
               Password
             </label>
             <input
@@ -87,25 +108,23 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-royal-500 transition-colors"
+              className="titan-dark-input border border-white/15 bg-white/[0.04] text-white placeholder:text-navy-300 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors"
             />
           </div>
 
           {error && (
-            <div className="text-caption text-danger-600 bg-danger-50 border border-danger-200 rounded px-3 py-2">
-              {error}
-            </div>
+            <div className="text-caption text-danger-600 bg-surface border border-danger-200 rounded px-3 py-2">{error}</div>
           )}
 
           <button
             type="submit"
             disabled={submitting}
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded px-4 py-[11px] text-body font-semibold bg-royal-500 text-white transition-colors hover:bg-royal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded px-4 py-[11px] text-body font-semibold bg-gradient-to-r from-gold-400 to-gold-600 text-navy-900 transition-all hover:shadow-[0_8px_24px_rgba(201,162,39,0.4)] hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {submitting ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }

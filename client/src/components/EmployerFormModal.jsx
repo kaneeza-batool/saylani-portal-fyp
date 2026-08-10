@@ -62,7 +62,7 @@ export default function EmployerFormModal({ open, mode = 'add', initialValues, o
           <label className={labelClass} htmlFor="employer-status">
             Verification status
           </label>
-          <select id="employer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+          <select id="employer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
             <option value="pending">Pending</option>
             <option value="verified">Verified</option>
             <option value="rejected">Rejected</option>
