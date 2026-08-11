@@ -8,7 +8,7 @@ export default function UnauthorizedPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-neutral-50 font-sans px-4">
-      <div className="w-full max-w-[380px] bg-white border border-neutral-200 rounded-xl p-[30px] flex flex-col items-center gap-4 text-center">
+      <div className="w-full max-w-[380px] bg-surface border border-neutral-200 rounded-xl p-[30px] flex flex-col items-center gap-4 text-center">
         <div className="font-heading font-bold text-h5 text-neutral-900">Portal not available</div>
         <p className="text-body-sm text-neutral-500">
           Your account doesn't have a portal set up yet. Contact an administrator if you think this is a mistake.
@@ -16,7 +16,7 @@ export default function UnauthorizedPage() {
         <button
           type="button"
           onClick={logout}
-          className="mt-1 inline-flex items-center justify-center gap-2 rounded px-4 py-[11px] text-body font-semibold bg-royal-500 text-white transition-colors hover:bg-royal-600"
+          className="mt-1 inline-flex items-center justify-center gap-2 rounded px-4 py-[11px] text-body font-semibold bg-gold-500 text-white transition-colors hover:bg-gold-600"
         >
           Log out
         </button>

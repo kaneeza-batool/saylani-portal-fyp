@@ -61,7 +61,7 @@ export default function TrainersAttendanceMark() {
 
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="show" className="flex flex-col gap-4 max-w-[720px]">
-      <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
         <div className="font-heading font-bold text-h6 text-neutral-900">Scan Trainer Card</div>
         <form onSubmit={handleVerify} className="flex gap-2.5">
           <input
@@ -69,12 +69,12 @@ export default function TrainersAttendanceMark() {
             value={employeeId}
             onChange={(e) => setEmployeeId(e.target.value)}
             placeholder="Scan or enter Employee ID..."
-            className="flex-1 border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-royal-500 transition-colors"
+            className="flex-1 border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors"
           />
           <button
             type="submit"
             disabled={verifying}
-            className="border-none bg-royal-500 text-white text-body font-semibold px-5 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50"
+            className="border-none bg-gold-500 text-white text-body font-semibold px-5 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50"
           >
             {verifying ? 'Verifying...' : 'Verify Trainer'}
           </button>
@@ -83,8 +83,8 @@ export default function TrainersAttendanceMark() {
       </div>
 
       {trainer && (
-        <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col items-center gap-3">
-          <div className="w-16 h-16 rounded-full bg-parrot-50 text-parrot-600 flex items-center justify-center font-heading font-bold text-h5">
+        <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col items-center gap-3">
+          <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 flex items-center justify-center font-heading font-bold text-h5 border border-gold-500/40">
             {initials(trainer.name)}
           </div>
           <div className="text-center">
@@ -110,7 +110,7 @@ export default function TrainersAttendanceMark() {
               type="button"
               onClick={() => checkInMutation.mutate()}
               disabled={!!today?.checkIn || checkInMutation.isPending}
-              className="border-none bg-royal-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Check In
             </button>
@@ -118,7 +118,7 @@ export default function TrainersAttendanceMark() {
               type="button"
               onClick={() => checkOutMutation.mutate()}
               disabled={!today?.checkIn || !!today?.checkOut || checkOutMutation.isPending}
-              className="border border-danger-200 bg-white text-danger-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="border border-danger-200 bg-surface text-danger-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Check Out
             </button>

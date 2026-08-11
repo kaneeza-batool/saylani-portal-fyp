@@ -107,7 +107,7 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
               value={form.campus}
               onChange={setField('campus')}
               disabled={isCampusLocked}
-              className={`${inputClass} bg-white ${isCampusLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`${inputClass} bg-surface ${isCampusLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {campuses.map((c) => (
                 <option key={c._id} value={c._id}>
@@ -120,7 +120,7 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
             <label className={labelClass} htmlFor="trainer-status">
               Status
             </label>
-            <select id="trainer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+            <select id="trainer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>

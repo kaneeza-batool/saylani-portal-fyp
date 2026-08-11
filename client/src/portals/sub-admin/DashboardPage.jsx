@@ -42,7 +42,7 @@ const staggerContainer = {
 
 function CardShell({ children, className = '' }) {
   return (
-    <motion.div variants={fadeInUp} className={`bg-white border border-neutral-200 rounded-xl ${className}`}>
+    <motion.div variants={fadeInUp} className={`bg-surface border border-neutral-200 rounded-xl ${className}`}>
       {children}
     </motion.div>
   );
@@ -82,7 +82,7 @@ function PendingAdmissions({ admissions, isLoading, isError, actionMutation, isB
         <button
           type="button"
           onClick={onViewAll}
-          className="border-none bg-transparent text-caption font-semibold text-royal-500 cursor-pointer hover:text-royal-600 transition-colors"
+          className="border-none bg-transparent text-caption font-semibold text-gold-600 cursor-pointer hover:text-gold-700 transition-colors"
         >
           View all
         </button>
@@ -124,7 +124,7 @@ function PendingAdmissions({ admissions, isLoading, isError, actionMutation, isB
                     type="button"
                     disabled={actionMutation.isPending}
                     onClick={() => actionMutation.mutate({ id: a._id, action: 'approve' })}
-                    className="border-none bg-royal-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isButtonPending(a._id, 'approve') ? 'Approving...' : 'Approve'}
                   </button>
@@ -132,7 +132,7 @@ function PendingAdmissions({ admissions, isLoading, isError, actionMutation, isB
                     type="button"
                     disabled={actionMutation.isPending}
                     onClick={() => actionMutation.mutate({ id: a._id, action: 'reject' })}
-                    className="border border-danger-200 bg-white text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isButtonPending(a._id, 'reject') ? 'Rejecting...' : 'Reject'}
                   </button>
@@ -228,12 +228,12 @@ export default function DashboardPage() {
       </div>
 
       {anyError && (
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex items-center justify-between">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex items-center justify-between">
           <span className="text-body-sm text-danger-600">Couldn't load some dashboard stats. Please try again.</span>
           <button
             type="button"
             onClick={retryAll}
-            className="border-none bg-royal-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-royal-600"
+            className="border-none bg-gold-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-gold-600"
           >
             Retry
           </button>

@@ -68,7 +68,7 @@ export default function TrainersAttendanceView() {
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-royal-500 transition-colors">
+        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" />
@@ -83,7 +83,7 @@ export default function TrainersAttendanceView() {
         </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Trainer', 'Campus', 'Check In', 'Check Out', 'Duration'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
@@ -123,7 +123,7 @@ export default function TrainersAttendanceView() {
                       setCorrectionRecord(r);
                     }}
                     title="Request correction"
-                    className="w-[30px] h-[30px] border border-neutral-200 bg-white rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 20h9" />
@@ -147,7 +147,7 @@ export default function TrainersAttendanceView() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Previous
             </button>
@@ -155,7 +155,7 @@ export default function TrainersAttendanceView() {
               type="button"
               disabled={page >= pages}
               onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Next
             </button>

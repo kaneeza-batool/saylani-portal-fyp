@@ -3,6 +3,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { createStudent, deleteStudent, fetchStudents, updateStudent } from '../../services/studentService';
 import StudentFormModal from '../../components/StudentFormModal';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import ExportButtons from '../../components/ExportButtons';
+import IDCardModal from '../../components/IDCardModal';
+
+const EXPORT_COLUMNS = [
+  { header: 'Name', accessor: (s) => s.name },
+  { header: 'CNIC', accessor: (s) => s.cnic },
+  { header: 'Phone', accessor: (s) => s.phone },
+  { header: 'Course', accessor: (s) => s.course },
+  { header: 'Campus', accessor: (s) => s.campus },
+  { header: 'Status', accessor: (s) => s.status },
+  { header: 'Payment', accessor: (s) => s.payment },
+];
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'All statuses' },
@@ -77,6 +90,8 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
   const [modal, setModal] = useState({ open: false, mode: 'add', student: null });
   const [formError, setFormError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [idCardTarget, setIdCardTarget] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -117,7 +132,10 @@ export default function StudentsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteStudent,
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      setDeleteTarget(null);
+    },
   });
 
   const openAdd = () => {
@@ -140,10 +158,9 @@ export default function StudentsPage() {
     }
   };
 
-  const handleDelete = (student) => {
-    if (window.confirm(`Delete ${student.name}? This can't be undone.`)) {
-      deleteMutation.mutate(student._id);
-    }
+  const handleDelete = (student) => setDeleteTarget(student);
+  const confirmDelete = () => {
+    if (deleteTarget) deleteMutation.mutate(deleteTarget._id);
   };
 
   const students = data?.students ?? [];
@@ -155,7 +172,7 @@ export default function StudentsPage() {
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-royal-500 transition-colors">
+          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-gold-500 transition-colors">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.3-4.3" />
@@ -171,7 +188,7 @@ export default function StudentsPage() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             {STATUS_FILTERS.map((s) => (
               <option key={s.value} value={s.value}>
@@ -181,19 +198,31 @@ export default function StudentsPage() {
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={openAdd}
-          className="border-none bg-royal-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-royal-600"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Student
-        </button>
+        <div className="flex items-center gap-2.5">
+          <ExportButtons
+            title="Students"
+            filenameBase="titan-students"
+            columns={EXPORT_COLUMNS}
+            fetchRows={async () => {
+              const res = await fetchStudents({ search, status, page: 1, limit: 1000 });
+              return res.students ?? [];
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={openAdd}
+            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Student
+          </button>
+        </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Student', 'Phone', 'Course', 'Campus', 'Status', 'Payment'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
@@ -221,7 +250,7 @@ export default function StudentsPage() {
                   className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded bg-neutral-100 text-primary-600 flex items-center justify-center font-heading font-bold text-caption shrink-0">
+                    <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">
                       {initials(s.name)}
                     </div>
                     <div className="min-w-0">
@@ -237,9 +266,22 @@ export default function StudentsPage() {
                   <div className="flex gap-1.5 justify-end">
                     <button
                       type="button"
+                      onClick={() => setIdCardTarget(s)}
+                      title="ID Card"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <circle cx="8" cy="11" r="2" />
+                        <path d="M5 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" />
+                        <path d="M14 10h5M14 14h5" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openEdit(s)}
                       title="Edit"
-                      className="w-[30px] h-[30px] border border-neutral-200 bg-white rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 20h9" />
@@ -250,7 +292,7 @@ export default function StudentsPage() {
                       type="button"
                       onClick={() => handleDelete(s)}
                       title="Delete"
-                      className="w-[30px] h-[30px] border border-neutral-200 bg-white rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 6h18" />
@@ -276,7 +318,7 @@ export default function StudentsPage() {
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Previous
             </button>
@@ -284,7 +326,7 @@ export default function StudentsPage() {
               type="button"
               disabled={page >= pages}
               onClick={() => setPage((p) => Math.min(pages, p + 1))}
-              className="border border-neutral-200 bg-white text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
             >
               Next
             </button>
@@ -300,6 +342,26 @@ export default function StudentsPage() {
         onSubmit={handleSubmit}
         submitting={submitting}
         error={formError}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete student"
+        message={deleteTarget ? `Delete ${deleteTarget.name}? This can't be undone.` : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        loading={deleteMutation.isPending}
+      />
+
+      <IDCardModal
+        open={!!idCardTarget}
+        onClose={() => setIdCardTarget(null)}
+        type="Student"
+        person={
+          idCardTarget
+            ? { name: idCardTarget.name, idNumber: idCardTarget.rollNumber, line1: idCardTarget.course, line2: idCardTarget.campus }
+            : null
+        }
       />
     </motion.div>
   );

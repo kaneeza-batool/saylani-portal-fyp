@@ -4,7 +4,7 @@
 // dead-ending, without inventing any data or endpoints.
 export default function ComingSoonPage({ title }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl p-[22px] text-body-sm text-neutral-500">
+    <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] text-body-sm text-neutral-500">
       {title} — coming soon.
     </div>
   );

@@ -64,7 +64,7 @@ export default function MarkAttendance() {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="show" className="grid grid-cols-[1.2fr_1fr] gap-4 items-start">
       <div className="flex flex-col gap-4">
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
           <div className="font-heading font-bold text-h6 text-neutral-900">Student Attendance</div>
           <form onSubmit={handleLookup} className="flex gap-2.5">
             <input
@@ -72,12 +72,12 @@ export default function MarkAttendance() {
               value={rollNumber}
               onChange={(e) => setRollNumber(e.target.value)}
               placeholder="Scan or enter Roll Number..."
-              className="flex-1 border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-royal-500 transition-colors"
+              className="flex-1 border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors"
             />
             <button
               type="submit"
               disabled={verifying}
-              className="border-none bg-royal-500 text-white text-body font-semibold px-5 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50"
+              className="border-none bg-gold-500 text-white text-body font-semibold px-5 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50"
             >
               {verifying ? 'Looking up...' : 'Mark Attendance'}
             </button>
@@ -86,8 +86,8 @@ export default function MarkAttendance() {
         </div>
 
         {student && (
-          <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col items-center gap-3">
-            <div className="w-16 h-16 rounded-full bg-parrot-50 text-parrot-600 flex items-center justify-center font-heading font-bold text-h5">
+          <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col items-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 flex items-center justify-center font-heading font-bold text-h5 border border-gold-500/40">
               {initials(student.name)}
             </div>
             <div className="text-center">
@@ -110,7 +110,7 @@ export default function MarkAttendance() {
                 type="button"
                 onClick={() => markMutation.mutate()}
                 disabled={markMutation.isPending}
-                className="border-none bg-royal-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50"
+                className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50"
               >
                 {markMutation.isPending ? 'Marking...' : 'Confirm Present'}
               </button>
@@ -119,7 +119,7 @@ export default function MarkAttendance() {
         )}
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
         <div className="font-heading font-bold text-h6 text-neutral-900">Attendance History</div>
         {!student ? (
           <div className="text-body-sm text-neutral-400">Look up a student to see their recent attendance.</div>

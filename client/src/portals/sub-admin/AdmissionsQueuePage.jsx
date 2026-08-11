@@ -44,17 +44,17 @@ export default function AdmissionsQueuePage() {
       </div>
 
       {isLoading ? (
-        <div className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
           {[0, 1, 2].map((i) => (
             <div key={i} className="h-16 w-full bg-neutral-100 rounded animate-pulse" />
           ))}
         </div>
       ) : isError ? (
-        <div className="bg-white border border-neutral-200 rounded-xl py-14 px-5 text-center text-danger-600 text-body-sm">
+        <div className="bg-surface border border-neutral-200 rounded-xl py-14 px-5 text-center text-danger-600 text-body-sm">
           Couldn't load admissions. Please try again.
         </div>
       ) : applicants.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-xl py-14 px-5 text-center text-neutral-400 text-body-sm">
+        <div className="bg-surface border border-neutral-200 rounded-xl py-14 px-5 text-center text-neutral-400 text-body-sm">
           No pending admissions.
         </div>
       ) : (
@@ -63,7 +63,7 @@ export default function AdmissionsQueuePage() {
             <motion.div
               key={a._id}
               variants={fadeInUp}
-              className="bg-white border border-neutral-200 rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
+              className="bg-surface border border-neutral-200 rounded-xl p-4 flex items-center justify-between gap-3 flex-wrap"
             >
               <div className="flex flex-col gap-0.5 min-w-0">
                 <span className="text-body-sm font-semibold text-neutral-900 truncate">{a.name}</span>
@@ -83,7 +83,7 @@ export default function AdmissionsQueuePage() {
                     type="button"
                     disabled={actionMutation.isPending}
                     onClick={() => actionMutation.mutate({ id: a._id, action: 'approve' })}
-                    className="border-none bg-royal-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isButtonPending(a._id, 'approve') ? 'Approving...' : 'Approve'}
                   </button>
@@ -91,7 +91,7 @@ export default function AdmissionsQueuePage() {
                     type="button"
                     disabled={actionMutation.isPending}
                     onClick={() => actionMutation.mutate({ id: a._id, action: 'reject' })}
-                    className="border border-danger-200 bg-white text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isButtonPending(a._id, 'reject') ? 'Rejecting...' : 'Reject'}
                   </button>

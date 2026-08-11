@@ -70,7 +70,7 @@ export default function QuizFormModal({ open, mode = 'add', initialValues, onClo
           <label className={labelClass} htmlFor="quiz-status">
             Status
           </label>
-          <select id="quiz-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+          <select id="quiz-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
             <option value="Scheduled">Scheduled</option>
             <option value="Live">Live</option>
             <option value="Completed">Completed</option>

@@ -13,10 +13,10 @@ const ICON_PROPS = {
   strokeLinejoin: 'round',
 };
 
-// Nav tree = every item from the TITAN design file's flat sidebar, plus the
-// extra pages/sub-pages only visible in the admin.saylanimit.com screenshots
-// (Trainers > Attendance, Attendance, Administration > Slots, Updation,
-// Profile). Leaf items carry `to`; anything with `children` is a collapsible
+// Nav tree = every item from the original design file's flat sidebar, plus
+// the extra pages/sub-pages added later (Trainers > Attendance, Attendance,
+// Administration > Slots, Updation, Profile, plus the AI/real-time additions).
+// Leaf items carry `to`; anything with `children` is a collapsible
 // group — only top-level groups/items carry an icon, matching the screenshots
 // where indented sub-items are plain text.
 export const NAV_ITEMS = [
@@ -299,6 +299,43 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'insights',
+    label: 'AI Insights',
+    to: '/admin/insights',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M12 2a7 7 0 0 0-4 12.7V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 2z" />
+        <path d="M9 21h6" />
+      </svg>
+    ),
+  },
+  {
+    id: 'campusmap',
+    label: 'Campus Map',
+    to: '/admin/campus-map',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" />
+        <circle cx="12" cy="9" r="2.5" />
+      </svg>
+    ),
+  },
+  {
+    id: 'alerts',
+    label: 'Alerts',
+    to: '/admin/alerts',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+      </svg>
+    ),
+  },
+  {
     id: 'profile',
     label: 'Profile',
     to: '/admin/profile',
@@ -408,8 +445,8 @@ function NavGroup({ item, depth, openGroups, onToggle }) {
           'w-full flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
           DEPTH_PADDING[depth] ?? DEPTH_PADDING[2],
           open
-            ? 'bg-saylani-sidebar-hover text-saylani-sidebar-text-active'
-            : 'text-saylani-sidebar-text hover:bg-saylani-sidebar-hover hover:text-saylani-sidebar-text-active',
+            ? 'bg-titan-sidebar-hover text-titan-sidebar-text-hover'
+            : 'text-titan-sidebar-text hover:bg-titan-sidebar-hover hover:text-titan-sidebar-text-hover',
         ].join(' ')}
       >
         {depth === 0 && item.icon && (
@@ -440,8 +477,8 @@ function NavLeaf({ item, depth }) {
           'flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
           DEPTH_PADDING[depth] ?? DEPTH_PADDING[2],
           isActive
-            ? 'bg-saylani-sidebar-active text-saylani-sidebar-text-active'
-            : 'text-saylani-sidebar-text hover:bg-saylani-sidebar-hover hover:text-saylani-sidebar-text-active',
+            ? 'bg-titan-sidebar-active text-titan-sidebar-text-active font-semibold shadow-[0_2px_10px_rgba(201,162,39,0.35)]'
+            : 'text-titan-sidebar-text hover:bg-titan-sidebar-hover hover:text-titan-sidebar-text-hover',
         ].join(' ')
       }
     >
@@ -494,20 +531,14 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-[252px] shrink-0 bg-saylani-sidebar flex flex-col gap-1 sticky top-0 h-screen py-[22px] px-3.5 overflow-y-auto">
+    <div className="w-[252px] shrink-0 bg-titan-sidebar flex flex-col gap-1 sticky top-0 h-screen py-[22px] px-3.5 overflow-y-auto">
       <div className="flex items-center gap-2.5 pt-1.5 px-2.5 pb-[22px]">
-        <div className="w-[34px] h-[34px] rounded-full shrink-0 bg-white flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-parrot-500">
-            <path d="M12 3c4 2 6 5 6 9a6 6 0 0 1-12 0c0-4 2-7 6-9z" />
-            <path d="M12 9v9" />
-          </svg>
+        <div className="w-[40px] h-[40px] shrink-0 flex items-center justify-center">
+          <img src="/logo.png" alt="TITAN crest" className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(201,162,39,0.4)]" />
         </div>
         <div>
-          <div className="font-heading font-bold text-brand">
-            <span className="text-parrot-500">Sayl</span>
-            <span className="text-royal-500">ani</span>
-          </div>
-          <div className="text-[11px] font-medium text-saylani-sidebar-text/80">{roleLabel(user?.role)}</div>
+          <div className="font-heading font-bold text-brand text-gold-400 tracking-wide">TITAN</div>
+          <div className="text-[11px] font-medium text-titan-sidebar-text/80">{roleLabel(user?.role)}</div>
         </div>
       </div>
 
