@@ -24,7 +24,13 @@ router.get(
 );
 router.get('/:id', restrictTo('super_admin'), getStudent);
 router.post('/', restrictTo('super_admin'), createStudent);
-router.patch('/:id', restrictTo('super_admin'), updateStudent);
+router.patch(
+  '/:id',
+  restrictTo('super_admin', 'sub_admin'),
+  campusScope,
+  checkPermission('STUDENT', 'update'),
+  updateStudent
+);
 router.delete('/:id', restrictTo('super_admin'), deleteStudent);
 
 module.exports = router;

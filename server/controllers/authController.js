@@ -33,6 +33,7 @@ function toSafeUser(user) {
     email: user.email,
     role: user.role,
     campus_id: user.campus_id,
+    permissions: user.permissions,
     status: user.status,
     avatar_url: user.avatar_url,
   };

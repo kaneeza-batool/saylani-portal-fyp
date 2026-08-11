@@ -19,3 +19,8 @@ export async function markMultipleAttendance(payload) {
   const { data } = await api.post('/admin/student-attendance/mark-multiple', payload);
   return data;
 }
+
+export async function getAttendanceSummary() {
+  const { data } = await api.get('/admin/attendance/summary');
+  return data;
+}

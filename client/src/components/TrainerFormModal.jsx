@@ -1,15 +1,38 @@
 import { useEffect, useState } from 'react';
 import SlideOverPanel from './SlideOverPanel';
 import { inputClass, labelClass } from './formFieldStyles';
+import { useAuth } from '../context/AuthContext';
+import { fetchCampuses } from '../services/campusService';
 
-const EMPTY_FORM = { name: '', email: '', phone: '', employeeId: '', course: '', city: '', status: 'active' };
+const EMPTY_FORM = { name: '', email: '', phone: '', employeeId: '', course: '', city: '', campus: '', status: 'active' };
 
 export default function TrainerFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
+  const { user } = useAuth();
+  const isCampusLocked = user?.role === 'sub_admin';
+
   const [form, setForm] = useState(EMPTY_FORM);
+  const [campuses, setCampuses] = useState([]);
 
   useEffect(() => {
-    if (open) setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
-  }, [open, initialValues]);
+    if (!open) return;
+    fetchCampuses({ status: 'active', limit: 100 })
+      .then((data) => setCampuses(data.items ?? []))
+      .catch(() => setCampuses([]));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const lockedCampus = isCampusLocked ? user?.campus_id ?? '' : undefined;
+    // initialValues.campus comes populated ({_id, name, city}) from the
+    // trainers list endpoint — normalize to the plain id the <select> and
+    // submit payload expect, same as StudentFormModal.
+    const editCampus = initialValues?.campus?._id ?? initialValues?.campus ?? '';
+    setForm(
+      initialValues
+        ? { ...EMPTY_FORM, ...initialValues, campus: lockedCampus ?? editCampus }
+        : { ...EMPTY_FORM, campus: lockedCampus ?? campuses[0]?._id ?? '' }
+    );
+  }, [open, initialValues, isCampusLocked, user, campuses]);
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -73,14 +96,35 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass} htmlFor="trainer-status">
-            Status
-          </label>
-          <select id="trainer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className={labelClass} htmlFor="trainer-campus">
+              Campus
+            </label>
+            <select
+              id="trainer-campus"
+              required
+              value={form.campus}
+              onChange={setField('campus')}
+              disabled={isCampusLocked}
+              className={`${inputClass} bg-white ${isCampusLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {campuses.map((c) => (
+                <option key={c._id} value={c._id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className={labelClass} htmlFor="trainer-status">
+              Status
+            </label>
+            <select id="trainer-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-white`}>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
         </div>
       </form>
     </SlideOverPanel>

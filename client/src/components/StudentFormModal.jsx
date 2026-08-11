@@ -17,6 +17,7 @@ const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pending' },
   { value: 'completed', label: 'Completed' },
   { value: 'dropout', label: 'Dropout' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 const EMPTY_FORM = {

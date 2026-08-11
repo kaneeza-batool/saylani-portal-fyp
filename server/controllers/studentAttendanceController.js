@@ -1,5 +1,6 @@
 const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
+const Campus = require('../models/Campus');
 
 function startOfToday() {
   return new Date(new Date().toDateString());
@@ -116,5 +117,52 @@ exports.getAttendance = async (req, res) => {
     return res.status(200).json({ items, total, page, limit, pages: Math.max(1, Math.ceil(total / limit)) });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load attendance', error: err.message });
+  }
+};
+
+// 30-day present/absent percentage. StudentAttendance.campus is a cached
+// display-name String (see model), not an ObjectId ref like Student/Trainer/
+// Slot — req.campusFilter from campusScope is shaped for those ({campus:
+// ObjectId}) and would silently match zero records here, not error. So this
+// deliberately does NOT use req.campusFilter: for a non-super_admin, it
+// resolves req.user.campus_id to that Campus's name and matches the cached
+// string directly instead. campusScope still runs in the route chain for
+// consistency with every other campus-scoped route, its output is just
+// unused by this one query.
+exports.getAttendanceSummary = async (req, res) => {
+  try {
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    since.setHours(0, 0, 0, 0);
+
+    const filter = { date: { $gte: since } };
+
+    if (req.user.role !== 'super_admin') {
+      const campus = await Campus.findById(req.user.campus_id).select('name');
+      // Fall back to a sentinel that matches nothing rather than leaving
+      // filter.campus unset — an unset key would be dropped by the Mongo
+      // driver and silently return every campus's data instead of none.
+      filter.campus = campus?.name || '__no_campus__';
+    }
+
+    const rows = await StudentAttendance.aggregate([{ $match: filter }, { $group: { _id: '$status', count: { $sum: 1 } } }]);
+
+    const counts = { present: 0, absent: 0, leave: 0 };
+    for (const row of rows) {
+      if (row._id in counts) counts[row._id] = row.count;
+    }
+
+    const denominator = counts.present + counts.absent;
+    const percentage = denominator > 0 ? Math.round((counts.present / denominator) * 1000) / 10 : null;
+
+    return res.status(200).json({
+      percentage,
+      present: counts.present,
+      absent: counts.absent,
+      leave: counts.leave,
+      windowDays: 30,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load attendance summary', error: err.message });
   }
 };

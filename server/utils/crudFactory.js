@@ -14,7 +14,16 @@ function escapeRegex(str) {
 
 function buildCrudController(
   Model,
-  { searchFields = [], statusField = 'status', resourceType = Model.modelName, label = (doc) => doc.name || doc._id }
+  {
+    searchFields = [],
+    statusField = 'status',
+    resourceType = Model.modelName,
+    label = (doc) => doc.name || doc._id,
+    // Opt-in only — Mongoose 6+ throws if you .populate() a path a schema
+    // doesn't have, so this must stay empty for resources with no such
+    // field (Course, Employer, Campus) rather than being applied blindly.
+    populate = [],
+  }
 ) {
   return {
     async getAll(req, res) {
@@ -23,20 +32,23 @@ function buildCrudController(
         const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 10));
         const { search, status } = req.query;
 
-        const filter = {};
+        // req.campusFilter is only set when campusScope middleware ran for
+        // this route (see routes wiring) — spreading `{}` when it didn't is
+        // a no-op, so routes that never run campusScope are unaffected.
+        const filter = { ...(req.campusFilter || {}) };
         if (status && status !== 'all') filter[statusField] = status;
         if (search && search.trim() && searchFields.length) {
           const re = new RegExp(escapeRegex(search.trim()), 'i');
           filter.$or = searchFields.map((field) => ({ [field]: re }));
         }
 
-        const [items, total] = await Promise.all([
-          Model.find(filter)
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit),
-          Model.countDocuments(filter),
-        ]);
+        let query = Model.find(filter)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit);
+        for (const p of populate) query = query.populate(p);
+
+        const [items, total] = await Promise.all([query, Model.countDocuments(filter)]);
 
         return res.status(200).json({
           items,
@@ -52,7 +64,9 @@ function buildCrudController(
 
     async getOne(req, res) {
       try {
-        const item = await Model.findById(req.params.id);
+        let query = Model.findById(req.params.id);
+        for (const p of populate) query = query.populate(p);
+        const item = await query;
         if (!item) return res.status(404).json({ message: 'Not found' });
         return res.status(200).json({ item });
       } catch (err) {

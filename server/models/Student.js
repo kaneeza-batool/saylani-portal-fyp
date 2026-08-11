@@ -13,7 +13,7 @@ const COURSES = [
   'Cybersecurity Fundamentals',
 ];
 
-const STATUSES = ['enrolled', 'pending', 'completed', 'dropout'];
+const STATUSES = ['enrolled', 'pending', 'completed', 'dropout', 'rejected'];
 const PAYMENT_STATUSES = ['paid', 'pending', 'overdue'];
 
 const studentSchema = new mongoose.Schema(

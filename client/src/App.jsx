@@ -28,6 +28,9 @@ import AuditLog from './portals/super-admin/AuditLog';
 import Updation from './portals/super-admin/Updation';
 import Settings from './portals/super-admin/Settings';
 import Profile from './portals/super-admin/Profile';
+import SubAdminDashboardPage from './portals/sub-admin/DashboardPage';
+import AdmissionsQueuePage from './portals/sub-admin/AdmissionsQueuePage';
+import ComingSoonPage from './portals/sub-admin/ComingSoonPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,7 +64,6 @@ function App() {
               <Route path="/admin" element={<SuperAdminLayout />}>
                 <Route index element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="students" element={<StudentsPage />} />
                 <Route path="campuses" element={<CampusesPage />} />
                 <Route path="subadmins" element={<SubAdminsPage />} />
                 <Route path="trainers" element={<TrainersPage />} />
@@ -80,13 +82,29 @@ function App() {
                 <Route path="auditlog" element={<AuditLog />} />
                 <Route path="updation" element={<Updation />} />
                 <Route path="settings" element={<Settings />} />
+              </Route>
+            </Route>
+
+            {/* TODO: temporary testing shortcut to verify campusScope end-to-end
+                before the real Sub-Admin Students page exists. sub_admin reuses
+                the super_admin StudentsPage/Profile/layout here — revisit once
+                Sub-Admin gets its own permission-gated routes for these. */}
+            <Route element={<ProtectedRoute allowedRoles={['super_admin', 'sub_admin']} />}>
+              <Route path="/admin" element={<SuperAdminLayout />}>
+                <Route path="students" element={<StudentsPage />} />
                 <Route path="profile" element={<Profile />} />
               </Route>
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['sub_admin']} />}>
               <Route path="/sub-admin" element={<SubAdminLayout />}>
-                <Route path="dashboard" element={<div>Sub-Admin Dashboard — coming soon</div>} />
+                <Route path="dashboard" element={<SubAdminDashboardPage />} />
+                <Route path="admissions" element={<AdmissionsQueuePage />} />
+                {/* TODO: placeholders — real pages/backends land in later phases */}
+                <Route path="trainers" element={<ComingSoonPage title="Trainers" />} />
+                <Route path="batches" element={<ComingSoonPage title="Batches" />} />
+                <Route path="attendance-reports" element={<ComingSoonPage title="Attendance Reports" />} />
+                <Route path="feedback" element={<ComingSoonPage title="Feedback" />} />
               </Route>
             </Route>
 

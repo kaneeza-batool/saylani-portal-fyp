@@ -10,6 +10,7 @@ const STATUS_FILTERS = [
   { value: 'pending', label: 'Pending' },
   { value: 'completed', label: 'Completed' },
   { value: 'dropout', label: 'Dropout' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 const STATUS_STYLE = {
@@ -17,6 +18,7 @@ const STATUS_STYLE = {
   pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
   completed: { label: 'Completed', className: 'bg-success-bg text-success-text' },
   dropout: { label: 'Dropout', className: 'bg-danger-50 text-danger-600' },
+  rejected: { label: 'Rejected', className: 'bg-danger-50 text-danger-600' },
 };
 
 const PAYMENT_STYLE = {

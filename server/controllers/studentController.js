@@ -96,9 +96,19 @@ exports.updateStudent = async (req, res) => {
   try {
     const { name, father, cnic, phone, email, course, campus, status, payment, address } = req.body;
 
-    const student = await Student.findByIdAndUpdate(
-      req.params.id,
-      { name, father, cnic, phone, email, course, campus, status, payment, address },
+    // sub_admin can only ever target students in their own campus (see
+    // req.campusFilter above), but the payload itself could still carry a
+    // different campus id — drop it silently rather than let them reassign
+    // a student out of their campus, or error on a form just re-submitting
+    // the student's existing (unchanged) campus value.
+    const updates = { name, father, cnic, phone, email, course, status, payment, address };
+    if (req.user.role === 'super_admin') {
+      updates.campus = campus;
+    }
+
+    const student = await Student.findOneAndUpdate(
+      { _id: req.params.id, ...req.campusFilter },
+      updates,
       { new: true, runValidators: true, context: 'query' }
     );
 
