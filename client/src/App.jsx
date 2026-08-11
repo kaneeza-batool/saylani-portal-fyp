@@ -30,6 +30,7 @@ import Settings from './portals/super-admin/Settings';
 import Profile from './portals/super-admin/Profile';
 import SubAdminDashboardPage from './portals/sub-admin/DashboardPage';
 import AdmissionsQueuePage from './portals/sub-admin/AdmissionsQueuePage';
+import SubAdminTrainersPage from './portals/sub-admin/TrainersPage';
 import ComingSoonPage from './portals/sub-admin/ComingSoonPage';
 
 const queryClient = new QueryClient({
@@ -100,8 +101,8 @@ function App() {
               <Route path="/sub-admin" element={<SubAdminLayout />}>
                 <Route path="dashboard" element={<SubAdminDashboardPage />} />
                 <Route path="admissions" element={<AdmissionsQueuePage />} />
+                <Route path="trainers" element={<SubAdminTrainersPage />} />
                 {/* TODO: placeholders — real pages/backends land in later phases */}
-                <Route path="trainers" element={<ComingSoonPage title="Trainers" />} />
                 <Route path="batches" element={<ComingSoonPage title="Batches" />} />
                 <Route path="attendance-reports" element={<ComingSoonPage title="Attendance Reports" />} />
                 <Route path="feedback" element={<ComingSoonPage title="Feedback" />} />
