@@ -37,6 +37,7 @@ const userSchema = new mongoose.Schema(
       BATCH: permissionShape(['read', 'write', 'update']),
       ADMISSIONS: permissionShape(['read', 'write', 'update']),
       FEEDBACK: permissionShape(['read']),
+      ALERTS: permissionShape(['read']),
     },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
     avatar_url: { type: String, default: '' },

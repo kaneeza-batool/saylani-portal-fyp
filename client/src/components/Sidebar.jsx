@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { getAdmissions } from '../services/admissionService';
 
 const ICON_PROPS = {
   width: 18,
@@ -117,6 +119,20 @@ export const NAV_ITEMS = [
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M4 4h16v12H8l-4 4z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'alerts-sub',
+    label: 'Alerts',
+    to: '/sub-admin/alerts',
+    roles: ['sub_admin'],
+    permission: { module: 'ALERTS', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
       </svg>
     ),
   },
@@ -485,7 +501,10 @@ function NavLeaf({ item, depth }) {
       {depth === 0 && item.icon && (
         <span className="w-[18px] h-[18px] shrink-0 flex items-center justify-center">{item.icon}</span>
       )}
-      {item.label}
+      <span className="flex-1 truncate">{item.label}</span>
+      {item.badge > 0 && (
+        <span className="text-badge px-1.5 py-0.5 rounded-pill bg-warning-bg text-warning-text shrink-0">{item.badge}</span>
+      )}
     </NavLink>
   );
 }
@@ -501,6 +520,28 @@ export default function Sidebar() {
   const { user } = useAuth();
   const location = useLocation();
   const visibleItems = useMemo(() => resolveNavItems(NAV_ITEMS, user ?? { role: null, permissions: {} }), [user]);
+
+  // Same queryKey + args as sub-admin/DashboardPage.jsx's admissions query
+  // (['admissions'], limit: 5) — React Query dedupes by key, so whichever of
+  // the two mounts first fetches and both share the cached result; this
+  // component never fires its own separate request when Dashboard is also
+  // on screen. `enabled` is gated on the nav item actually being visible
+  // (role + ADMISSIONS:read permission, via resolveNavItems above) rather
+  // than just role, so it doesn't fetch for a sub_admin who lacks the
+  // permission either.
+  const hasAdmissionsItem = visibleItems.some((item) => item.id === 'admissions-queue');
+  const pendingAdmissions = useQuery({
+    queryKey: ['admissions'],
+    queryFn: () => getAdmissions({ limit: 5 }),
+    enabled: hasAdmissionsItem,
+  });
+  const itemsWithBadges = useMemo(() => {
+    if (!hasAdmissionsItem) return visibleItems;
+    return visibleItems.map((item) =>
+      item.id === 'admissions-queue' ? { ...item, badge: pendingAdmissions.data?.total } : item
+    );
+  }, [visibleItems, hasAdmissionsItem, pendingAdmissions.data?.total]);
+
   const [openGroups, setOpenGroups] = useState(() => new Set(findActiveAncestors(visibleItems, location.pathname) ?? []));
 
   // Keep whichever group holds the current route expanded as navigation
@@ -542,7 +583,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {visibleItems.map((item) => (
+      {itemsWithBadges.map((item) => (
         <NavNode key={item.id} item={item} depth={0} openGroups={openGroups} onToggle={toggleGroup} />
       ))}
     </div>

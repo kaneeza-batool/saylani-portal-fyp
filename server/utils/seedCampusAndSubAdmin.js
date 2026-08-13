@@ -19,6 +19,7 @@ const FULL_ACCESS_PERMISSIONS = {
   BATCH: { read: true, write: true, update: true },
   ADMISSIONS: { read: true, write: true, update: true },
   FEEDBACK: { read: true },
+  ALERTS: { read: true },
 };
 
 async function ensureCampus({ name, city, country, status }) {

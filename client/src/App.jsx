@@ -40,6 +40,7 @@ import SubAdminBatchesPage from './portals/sub-admin/BatchesPage';
 import SubAdminStudentsPage from './portals/sub-admin/StudentsPage';
 import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReportsPage';
 import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
+import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +118,7 @@ function App() {
                     <Route path="batches" element={<SubAdminBatchesPage />} />
                     <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
+                    <Route path="alerts" element={<SubAdminAlertsPage />} />
                   </Route>
                 </Route>
 

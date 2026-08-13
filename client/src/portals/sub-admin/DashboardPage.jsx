@@ -72,6 +72,59 @@ function KpiCard({ label, value, icon, tag, loading }) {
   );
 }
 
+const BATCH_OVERVIEW_LIMIT = 5;
+
+// Course/batch name on the left, trainer + studentCount right-aligned on
+// the same line, capacity bar underneath. studentCount comes from
+// slotRoutes.js's withStudentCounts annotate hook (same field BatchesPage
+// uses) — no separate aggregation here. seatsTotal is Slot's capacity field
+// (required, min 1 — confirmed no existing Slot lacks it), so denominator
+// is never 0/undefined for real data; still guarded defensively.
+function BatchOverview({ batches, isLoading, isError }) {
+  const list = batches ?? [];
+
+  return (
+    <CardShell className="p-[22px] flex flex-col gap-3.5">
+      <div className="flex items-center justify-between">
+        <div className="font-heading font-bold text-h6 text-neutral-900">Batch Overview</div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <SkeletonBlock key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="text-body-sm text-danger-600">Couldn't load batches.</div>
+      ) : list.length === 0 ? (
+        <div className="text-body-sm text-neutral-400">No active batches yet.</div>
+      ) : (
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-3.5">
+          {list.map((b) => {
+            const pct = b.seatsTotal > 0 ? Math.min(100, Math.round((b.studentCount / b.seatsTotal) * 100)) : 0;
+            return (
+              <motion.div key={b._id} variants={fadeInUp} className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-body-sm font-semibold text-neutral-900 truncate">
+                    {b.course} · {b.schedule}
+                  </span>
+                  <span className="text-caption text-neutral-500 font-normal shrink-0">
+                    {b.trainer} · {b.studentCount}/{b.seatsTotal}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-neutral-100 rounded-pill overflow-hidden">
+                  <div className="h-full bg-gold-500 rounded-pill" style={{ width: `${pct}%` }} />
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      )}
+    </CardShell>
+  );
+}
+
 function PendingAdmissions({ admissions, isLoading, isError, actionMutation, isButtonPending, onViewAll }) {
   const applicants = admissions ?? [];
 
@@ -84,7 +137,7 @@ function PendingAdmissions({ admissions, isLoading, isError, actionMutation, isB
           onClick={onViewAll}
           className="border-none bg-transparent text-caption font-semibold text-gold-600 cursor-pointer hover:text-gold-700 transition-colors"
         >
-          View all
+          View all →
         </button>
       </div>
 
@@ -155,9 +208,14 @@ export default function DashboardPage() {
     queryFn: () => fetchStudents({ limit: 1, roster: true }),
   });
 
+  // limit bumped from 1 to BATCH_OVERVIEW_LIMIT (5) so this same query also
+  // supplies the Batch Overview panel's rows — `total` (used by the KPI
+  // card below) is a server-side count independent of `limit`, so raising
+  // it doesn't change the KPI value, just adds `items` the panel can use
+  // instead of firing a second request.
   const batches = useQuery({
     queryKey: ['sub-admin-dashboard-batches'],
-    queryFn: () => fetchSlots({ status: 'active', limit: 1 }),
+    queryFn: () => fetchSlots({ status: 'active', limit: BATCH_OVERVIEW_LIMIT }),
   });
 
   const admissions = useQuery({
@@ -240,14 +298,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <PendingAdmissions
-        admissions={admissions.data?.students}
-        isLoading={admissions.isLoading}
-        isError={admissions.isError}
-        actionMutation={actionMutation}
-        isButtonPending={isButtonPending}
-        onViewAll={() => navigate('/sub-admin/admissions')}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <PendingAdmissions
+          admissions={admissions.data?.students}
+          isLoading={admissions.isLoading}
+          isError={admissions.isError}
+          actionMutation={actionMutation}
+          isButtonPending={isButtonPending}
+          onViewAll={() => navigate('/sub-admin/admissions')}
+        />
+        <BatchOverview batches={batches.data?.items} isLoading={batches.isLoading} isError={batches.isError} />
+      </div>
     </motion.div>
   );
 }
