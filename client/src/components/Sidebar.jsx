@@ -37,7 +37,7 @@ export const NAV_ITEMS = [
   {
     id: 'students',
     label: 'Students',
-    to: '/admin/students',
+    to: { super_admin: '/admin/students', sub_admin: '/sub-admin/students' },
     roles: ['super_admin', 'sub_admin'],
     permission: { module: 'STUDENT', action: 'read' },
     icon: (

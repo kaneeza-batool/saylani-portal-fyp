@@ -166,3 +166,75 @@ exports.getAttendanceSummary = async (req, res) => {
     return res.status(500).json({ message: 'Failed to load attendance summary', error: err.message });
   }
 };
+
+// Per-student attendance rows for the campus (Attendance Reports page).
+// Roster + batch come from Student, whose `campus` is a real ObjectId ref —
+// req.campusFilter is safe there, same as studentController.getStudents.
+// StudentAttendance.campus is not (see model comment above), so counts are
+// additionally scoped by resolved campus name, same pattern as
+// getAttendanceSummary, on top of (not instead of) the student-id scoping —
+// belt and suspenders on the one collection that has the cached-string trap.
+exports.getAttendanceReports = async (req, res) => {
+  try {
+    const end = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = req.query.startDate ? new Date(req.query.startDate) : new Date(end);
+    if (!req.query.startDate) start.setDate(start.getDate() - 30);
+    start.setHours(0, 0, 0, 0);
+
+    // Applicants (pending/rejected) never attended anything — an attendance
+    // row for one is always 0/0/0/null%, which reads as broken data rather
+    // than "not applicable". Same exclusion as studentController's
+    // roster=true (see getStudents), just unconditional here since this
+    // report has no reason to ever include them.
+    const studentFilter = { ...req.campusFilter, status: { $nin: ['pending', 'rejected'] } };
+    if (req.query.batch) studentFilter.batch = req.query.batch;
+
+    const students = await Student.find(studentFilter, 'name rollNumber batch')
+      .populate('batch', 'schedule course')
+      .sort({ name: 1 })
+      .lean();
+
+    if (students.length === 0) {
+      return res.status(200).json({ rows: [], startDate: start, endDate: end });
+    }
+
+    const attendanceFilter = { student: { $in: students.map((s) => s._id) }, date: { $gte: start, $lte: end } };
+    if (req.user.role !== 'super_admin') {
+      const campus = await Campus.findById(req.user.campus_id).select('name');
+      attendanceFilter.campus = campus?.name || '__no_campus__';
+    }
+
+    const grouped = await StudentAttendance.aggregate([
+      { $match: attendanceFilter },
+      { $group: { _id: { student: '$student', status: '$status' }, count: { $sum: 1 } } },
+    ]);
+
+    const countsByStudent = new Map();
+    for (const g of grouped) {
+      const sid = String(g._id.student);
+      if (!countsByStudent.has(sid)) countsByStudent.set(sid, { present: 0, absent: 0, leave: 0 });
+      countsByStudent.get(sid)[g._id.status] = g.count;
+    }
+
+    const rows = students.map((s) => {
+      const c = countsByStudent.get(String(s._id)) || { present: 0, absent: 0, leave: 0 };
+      const denominator = c.present + c.absent;
+      const percentage = denominator > 0 ? Math.round((c.present / denominator) * 1000) / 10 : null;
+      return {
+        studentId: s._id,
+        name: s.name,
+        rollNumber: s.rollNumber,
+        batch: s.batch ? { _id: s.batch._id, schedule: s.batch.schedule, course: s.batch.course } : null,
+        present: c.present,
+        absent: c.absent,
+        leave: c.leave,
+        percentage,
+      };
+    });
+
+    return res.status(200).json({ rows, startDate: start, endDate: end });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load attendance reports', error: err.message });
+  }
+};

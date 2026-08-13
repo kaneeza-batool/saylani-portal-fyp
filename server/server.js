@@ -31,6 +31,7 @@ const attendanceSummaryRoutes = require('./routes/attendanceSummaryRoutes');
 const mlRoutes = require('./routes/mlRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const mapRoutes = require('./routes/mapRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use('/api/admin/attendance', attendanceSummaryRoutes);
 app.use('/api/admin/ml', mlRoutes);
 app.use('/api/admin/alerts', alertRoutes);
 app.use('/api/admin/map', mapRoutes);
+app.use('/api/admin/feedback', feedbackRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

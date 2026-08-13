@@ -23,6 +23,12 @@ function buildCrudController(
     // doesn't have, so this must stay empty for resources with no such
     // field (Course, Employer, Campus) rather than being applied blindly.
     populate = [],
+    // Opt-in only — for list-response fields that aren't on the model at
+    // all and need a second query (e.g. Slot's studentCount, a count of
+    // Students referencing each Slot). Receives the fetched Mongoose docs,
+    // returns plain objects/docs to serialize; a no-op by default so
+    // resources that don't need it pay nothing extra.
+    annotate = async (items) => items,
   }
 ) {
   return {
@@ -49,9 +55,10 @@ function buildCrudController(
         for (const p of populate) query = query.populate(p);
 
         const [items, total] = await Promise.all([query, Model.countDocuments(filter)]);
+        const annotated = await annotate(items);
 
         return res.status(200).json({
-          items,
+          items: annotated,
           total,
           page,
           limit,

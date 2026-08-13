@@ -36,7 +36,10 @@ import AlertsPage from './portals/super-admin/AlertsPage';
 import SubAdminDashboardPage from './portals/sub-admin/DashboardPage';
 import AdmissionsQueuePage from './portals/sub-admin/AdmissionsQueuePage';
 import SubAdminTrainersPage from './portals/sub-admin/TrainersPage';
-import ComingSoonPage from './portals/sub-admin/ComingSoonPage';
+import SubAdminBatchesPage from './portals/sub-admin/BatchesPage';
+import SubAdminStudentsPage from './portals/sub-admin/StudentsPage';
+import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReportsPage';
+import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,26 +99,24 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* TODO: temporary testing shortcut to verify campusScope end-to-end
-                    before the real Sub-Admin Students page exists. sub_admin reuses
-                    the super_admin StudentsPage/Profile/layout here — revisit once
-                    Sub-Admin gets its own permission-gated routes for these. */}
                 <Route element={<ProtectedRoute allowedRoles={['super_admin', 'sub_admin']} />}>
                   <Route path="/admin" element={<SuperAdminLayout />}>
-                    <Route path="students" element={<StudentsPage />} />
                     <Route path="profile" element={<Profile />} />
+                    <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+                      <Route path="students" element={<StudentsPage />} />
+                    </Route>
                   </Route>
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={['sub_admin']} />}>
                   <Route path="/sub-admin" element={<SubAdminLayout />}>
                     <Route path="dashboard" element={<SubAdminDashboardPage />} />
+                    <Route path="students" element={<SubAdminStudentsPage />} />
                     <Route path="admissions" element={<AdmissionsQueuePage />} />
                     <Route path="trainers" element={<SubAdminTrainersPage />} />
-                    {/* TODO: placeholders — real pages/backends land in later phases */}
-                    <Route path="batches" element={<ComingSoonPage title="Batches" />} />
-                    <Route path="attendance-reports" element={<ComingSoonPage title="Attendance Reports" />} />
-                    <Route path="feedback" element={<ComingSoonPage title="Feedback" />} />
+                    <Route path="batches" element={<SubAdminBatchesPage />} />
+                    <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
+                    <Route path="feedback" element={<SubAdminFeedbackPage />} />
                   </Route>
                 </Route>
 

@@ -32,6 +32,9 @@ const studentSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true, lowercase: true },
     course: { type: String, required: true, enum: COURSES },
     campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', required: true, index: true },
+    // Not required — existing records predate this field, and applicants
+    // (status 'pending'/'rejected') are never placed in a batch at all.
+    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot', index: true },
     status: { type: String, enum: STATUSES, default: 'enrolled' },
     payment: { type: String, enum: PAYMENT_STATUSES, default: 'pending' },
     address: { type: String, default: '', trim: true },

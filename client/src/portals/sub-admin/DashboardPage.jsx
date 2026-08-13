@@ -152,7 +152,7 @@ export default function DashboardPage() {
 
   const students = useQuery({
     queryKey: ['sub-admin-dashboard-students'],
-    queryFn: () => fetchStudents({ limit: 1 }),
+    queryFn: () => fetchStudents({ limit: 1, roster: true }),
   });
 
   const batches = useQuery({

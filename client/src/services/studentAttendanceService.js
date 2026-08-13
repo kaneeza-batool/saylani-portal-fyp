@@ -24,3 +24,8 @@ export async function getAttendanceSummary() {
   const { data } = await api.get('/admin/attendance/summary');
   return data;
 }
+
+export async function getAttendanceReports({ startDate, endDate, batch } = {}) {
+  const { data } = await api.get('/admin/attendance/reports', { params: { startDate, endDate, batch } });
+  return data;
+}

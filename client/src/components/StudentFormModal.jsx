@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchCampuses } from '../services/campusService';
+import { fetchSlots } from '../services/slotService';
 
 const COURSES = [
   'Web Development',
@@ -28,6 +29,7 @@ const EMPTY_FORM = {
   email: '',
   course: COURSES[0],
   campus: '',
+  batch: '',
   status: 'enrolled',
   address: '',
 };
@@ -42,6 +44,7 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [campuses, setCampuses] = useState([]);
+  const [batches, setBatches] = useState([]);
 
   useEffect(() => {
     if (!open) return;
@@ -53,16 +56,42 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
   useEffect(() => {
     if (!open) return;
     const lockedCampus = isCampusLocked ? user?.campus_id ?? '' : undefined;
-    // initialValues.campus comes populated ({_id, name, city}) from the students
-    // list/detail endpoints — normalize to the plain id the <select> and submit
+    // initialValues.campus/.batch come populated ({_id, ...}) from the students
+    // list/detail endpoints — normalize to the plain id the <select>s and submit
     // payload expect. Falls back to a bare string in case a caller ever passes one.
     const editCampus = initialValues?.campus?._id ?? initialValues?.campus ?? '';
+    const editBatch = initialValues?.batch?._id ?? initialValues?.batch ?? '';
     setForm(
       initialValues
-        ? { ...EMPTY_FORM, ...initialValues, campus: lockedCampus ?? editCampus }
+        ? { ...EMPTY_FORM, ...initialValues, campus: lockedCampus ?? editCampus, batch: editBatch }
         : { ...EMPTY_FORM, campus: lockedCampus ?? campuses[0]?._id ?? '' }
     );
   }, [open, initialValues, isCampusLocked, user, campuses]);
+
+  // Batch options are scoped to whichever campus is currently selected — for
+  // sub_admin that's always their own (server re-validates regardless, see
+  // studentController.resolveBatchAssignment); for super_admin it tracks the
+  // Campus <select> above. Re-fetches on campus change; only active batches
+  // are offered since assigning new students into an inactive one is not a
+  // real workflow. A student's currently-assigned batch is preserved in
+  // `form.batch` even if a campus switch makes it disappear from this list —
+  // submitting unchanged just re-sends the same id.
+  useEffect(() => {
+    if (!open || !form.campus) {
+      setBatches([]);
+      return;
+    }
+    let cancelled = false;
+    fetchSlots({ status: 'active', limit: 100 })
+      .then((data) => {
+        if (cancelled) return;
+        setBatches((data.items ?? []).filter((b) => (b.campus?._id ?? b.campus) === form.campus));
+      })
+      .catch(() => !cancelled && setBatches([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, form.campus]);
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -207,6 +236,20 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} htmlFor="student-batch">
+              Batch
+            </label>
+            <select id="student-batch" value={form.batch} onChange={setField('batch')} className={`${inputClass} bg-surface`}>
+              <option value="">No batch</option>
+              {batches.map((b) => (
+                <option key={b._id} value={b._id}>
+                  {b.schedule}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-1.5">
