@@ -149,7 +149,11 @@ exports.updateStudent = async (req, res) => {
     // only reach students already inside req.campusFilter); super_admin's
     // target campus is whatever this same request just set above.
     if (batch !== undefined) {
-      const targetCampusId = req.user.role === 'super_admin' ? campus : req.user.campus_id;
+      let targetCampusId = req.user.role === 'super_admin' ? campus : req.user.campus_id;
+      if (req.user.role === 'super_admin' && !targetCampusId) {
+        const existing = await Student.findById(req.params.id).select('campus').lean();
+        targetCampusId = existing?.campus;
+      }
       const batchResult = await resolveBatchAssignment(req.user, targetCampusId, batch);
       if (!batchResult.ok) return res.status(batchResult.status).json({ message: batchResult.message });
       updates.batch = batchResult.batch;
