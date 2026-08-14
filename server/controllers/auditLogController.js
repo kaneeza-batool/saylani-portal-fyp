@@ -1,4 +1,5 @@
 const AuditLog = require('../models/AuditLog');
+const { escapeRegex } = require('../utils/regex');
 
 // Read-only — audit entries are written automatically (see utils/auditLogger.js),
 // never created/edited by hand. Powers both the Audit Log page (all actions)
@@ -16,7 +17,8 @@ exports.getAuditLogs = async (req, res) => {
     if (action && action !== 'all') filter.action = action;
     if (resourceType && resourceType !== 'all') filter.resourceType = resourceType;
     if (search && search.trim()) {
-      filter.$or = [{ summary: new RegExp(search.trim(), 'i') }, { actorName: new RegExp(search.trim(), 'i') }];
+      const re = new RegExp(escapeRegex(search.trim()), 'i');
+      filter.$or = [{ summary: re }, { actorName: re }];
     }
     if (startDate || endDate) {
       filter.createdAt = {};

@@ -2,6 +2,7 @@ const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
 const Campus = require('../models/Campus');
 const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
+const { escapeRegex } = require('../utils/regex');
 
 function startOfToday() {
   return new Date(new Date().toDateString());
@@ -132,11 +133,8 @@ exports.getAttendance = async (req, res) => {
     if (search && search.trim()) {
       // campus here is StudentAttendance's own cached-name String (snapshotted
       // at mark time above), not a ref — safe to regex-match directly.
-      filter.$or = [
-        { studentName: new RegExp(search.trim(), 'i') },
-        { campus: new RegExp(search.trim(), 'i') },
-        { course: new RegExp(search.trim(), 'i') },
-      ];
+      const re = new RegExp(escapeRegex(search.trim()), 'i');
+      filter.$or = [{ studentName: re }, { campus: re }, { course: re }];
     }
 
     const [items, total] = await Promise.all([

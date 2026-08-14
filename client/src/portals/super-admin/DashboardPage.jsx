@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { getDashboard } from '../../services/dashboardService';
-import { GraduationCapIcon, CampusIcon, BriefcaseIcon, HourglassIcon } from '../../components/icons';
+import { updateEmployer } from '../../services/employerService';
+import { updateDonationStatus } from '../../services/donationService';
+import { GraduationCapIcon, CampusIcon, CalendarIcon, HourglassIcon } from '../../components/icons';
 import ExportButtons from '../../components/ExportButtons';
 
 const KPI_EXPORT_COLUMNS = [
@@ -15,13 +17,14 @@ const KPI_EXPORT_COLUMNS = [
 const KPI_ICON = {
   students: { bg: 'bg-success-bg', color: 'text-success-text', Icon: GraduationCapIcon },
   campuses: { bg: 'bg-warning-bg', color: 'text-warning-text', Icon: CampusIcon },
-  placement: { bg: 'bg-info-bg', color: 'text-info-text', Icon: BriefcaseIcon },
+  attendance: { bg: 'bg-info-bg', color: 'text-info-text', Icon: CalendarIcon },
   pending: { bg: 'bg-danger-50', color: 'text-danger-600', Icon: HourglassIcon },
 };
 
 const DELTA_TONE = {
   positive: 'bg-success-bg text-success-text',
   warning: 'bg-warning-bg text-warning-text',
+  neutral: 'bg-neutral-100 text-neutral-500',
 };
 
 const fadeInUp = {
@@ -137,17 +140,13 @@ function TrendChart({ trend }) {
     <CardShell className="p-[22px] flex flex-col gap-4 col-span-1">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <div className="font-heading font-bold text-h6 text-neutral-900">Enrollment vs Placement Trend</div>
+          <div className="font-heading font-bold text-h6 text-neutral-900">Enrollment Trend</div>
           <div className="text-body-sm text-neutral-400 mt-0.5">Last 6 months, all campuses</div>
         </div>
         <div className="flex gap-3.5">
           <div className="flex items-center gap-1.5 text-caption text-neutral-600">
             <span className="w-[9px] h-[9px] rounded-sm bg-chart-enrollment" />
             Enrollment
-          </div>
-          <div className="flex items-center gap-1.5 text-caption text-neutral-600">
-            <span className="w-[9px] h-[9px] rounded-sm bg-gold-500" />
-            Placement
           </div>
         </div>
       </div>
@@ -172,15 +171,6 @@ function TrendChart({ trend }) {
                 dataKey="enrollment"
                 name="Enrollment"
                 fill="var(--chart-enrollment)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={14}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
-              <Bar
-                dataKey="placement"
-                name="Placement"
-                fill="#C9A227"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={14}
                 animationDuration={800}
@@ -227,8 +217,31 @@ function CampusPerformance({ campuses }) {
 
 function PendingApprovals({ approvals }) {
   const [resolved, setResolved] = useState({});
+  const [pending, setPending] = useState({});
+  const queryClient = useQueryClient();
 
-  const resolve = (id, outcome) => setResolved((prev) => ({ ...prev, [id]: outcome }));
+  const mutation = useMutation({
+    mutationFn: async ({ resource, id, outcome }) => {
+      if (resource === 'employer') {
+        return updateEmployer(id, { status: outcome === 'approved' ? 'verified' : 'rejected' });
+      }
+      return updateDonationStatus(id, outcome === 'approved' ? 'confirmed' : 'rejected');
+    },
+  });
+
+  const resolve = (a, outcome) => {
+    setPending((prev) => ({ ...prev, [a.id]: true }));
+    mutation.mutate(
+      { resource: a.resource, id: a.id, outcome },
+      {
+        onSuccess: () => {
+          setResolved((prev) => ({ ...prev, [a.id]: outcome }));
+          queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+        },
+        onSettled: () => setPending((prev) => ({ ...prev, [a.id]: false })),
+      }
+    );
+  };
 
   return (
     <CardShell className="p-[22px] flex flex-col gap-3.5">
@@ -277,15 +290,17 @@ function PendingApprovals({ approvals }) {
                     >
                       <button
                         type="button"
-                        onClick={() => resolve(a.id, 'approved')}
-                        className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600"
+                        disabled={pending[a.id]}
+                        onClick={() => resolve(a, 'approved')}
+                        className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-wait"
                       >
                         Approve
                       </button>
                       <button
                         type="button"
-                        onClick={() => resolve(a.id, 'rejected')}
-                        className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50"
+                        disabled={pending[a.id]}
+                        onClick={() => resolve(a, 'rejected')}
+                        className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-50 disabled:cursor-wait"
                       >
                         Reject
                       </button>

@@ -8,7 +8,7 @@ const fadeIn = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transit
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
 
 export default function CampusMapPage() {
-  const { data, isLoading, isError } = useQuery({ queryKey: ['campus-map'], queryFn: fetchCampusMap });
+  const { data, isLoading, isError } = useQuery({ queryKey: ['campus-map'], queryFn: fetchCampusMap, retry: false });
 
   if (isLoading) {
     return <div className="bg-surface border border-neutral-200 rounded-xl animate-pulse" style={{ height: 560 }} />;

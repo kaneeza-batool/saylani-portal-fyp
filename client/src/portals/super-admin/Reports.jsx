@@ -21,7 +21,7 @@ const TOTAL_CARDS = [
   { key: 'employers', label: 'Employers', Icon: BriefcaseIcon, bg: 'bg-info-bg', color: 'text-info-text' },
   { key: 'quizzes', label: 'Quizzes', Icon: ClipboardIcon, bg: 'bg-warning-bg', color: 'text-warning-text' },
   { key: 'jobs', label: 'Job Postings', Icon: JobPostingIcon, bg: 'bg-success-bg', color: 'text-success-text' },
-  { key: 'slots', label: 'Active Slots', Icon: CalendarIcon, bg: 'bg-info-bg', color: 'text-info-text' },
+  { key: 'slots', label: 'Total Slots', Icon: CalendarIcon, bg: 'bg-info-bg', color: 'text-info-text' },
 ];
 
 const STUDENT_STATUS_LABEL = { enrolled: 'Enrolled', pending: 'Pending', completed: 'Completed', dropout: 'Dropout' };
