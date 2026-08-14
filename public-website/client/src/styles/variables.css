@@ -1,0 +1,6 @@
+:root {
+  /* Structural Standards (colors now live in the Tailwind v4 @theme
+     block in index.css — see the color-primary, color-accent, etc. tokens) */
+  --radius-standard: 12px;
+  --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
