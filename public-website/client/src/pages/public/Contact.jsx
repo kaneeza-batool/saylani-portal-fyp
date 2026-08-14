@@ -12,7 +12,7 @@ import SectionHeading from '../../components/common/SectionHeading';
    Theme: TITAN Navy / Gold Brand Palette
    ============================================================ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const initialForm = { name: '', email: '', subject: '', message: '' };

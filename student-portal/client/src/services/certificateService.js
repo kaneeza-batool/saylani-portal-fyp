@@ -15,7 +15,7 @@ export async function getCertificateForCourse(courseId) {
 // no auth interceptor) since /verify is reachable by anyone with the link,
 // logged in or not, and must never depend on a session cookie existing.
 const publicApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5100/api',
 });
 
 export async function verifyCertificate(certificateId) {

@@ -15,7 +15,7 @@ import { getTestimonialByCategory, OUTCOME_STYLES } from '../../data/testimonial
    Theme: TITAN Navy / Gold Brand Palette
    ============================================================ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 
 // Delivery mode and registration status vary by campus and aren't tracked
 // per-course — see the audit note on the Course model — so the detail page

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 
 // Shared by every public page that needs the full active-course list
 // (Programs, Home's featured section, Enroll Now, the Find Your Path quiz).

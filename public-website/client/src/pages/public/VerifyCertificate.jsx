@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const STUDENT_PORTAL_URL_BASE = import.meta.env.VITE_STUDENT_PORTAL_URL_BASE || 'http://localhost:5173';
+const STUDENT_PORTAL_URL_BASE = import.meta.env.VITE_STUDENT_PORTAL_URL_BASE || 'http://localhost:5273';
 
 const VerifyCertificate = () => {
   const [certificateId, setCertificateId] = useState('');
