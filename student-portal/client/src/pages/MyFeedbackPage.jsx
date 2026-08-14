@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { getMyFeedback } from '../services/feedbackService';
+import { getMyFeedback } from '../services/supportFeedbackService';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { FeedbackIcon } from '../components/icons';
 

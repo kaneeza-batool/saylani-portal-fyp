@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const Feedback = require('../models/Feedback');
+const SupportFeedback = require('../models/SupportFeedback');
 
 // Same simplification as studentController's avatar upload — written straight
 // to the client's public folder and served as a static file, since object
@@ -14,7 +14,7 @@ exports.submitFeedback = async (req, res) => {
   try {
     const { type, text, imageBase64 } = req.body;
 
-    if (!Feedback.TYPES.includes(type)) {
+    if (!SupportFeedback.TYPES.includes(type)) {
       return res.status(400).json({ message: 'A valid feedback type is required' });
     }
     if (!text || !text.trim()) {
@@ -38,7 +38,7 @@ exports.submitFeedback = async (req, res) => {
       imageUrl = `/images/feedback/${filename}`;
     }
 
-    const feedback = await Feedback.create({
+    const feedback = await SupportFeedback.create({
       student: req.student._id,
       type,
       text: text.trim(),
@@ -58,7 +58,7 @@ exports.submitFeedback = async (req, res) => {
 // real status field (e.g. reviewed/actioned) instead of a hardcoded label.
 exports.getMyFeedback = async (req, res) => {
   try {
-    const feedback = await Feedback.find({ student: req.student._id }).sort({ createdAt: -1 });
+    const feedback = await SupportFeedback.find({ student: req.student._id }).sort({ createdAt: -1 });
     return res.status(200).json({
       feedback: feedback.map((f) => ({
         _id: f._id,

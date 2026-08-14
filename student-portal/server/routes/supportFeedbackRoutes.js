@@ -1,6 +1,6 @@
 const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
-const { submitFeedback, getMyFeedback } = require('../controllers/feedbackController');
+const { submitFeedback, getMyFeedback } = require('../controllers/supportFeedbackController');
 
 const router = express.Router();
 

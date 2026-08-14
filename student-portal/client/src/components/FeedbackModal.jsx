@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import Modal from './Modal';
-import { submitFeedback } from '../services/feedbackService';
+import { submitFeedback } from '../services/supportFeedbackService';
 import { ImageIcon, CheckCircleIcon } from './icons';
 
 const inputClass =
