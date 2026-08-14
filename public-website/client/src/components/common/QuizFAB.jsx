@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import useFooterInView from '../../hooks/useFooterInView';
 
 // Site-wide floating entry point into the Find Your Path quiz. Mounted once
 // in PublicLayout so its minimized/expanded state survives route changes
 // within a session. Positioned above ScrollToTopButton (`bottom-8 right-8`)
-// so the two never overlap even when both are visible at once.
+// so the two never overlap each other; both hide once the footer scrolls
+// into view so neither ever overlaps footer links either.
 const QuizFAB = () => {
   const [minimized, setMinimized] = useState(false);
   const { pathname } = useLocation();
+  const footerInView = useFooterInView();
 
-  if (pathname === '/find-your-path') return null;
+  if (pathname === '/find-your-path' || footerInView) return null;
 
   if (minimized) {
     return (

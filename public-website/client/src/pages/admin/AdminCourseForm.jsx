@@ -6,17 +6,17 @@ import resolveImageUrl from '../../utils/resolveImageUrl';
 
 /* ============================================================
    TITAN — Admin Course Form (/admin/courses/new, /admin/courses/:id/edit)
-   Full form covering every Course field: basic info, curriculum modules
-   (dynamic add/remove), career outcomes, tools, image upload + preview,
-   and the three admin-specific toggles.
+   Full form covering every Course field: basic info, monthly curriculum
+   outline (dynamic add/remove months, duration auto-calculated from month
+   count), career outcomes, tools, image upload + preview, and admin
+   controls.
    ============================================================ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 const EMPTY_COURSE = {
   title: '',
   category: 'web',
-  duration: '',
   seats: 0,
   codingRequired: false,
   languages: [],
@@ -30,6 +30,8 @@ const EMPTY_COURSE = {
   idealFor: '',
   isActive: true,
 };
+
+const durationLabel = (monthCount) => `${monthCount} Month${monthCount === 1 ? '' : 's'}`;
 
 const labelClass = 'block text-xs font-bold uppercase tracking-wider mb-1.5 text-neutral-600';
 const inputClass = 'w-full border border-neutral-200 rounded-lg p-2.5 text-sm outline-none transition-colors focus:border-primary-800';
@@ -78,43 +80,49 @@ const TextListField = ({ label, items, onChange, placeholder }) => {
   );
 };
 
-// --- Curriculum modules: each has a name + its own nested topics list ---
-const CurriculumField = ({ modules, onChange }) => {
-  const updateModule = (idx, field, value) => {
-    const next = [...modules];
+// --- Monthly outline: each month has a title + its own nested topics list.
+// Month numbers are positional (array index + 1), not independently
+// editable, so reordering is never possible to get wrong — and course
+// duration is derived from how many months exist here. ---
+const MonthlyOutlineField = ({ months, onChange }) => {
+  const updateMonth = (idx, field, value) => {
+    const next = [...months];
     next[idx] = { ...next[idx], [field]: value };
     onChange(next);
   };
-  const removeModule = (idx) => onChange(modules.filter((_, i) => i !== idx));
-  const addModule = () => onChange([...modules, { module: '', topics: [] }]);
+  const removeMonth = (idx) => onChange(months.filter((_, i) => i !== idx));
+  const addMonth = () => onChange([...months, { title: '', topics: [] }]);
 
   return (
     <div>
-      <label className={labelClass}>Curriculum Modules</label>
+      <label className={labelClass}>Monthly Outline</label>
       <div className="space-y-4">
-        {modules.map((mod, idx) => (
+        {months.map((month, idx) => (
           <div key={idx} className="p-4 border border-neutral-200 rounded-lg bg-neutral-50/40">
             <div className="flex gap-2 items-start">
+              <span className="shrink-0 mt-1 te-mono text-xs font-bold text-primary-800 bg-white border border-neutral-200 rounded-lg px-3 py-2.5 whitespace-nowrap">
+                Month {idx + 1}
+              </span>
               <input
                 type="text"
-                value={mod.module}
-                onChange={(e) => updateModule(idx, 'module', e.target.value)}
+                value={month.title}
+                onChange={(e) => updateMonth(idx, 'title', e.target.value)}
                 className={`${inputClass} bg-white`}
-                placeholder="Module name (e.g. Web Foundations)"
+                placeholder="Month title (e.g. Web Foundations)"
               />
               <button
                 type="button"
-                onClick={() => removeModule(idx)}
+                onClick={() => removeMonth(idx)}
                 className="shrink-0 px-3 py-2.5 text-danger-text font-bold text-sm border border-neutral-200 rounded-lg hover:bg-danger-bg transition-colors bg-white cursor-pointer"
               >
-                × Remove Module
+                × Remove Month
               </button>
             </div>
             <div className="mt-3">
               <TextListField
                 label="Topics"
-                items={mod.topics}
-                onChange={(topics) => updateModule(idx, 'topics', topics)}
+                items={month.topics}
+                onChange={(topics) => updateMonth(idx, 'topics', topics)}
                 placeholder="e.g. Semantic HTML5 and modern CSS layouts"
               />
             </div>
@@ -123,10 +131,10 @@ const CurriculumField = ({ modules, onChange }) => {
       </div>
       <button
         type="button"
-        onClick={addModule}
+        onClick={addMonth}
         className="mt-3 text-xs font-bold text-primary-800 hover:text-primary-900 cursor-pointer bg-transparent border-none p-0"
       >
-        + Add Module
+        + Add Month
       </button>
     </div>
   );
@@ -144,6 +152,8 @@ const AdminCourseForm = () => {
 
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageUrlStatus, setImageUrlStatus] = useState('idle'); // idle | checking | valid | invalid
   const [slug, setSlug] = useState('');
 
   useEffect(() => {
@@ -155,7 +165,6 @@ const AdminCourseForm = () => {
         setForm({
           title: c.title || '',
           category: c.category || 'web',
-          duration: c.duration || '',
           seats: c.seats ?? 0,
           codingRequired: Boolean(c.codingRequired),
           languages: c.languages || [],
@@ -183,11 +192,61 @@ const AdminCourseForm = () => {
     if (!file) return;
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
+    // Uploading a file and pasting a URL are mutually exclusive — picking
+    // one clears the other so it's never ambiguous which wins on submit.
+    setImageUrlInput('');
+    setImageUrlStatus('idle');
+  };
+
+  const handleImageUrlChange = (e) => {
+    const url = e.target.value;
+    setImageUrlInput(url);
+    setImageFile(null);
+
+    if (!url.trim()) {
+      setImageUrlStatus('idle');
+      return;
+    }
+
+    setImageUrlStatus('checking');
+    const probe = new Image();
+    probe.onload = () => {
+      // Guard against a stale/slow probe resolving after the user has
+      // since changed or cleared the field.
+      setImageUrlInput((current) => {
+        if (current === url) {
+          setImageUrlStatus('valid');
+          setImagePreview(url);
+        }
+        return current;
+      });
+    };
+    probe.onerror = () => {
+      setImageUrlInput((current) => {
+        if (current === url) setImageUrlStatus('invalid');
+        return current;
+      });
+    };
+    probe.src = url;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const months = form.curriculum.filter((m) => m.title.trim());
+    if (months.length === 0) {
+      setError('Add at least one month to the Monthly Outline before saving.');
+      return;
+    }
+    if (imageUrlInput.trim() && imageUrlStatus !== 'valid') {
+      setError(
+        imageUrlStatus === 'checking'
+          ? 'Still checking the pasted image URL — wait a moment and try again.'
+          : "The pasted image URL couldn't be loaded. Fix it or clear the field before saving."
+      );
+      return;
+    }
     setSaving(true);
 
     const payload = {
@@ -197,9 +256,15 @@ const AdminCourseForm = () => {
       tools: form.tools.filter((v) => v.trim()),
       roadmap: form.roadmap.filter((v) => v.trim()),
       careerOutcomes: form.careerOutcomes.filter((v) => v.trim()),
-      curriculum: form.curriculum
-        .filter((m) => m.module.trim())
-        .map((m) => ({ module: m.module, topics: m.topics.filter((t) => t.trim()) })),
+      curriculum: months.map((m, idx) => ({
+        monthNumber: idx + 1,
+        title: m.title,
+        topics: m.topics.filter((t) => t.trim()),
+      })),
+      duration: durationLabel(months.length),
+      ...(imageUrlStatus === 'valid' && imageUrlInput.trim()
+        ? { img: imageUrlInput.trim(), imageUrl: imageUrlInput.trim() }
+        : {}),
     };
 
     try {
@@ -277,7 +342,8 @@ const AdminCourseForm = () => {
             </div>
             <div>
               <label className={labelClass}>Duration</label>
-              <input type="text" required value={form.duration} onChange={(e) => setField('duration', e.target.value)} className={inputClass} placeholder="6 Months" />
+              <input type="text" readOnly value={durationLabel(form.curriculum.length)} className={`${inputClass} bg-neutral-50 text-neutral-500 cursor-not-allowed`} />
+              <p className="text-[11px] text-neutral-400 mt-1">Auto-calculated from the Monthly Outline below.</p>
             </div>
             <div>
               <label className={labelClass}>Seats</label>
@@ -316,13 +382,39 @@ const AdminCourseForm = () => {
         {/* --- Image --- */}
         <section className="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
           <h2 className="text-sm font-extrabold text-neutral-900 uppercase tracking-wide">Course Image</h2>
-          <div className="flex items-center gap-5">
-            {imagePreview && (
-              <img src={imagePreview} alt="Course preview" className="w-32 h-24 object-cover rounded-lg border border-neutral-200" />
-            )}
-            <div>
-              <input type="file" accept="image/*" onChange={handleImageSelect} className="text-sm" />
-              <p className="text-xs text-neutral-400 mt-1.5">Uploads to server/uploads/courses. Max 5MB.</p>
+          <div className="flex items-start gap-5">
+            <div className="w-32 h-24 shrink-0 rounded-lg border border-neutral-200 overflow-hidden bg-neutral-50 flex items-center justify-center">
+              {imagePreview ? (
+                <img src={imagePreview} alt="Course preview" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider">No Image</span>
+              )}
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <label className={labelClass}>Upload a File</label>
+                <input type="file" accept="image/*" onChange={handleImageSelect} className="text-sm" />
+                <p className="text-xs text-neutral-400 mt-1.5">Uploads to server/uploads/courses. Max 5MB.</p>
+              </div>
+              <div>
+                <label className={labelClass}>Or Paste an Image URL</label>
+                <input
+                  type="text"
+                  value={imageUrlInput}
+                  onChange={handleImageUrlChange}
+                  className={inputClass}
+                  placeholder="https://images.unsplash.com/..."
+                />
+                {imageUrlStatus === 'checking' && (
+                  <p className="text-xs text-neutral-400 mt-1.5">Checking image...</p>
+                )}
+                {imageUrlStatus === 'valid' && (
+                  <p className="text-xs text-success-text mt-1.5 font-semibold">✓ Image loads correctly.</p>
+                )}
+                {imageUrlStatus === 'invalid' && (
+                  <p className="text-xs text-danger-text mt-1.5 font-semibold">✗ Couldn't load an image from that URL.</p>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -343,7 +435,7 @@ const AdminCourseForm = () => {
         {/* --- Curriculum --- */}
         <section className="bg-white border border-neutral-200 rounded-xl p-6">
           <h2 className="text-sm font-extrabold text-neutral-900 uppercase tracking-wide mb-4">Curriculum</h2>
-          <CurriculumField modules={form.curriculum} onChange={(v) => setField('curriculum', v)} />
+          <MonthlyOutlineField months={form.curriculum} onChange={(v) => setField('curriculum', v)} />
         </section>
 
         {/* --- Career Outcomes --- */}

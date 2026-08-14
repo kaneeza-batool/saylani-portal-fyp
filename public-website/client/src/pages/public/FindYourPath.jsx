@@ -150,7 +150,7 @@ const FindYourPath = () => {
             </span>
           </h1>
           <p className="te-body mt-5 text-sm sm:text-base leading-relaxed text-neutral-600 max-w-xl mx-auto font-normal">
-            Answer four quick questions and we'll match you to a real TITAN program based on your interests, experience, and goals.
+            Answer four quick questions and we'll match you to a TITAN program based on your interests, experience, and goals.
           </p>
         </div>
       </section>
