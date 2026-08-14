@@ -165,7 +165,7 @@ exports.updateStudent = async (req, res) => {
     if (batch !== undefined) {
       let targetCampusId = req.user.role === 'super_admin' ? campus : req.user.campus_id;
       if (req.user.role === 'super_admin' && !targetCampusId) {
-        const existing = await Student.findById(req.params.id).select('campus');
+        const existing = await Student.findById(req.params.id).select('campus').lean();
         targetCampusId = existing?.campus;
       }
       const batchResult = await resolveBatchAssignment(req.user, targetCampusId, batch);
