@@ -22,7 +22,9 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
 
   useEffect(() => {
     if (!open) return;
-    const lockedCampus = isCampusLocked ? user?.campus_id ?? '' : undefined;
+    // user.campus_id now comes populated ({_id, name}) from authController's
+    // toSafeUser — normalize to the plain id, same as editCampus below.
+    const lockedCampus = isCampusLocked ? user?.campus_id?._id ?? user?.campus_id ?? '' : undefined;
     // initialValues.campus comes populated ({_id, name, city}) from the
     // trainers list endpoint — normalize to the plain id the <select> and
     // submit payload expect, same as StudentFormModal.

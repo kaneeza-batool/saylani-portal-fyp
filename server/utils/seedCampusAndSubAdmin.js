@@ -41,7 +41,7 @@ async function ensureUser({ name, email, password, role, campus_id, permissions 
     return existing;
   }
   const user = await User.create({ name, email, password, role, campus_id, status: 'active', permissions });
-  console.log(`${role} created — email: ${email}  password: ${password}  campus_id: ${campus_id}`);
+  console.log(`${role} created — email: ${email}  campus_id: ${campus_id}`);
   return user;
 }
 

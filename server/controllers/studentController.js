@@ -133,6 +133,16 @@ exports.updateStudent = async (req, res) => {
   try {
     const { name, father, cnic, phone, email, course, campus, status, payment, address, batch } = req.body;
 
+    // Pending/rejected are admissions-applicant states, only reachable
+    // through the Admissions Queue's approve/reject flow (admissionController.js)
+    // — enforced here too, not just by hiding the option in the UI, since a
+    // sub_admin could otherwise bounce a roster student back to pending via
+    // a direct API call and watch them silently vanish from their own roster
+    // (which excludes pending/rejected — see getStudents' roster=true filter).
+    if (req.user.role !== 'super_admin' && status && ['pending', 'rejected'].includes(status)) {
+      return res.status(403).json({ message: 'Use the Admissions Queue to set a student to pending or rejected' });
+    }
+
     // sub_admin can only ever target students in their own campus (see
     // req.campusFilter above), but the payload itself could still carry a
     // different campus id — drop it silently rather than let them reassign
@@ -147,9 +157,17 @@ exports.updateStudent = async (req, res) => {
     // `batch` key — omitting it from the payload must not wipe an existing
     // assignment. sub_admin's target campus is always their own (they can
     // only reach students already inside req.campusFilter); super_admin's
-    // target campus is whatever this same request just set above.
+    // target campus is whatever this same request just set above — except
+    // a batch-only update (no `campus` key sent at all) leaves that
+    // undefined, which used to skip resolveBatchAssignment's consistency
+    // check entirely. Fall back to the student's existing campus in that
+    // case, so a Sukkur student can't be silently pointed at a Karachi batch.
     if (batch !== undefined) {
-      const targetCampusId = req.user.role === 'super_admin' ? campus : req.user.campus_id;
+      let targetCampusId = req.user.role === 'super_admin' ? campus : req.user.campus_id;
+      if (req.user.role === 'super_admin' && !targetCampusId) {
+        const existing = await Student.findById(req.params.id).select('campus');
+        targetCampusId = existing?.campus;
+      }
       const batchResult = await resolveBatchAssignment(req.user, targetCampusId, batch);
       if (!batchResult.ok) return res.status(batchResult.status).json({ message: batchResult.message });
       updates.batch = batchResult.batch;

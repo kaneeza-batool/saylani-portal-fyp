@@ -42,7 +42,14 @@ async function logAudit({ actor, action, resourceType, resourceId, summary, reso
       campus: actor?.campus_id || resourceCampus || null,
     });
     const io = getIO();
-    if (io) io.emit('audit:new', entry);
+    // Same room-scoping as alertEngine.js's emitAlert — a global io.emit()
+    // here would leak every campus's actor names and actions to every
+    // connected socket. No campus (a global resource, or a lookup that
+    // failed) goes to super-admins only, never broadcast.
+    if (io) {
+      const rooms = entry.campus ? [`campus:${entry.campus}`, 'super-admins'] : ['super-admins'];
+      io.to(rooms).emit('audit:new', entry);
+    }
   } catch (err) {
     console.error('audit log write failed:', err.message);
   }

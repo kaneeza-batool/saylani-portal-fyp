@@ -2,7 +2,17 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { getRoleHome } from '../utils/roleHome';
+import { getRoleHome, isRouteAllowedForRole } from '../utils/roleHome';
+
+// `location.state.from` is only trustworthy when it's a route the CURRENT
+// user's role can actually reach — it was set by ProtectedRoute for
+// whichever user/role was signed in at the time (possibly a different one:
+// logging out from an allowed-for-both page like /admin/profile and back in
+// as a different role carries that stale state across the login boundary).
+// Falls back to the fresh user's own role home otherwise.
+function resolveRedirect(pathname, role) {
+  return (pathname && isRouteAllowedForRole(pathname, role) ? pathname : null) || getRoleHome(role) || '/unauthorized';
+}
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -15,8 +25,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && user) {
-    const redirectTo = location.state?.from?.pathname || getRoleHome(user.role) || '/unauthorized';
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to={resolveRedirect(location.state?.from?.pathname, user.role)} replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -25,7 +34,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const loggedInUser = await login(email, password);
-      navigate(location.state?.from?.pathname || getRoleHome(loggedInUser.role) || '/unauthorized', { replace: true });
+      navigate(resolveRedirect(location.state?.from?.pathname, loggedInUser.role), { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {

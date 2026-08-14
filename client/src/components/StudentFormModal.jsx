@@ -41,6 +41,13 @@ const labelClass = 'text-caption font-semibold text-neutral-600';
 export default function StudentFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
   const { user } = useAuth();
   const isCampusLocked = user?.role === 'sub_admin';
+  // Pending/rejected are admissions-applicant states, only reachable through
+  // the Admissions Queue's approve/reject flow — offering them here let a
+  // sub_admin quietly bounce a roster student back to pending and watch them
+  // vanish from the roster (which excludes both statuses). Enforced
+  // server-side too (studentController.updateStudent), this just keeps the
+  // dropdown from offering a value the API will now reject.
+  const statusOptions = user?.role === 'sub_admin' ? STATUS_OPTIONS.filter((s) => !['pending', 'rejected'].includes(s.value)) : STATUS_OPTIONS;
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [campuses, setCampuses] = useState([]);
@@ -55,7 +62,9 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
 
   useEffect(() => {
     if (!open) return;
-    const lockedCampus = isCampusLocked ? user?.campus_id ?? '' : undefined;
+    // user.campus_id now comes populated ({_id, name}) from authController's
+    // toSafeUser — normalize to the plain id, same as editCampus below.
+    const lockedCampus = isCampusLocked ? user?.campus_id?._id ?? user?.campus_id ?? '' : undefined;
     // initialValues.campus/.batch come populated ({_id, ...}) from the students
     // list/detail endpoints — normalize to the plain id the <select>s and submit
     // payload expect. Falls back to a bare string in case a caller ever passes one.
@@ -229,7 +238,7 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
                 Status
               </label>
               <select id="student-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
-                {STATUS_OPTIONS.map((s) => (
+                {statusOptions.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
                   </option>

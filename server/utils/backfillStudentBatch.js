@@ -34,8 +34,10 @@ async function main() {
   });
   const skippedApplicants = await Student.countDocuments({ status: { $in: ['pending', 'rejected'] } });
 
+  // { $exists: false } alone misses records where batch was explicitly set
+  // to null (rather than never set at all) — both mean "unassigned" here.
   const candidates = await Student.find(
-    { status: { $in: ROSTER_STATUSES }, batch: { $exists: false } },
+    { status: { $in: ROSTER_STATUSES }, $or: [{ batch: { $exists: false } }, { batch: null }] },
     'name cnic course campus status'
   );
 
