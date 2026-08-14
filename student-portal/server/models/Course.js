@@ -20,4 +20,11 @@ const courseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Course', courseSchema);
+// Explicit collection name — main app has its own unrelated Course model
+// (name/description/durationWeeks/status, currently unused but a real,
+// live-creatable admin resource) that would otherwise land on the same
+// default-pluralized 'courses' collection now that both apps share one
+// database. Model name stays 'Course' so every existing ref: 'Course'
+// (Enrollment, Quiz, CourseModule) keeps resolving unchanged — only the
+// physical collection moves.
+module.exports = mongoose.model('Course', courseSchema, 'studentportal_courses');

@@ -37,4 +37,9 @@ quizSchema.pre('validate', function computeTotalMarks() {
   }
 });
 
-module.exports = mongoose.model('Quiz', quizSchema);
+// Explicit collection name — main app has its own unrelated Quiz model (an
+// admin oversight summary: title/course/campus/attempts/avg/status, no
+// question content) that would otherwise land on the same default-
+// pluralized 'quizzes' collection now that both apps share one database.
+// Model name stays 'Quiz' so nothing else needs to change.
+module.exports = mongoose.model('Quiz', quizSchema, 'studentportal_quizzes');

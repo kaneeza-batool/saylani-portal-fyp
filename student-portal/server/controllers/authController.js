@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Student = require('../models/Student');
+require('../models/Campus'); // registers 'Campus' so .populate('campus') resolves it
 const { sendPasswordResetEmail } = require('../utils/mailer');
 
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -47,8 +48,12 @@ function setAuthCookies(res, student) {
 function toSafeStudent(student) {
   return {
     id: student._id,
-    fullName: student.fullName,
-    fatherName: student.fatherName,
+    // Sourced from name/father (the shared document's real fields, see
+    // Student.js) — fullName/fatherName no longer exist on the document
+    // itself, only as this response's outward JSON keys, unchanged so the
+    // frontend doesn't need to know anything moved.
+    fullName: student.name,
+    fatherName: student.father,
     cnic: student.cnic,
     phone: student.phone,
     email: student.email,
@@ -58,7 +63,10 @@ function toSafeStudent(student) {
     lastQualification: student.lastQualification,
     avatarUrl: student.avatarUrl,
     hasCompletedOnboarding: student.hasCompletedOnboarding,
-    campus: student.campus,
+    // campus is now a populated ref (see Student.js) — only ever a name
+    // string here, never the ObjectId/document itself. null if somehow
+    // unpopulated rather than leaking a Mongoose document.
+    campus: student.campus?.name || null,
     city: student.city,
     role: student.role,
   };
@@ -73,7 +81,9 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'CNIC and password are required' });
     }
 
-    const student = await Student.findOne({ cnic: normalizeCnic(cnic) }).select('+password');
+    const student = await Student.findOne({ cnic: normalizeCnic(cnic) })
+      .select('+password')
+      .populate('campus', 'name');
     if (!student || !student.password || !(await student.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid CNIC or password' });
     }
@@ -107,7 +117,7 @@ exports.refresh = async (req, res) => {
     if (!token) return res.status(401).json({ message: 'Not authenticated' });
 
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const student = await Student.findById(decoded.id);
+    const student = await Student.findById(decoded.id).populate('campus', 'name');
     if (!student) return res.status(401).json({ message: 'Not authenticated' });
 
     // Only the access token is reissued — the refresh token keeps its
@@ -148,7 +158,9 @@ exports.setPassword = async (req, res) => {
       return res.status(400).json({ message: 'CNIC and password are required' });
     }
 
-    const student = await Student.findOne({ cnic: normalizeCnic(cnic) }).select('+password');
+    const student = await Student.findOne({ cnic: normalizeCnic(cnic) })
+      .select('+password')
+      .populate('campus', 'name');
     if (!student) {
       return res.status(404).json({ message: 'No student found with this CNIC. Please contact your campus.' });
     }
