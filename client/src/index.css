@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/*
+ * TITAN brand design tokens — Tailwind v4 CSS-first theme.
+ * Refined palette sampled from the actual TITAN crest: Titan Midnight
+ * navy + Antique Gold, a warm ivory surface, and a charcoal/slate text
+ * scale. Primary anchors sit at 800 (Titan Blue — hover) / 900 (Titan
+ * Midnight — base) since that's where the site's ~140 existing
+ * bg-primary-900 / hover:bg-primary-800 call sites already live; accent
+ * anchors sit at 200 (Soft Gold) / 500 (Antique Gold); neutral anchors
+ * sit at 50 (ivory) / 200 (border) / 600 (slate) / 900 (charcoal). Each
+ * anchor is the exact brand hex — the rest of the scale is interpolated
+ * for hover states, tints, and badges.
+ */
+@theme {
+  /* ---- Primary — Titan Midnight / Titan Blue ---- */
+  --color-primary-50: #F4F6FA;
+  --color-primary-100: #D2D7E0;
+  --color-primary-200: #AFB8C6;
+  --color-primary-300: #8F9BAD;
+  --color-primary-400: #718097;
+  --color-primary-500: #556781;
+  --color-primary-600: #3D526F;
+  --color-primary-700: #2C4362;
+  --color-primary-800: #1D3557; /* Titan Blue — hover state */
+  --color-primary-900: #132345; /* Titan Midnight — base */
+
+  /* ---- Accent — Antique Gold / Soft Gold ---- */
+  --color-accent-50: #FBF8F4;
+  --color-accent-100: #F6F0E5;
+  --color-accent-200: #E7D5AE; /* Soft Gold highlight */
+  --color-accent-300: #DDC492;
+  --color-accent-400: #D5B476;
+  --color-accent-500: #CEA45C; /* Antique Gold — base */
+  --color-accent-600: #BE8837;
+  --color-accent-700: #97682B;
+  --color-accent-800: #714A1E;
+  --color-accent-900: #523314;
+
+  /* ---- Neutral — warm ivory surfaces fading into charcoal/slate text ---- */
+  --color-neutral-50: #F7F5F0; /* Ivory background */
+  --color-neutral-100: #EEEBE5;
+  --color-neutral-200: #E4E1DA; /* Border */
+  --color-neutral-300: #C5C5C5;
+  --color-neutral-400: #A5A9B0;
+  --color-neutral-500: #868C9A;
+  --color-neutral-600: #667085; /* Muted Slate — secondary text */
+  --color-neutral-700: #4F586B;
+  --color-neutral-800: #374152;
+  --color-neutral-900: #202938; /* Charcoal — primary text */
+
+  /* ---- Flat semantic aliases (named per brand spec) ---- */
+  --color-background: #F7F5F0; /* Ivory, warm */
+  --color-surface: #FFFFFF;
+  --color-border: #E4E1DA;
+  --color-text-primary: #202938; /* Charcoal */
+  --color-text-secondary: #667085; /* Muted Slate */
+  --color-positive: #71806A; /* Sage — success/verified/positive states only */
+
+  /* ---- Semantic status — {bg, text} pairs, muted so they don't fight the palette ---- */
+  --color-success-bg: #EDF0EC;
+  --color-success-text: #4F7A5A;
+  --color-warning-bg: #FBF1E4;
+  --color-warning-text: #B78335;
+  --color-danger-bg: #FBEBEA;
+  --color-danger-text: #B84A4A;
+  --color-info-bg: #E8EEF3;
+  --color-info-text: #416A8A;
+
+  /* ---- Fonts ---- */
+  --font-heading: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
