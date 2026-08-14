@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { logAudit } = require('../utils/auditLogger');
+const { FULL_ACCESS_PERMISSIONS } = require('../utils/fullAccessPermissions');
 
 // Sub-admins are Users with role 'sub_admin' — no separate model. Custom
 // (not the crudFactory) because create needs a password + forced role,
@@ -63,7 +64,15 @@ exports.createSubAdmin = async (req, res) => {
       return res.status(400).json({ message: 'name, email, and password are required' });
     }
 
-    const user = await User.create({ name, email, password, campus_id, status, role: 'sub_admin' });
+    const user = await User.create({
+      name,
+      email,
+      password,
+      campus_id,
+      status,
+      role: 'sub_admin',
+      permissions: FULL_ACCESS_PERMISSIONS,
+    });
     logAudit({
       actor: req.user,
       action: 'create',
@@ -83,6 +92,8 @@ exports.createSubAdmin = async (req, res) => {
 exports.updateSubAdmin = async (req, res) => {
   try {
     const { name, email, campus_id, status } = req.body;
+    // Mongoose folds a plain (non-$) update object into $set, so omitting
+    // `permissions` here leaves an existing sub_admin's grants untouched.
     const user = await User.findOneAndUpdate(
       { _id: req.params.id, role: 'sub_admin' },
       { name, email, campus_id, status },

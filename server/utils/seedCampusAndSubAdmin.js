@@ -2,26 +2,12 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Campus = require('../models/Campus');
+const { FULL_ACCESS_PERMISSIONS } = require('./fullAccessPermissions');
 
 const CAMPUSES = [
   { name: 'Saylani TITAN Sukkur Campus', city: 'Sukkur', country: 'Pakistan', status: 'active' },
   { name: 'Saylani TITAN Karachi Campus', city: 'Karachi', country: 'Pakistan', status: 'active' },
 ];
-
-const FULL_ACCESS_PERMISSIONS = {
-  STUDENT: { read: true, write: true, update: true },
-  ATTENDANCE_VIEW: { read: true, write: true },
-  ATTENDANCE_MARK: { read: true, write: true, update: true },
-  ATTENDANCE_ADD_MULTI: { read: true, write: true, update: true },
-  TRAINER: { read: true, write: true },
-  TRAINER_ATTENDANCE_MARK: { read: true, write: true, update: true },
-  TRAINER_ATTENDANCE_VIEW: { read: true, write: true },
-  BATCH: { read: true, write: true, update: true },
-  ADMISSIONS: { read: true, write: true, update: true },
-  FEEDBACK: { read: true },
-  ALERTS: { read: true },
-  AUDIT: { read: true },
-};
 
 async function ensureCampus({ name, city, country, status }) {
   const existing = await Campus.findOne({ name });
