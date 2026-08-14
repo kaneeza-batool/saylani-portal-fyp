@@ -191,7 +191,7 @@ Branch from `dev`, merge back into `dev` via pull request.
 | Tooba Malik | Super Admin portal, ML model, alert engine, real-time infrastructure, Jobs portal |
 | Kaneeza Batool | Campus Manager portal, campus scoping architecture, socket authentication, audit system |
 | Rabbia Sachana | Student portal |
-| Areeba | Trainer portal |
+| Areeba Ansari | Trainer portal |
 
 ---
 
