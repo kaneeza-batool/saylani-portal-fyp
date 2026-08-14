@@ -1,18 +1,34 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { createJob, deleteJob, fetchJobs, updateJob } from '../../services/jobService';
-import JobFormModal from '../../components/JobFormModal';
+import {
+  fetchDonations,
+  fetchCampaignOptions,
+  updateDonationStatus,
+  deleteDonation,
+} from '../../services/donationService';
+import DonationProfilePanel from '../../components/DonationProfilePanel';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExportButtons from '../../components/ExportButtons';
 
 const STATUS_STYLE = {
-  open: { label: 'Open', className: 'bg-success-bg text-success-text' },
-  closed: { label: 'Closed', className: 'bg-neutral-100 text-neutral-500' },
+  pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
+  confirmed: { label: 'Confirmed', className: 'bg-success-bg text-success-text' },
+  rejected: { label: 'Rejected', className: 'bg-danger-50 text-danger-600' },
 };
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.6fr_1.4fr_1.2fr_1fr_0.8fr_0.9fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.3fr_1.3fr_0.9fr_0.9fr_0.9fr_0.8fr]';
+
+const EXPORT_COLUMNS = [
+  { header: 'Donor', accessor: (d) => d.donorName },
+  { header: 'Email', accessor: (d) => d.email },
+  { header: 'Campaign', accessor: (d) => d.campaignTitle },
+  { header: 'Amount', accessor: (d) => d.amount },
+  { header: 'Payment Method', accessor: (d) => d.paymentMethod },
+  { header: 'Status', accessor: (d) => d.status },
+];
 
 function RowSkeleton() {
   return (
@@ -24,88 +40,69 @@ function RowSkeleton() {
   );
 }
 
-export default function JobsPage() {
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function money(n) {
+  return `Rs. ${Number(n || 0).toLocaleString()}`;
+}
+
+export default function DonationsPage() {
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
+  const [campaign, setCampaign] = useState('all');
   const [page, setPage] = useState(1);
-  const [modal, setModal] = useState({ open: false, mode: 'add', item: null });
+  const [viewTarget, setViewTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  useEffect(() => setPage(1), [search, status]);
+  useEffect(() => setPage(1), [search, status, campaign]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['jobs', { search, status, page }],
-    queryFn: () => fetchJobs({ search, status, page, limit: 8 }),
+    queryKey: ['donations', { search, status, campaign, page }],
+    queryFn: () => fetchDonations({ search, status, campaign, page, limit: 8 }),
     keepPreviousData: true,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['jobs'] });
+  const { data: campaignOptions } = useQuery({ queryKey: ['campaign-options'], queryFn: fetchCampaignOptions });
 
-  const createMutation = useMutation({
-    mutationFn: createJob,
-    onSuccess: () => {
-      invalidate();
-      setModal({ open: false, mode: 'add', item: null });
-      setFormError('');
-    },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to add job.'),
-  });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['donations'] });
+    queryClient.invalidateQueries({ queryKey: ['campaign-summary'] });
+  };
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, payload }) => updateJob(id, payload),
-    onSuccess: () => {
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status: newStatus }) => updateDonationStatus(id, newStatus),
+    onSuccess: (updated) => {
       invalidate();
-      setModal({ open: false, mode: 'add', item: null });
-      setFormError('');
+      setViewTarget(updated);
     },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to update job.'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteJob,
+    mutationFn: deleteDonation,
     onSuccess: () => {
       invalidate();
       setDeleteTarget(null);
+      setViewTarget(null);
     },
   });
-
-  const openAdd = () => {
-    setFormError('');
-    setModal({ open: true, mode: 'add', item: null });
-  };
-  const openEdit = (item) => {
-    setFormError('');
-    setModal({ open: true, mode: 'edit', item });
-  };
-  const closeModal = () => setModal((m) => ({ ...m, open: false }));
-
-  const handleSubmit = (values) => {
-    if (modal.mode === 'add') createMutation.mutate(values);
-    else updateMutation.mutate({ id: modal.item._id, payload: values });
-  };
-
-  const handleDelete = (item) => setDeleteTarget(item);
-  const confirmDelete = () => {
-    if (deleteTarget) deleteMutation.mutate(deleteTarget._id);
-  };
 
   const items = data?.items ?? [];
   const pages = data?.pages ?? 1;
   const total = data?.total ?? 0;
-  const submitting = createMutation.isPending || updateMutation.isPending;
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-gold-500 transition-colors">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
               <circle cx="11" cy="11" r="7" />
@@ -115,47 +112,40 @@ export default function JobsPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search jobs..."
+              placeholder="Search donors..."
               className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
             />
           </div>
+          <select
+            value={campaign}
+            onChange={(e) => setCampaign(e.target.value)}
+            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
+          >
+            <option value="all">All campaigns</option>
+            {campaignOptions?.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="all">All statuses</option>
-            <option value="open">Open</option>
-            <option value="closed">Closed</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="rejected">Rejected</option>
           </select>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <a
-            href="/careers"
-            target="_blank"
-            rel="noreferrer"
-            className="border border-neutral-200 bg-surface text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
-          >
-            View Careers Page
-          </a>
-
-          <button
-            type="button"
-            onClick={openAdd}
-            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add Job
-          </button>
-        </div>
+        <ExportButtons title="Donations" filenameBase="titan-donations" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Title', 'Company', 'Location', 'Type', 'Status', 'Published'].map((h) => (
+          {['Donor', 'Campaign', 'Amount', 'Donated', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -166,46 +156,39 @@ export default function JobsPage() {
         {isLoading ? (
           [0, 1, 2, 3, 4].map((i) => <RowSkeleton key={i} />)
         ) : isError ? (
-          <div className="py-14 px-5 text-center text-danger-600 text-body-sm">Couldn't load jobs. Please try again.</div>
+          <div className="py-14 px-5 text-center text-danger-600 text-body-sm">Couldn't load donations. Please try again.</div>
         ) : items.length === 0 ? (
-          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No jobs match this search.</div>
+          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No donations match this search.</div>
         ) : (
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
-            {items.map((j) => {
-              const s = STATUS_STYLE[j.status] ?? STATUS_STYLE.open;
+            {items.map((d) => {
+              const s = STATUS_STYLE[d.status] ?? STATUS_STYLE.pending;
               return (
                 <motion.div
-                  key={j._id}
+                  key={d._id}
                   variants={fadeInUp}
                   className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
-                  <span className="text-body-sm font-semibold text-neutral-900 truncate">{j.title}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{j.company}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{j.location || '—'}</span>
-                  <span className="text-body-sm text-neutral-600">{j.type}</span>
+                  <span className="text-body-sm font-semibold text-neutral-900 truncate">{d.donorName}</span>
+                  <span className="text-body-sm text-neutral-600 truncate">{d.campaignTitle}</span>
+                  <span className="text-body-sm font-semibold text-gold-600">{money(d.amount)}</span>
+                  <span className="text-body-sm text-neutral-600">{fmtDate(d.createdAt)}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
-                  <span
-                    className={`text-badge px-2.5 py-1 rounded-pill w-fit ${
-                      j.published ? 'bg-success-bg text-success-text' : 'bg-neutral-100 text-neutral-500'
-                    }`}
-                  >
-                    {j.published ? 'Live' : 'Draft'}
-                  </span>
                   <div className="flex gap-1.5 justify-end">
                     <button
                       type="button"
-                      onClick={() => openEdit(j)}
-                      title="Edit"
+                      onClick={() => setViewTarget(d)}
+                      title="View details"
                       className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                        <circle cx="12" cy="12" r="3" />
                       </svg>
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(j)}
+                      onClick={() => setDeleteTarget(d)}
                       title="Delete"
                       className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
                     >
@@ -226,7 +209,7 @@ export default function JobsPage() {
       {!isLoading && !isError && total > 0 && (
         <div className="flex items-center justify-between text-body-sm text-neutral-400">
           <span>
-            {total} job{total === 1 ? '' : 's'} · Page {page} of {pages}
+            {total} donation{total === 1 ? '' : 's'} · Page {page} of {pages}
           </span>
           <div className="flex gap-2">
             <button
@@ -249,22 +232,20 @@ export default function JobsPage() {
         </div>
       )}
 
-      <JobFormModal
-        open={modal.open}
-        mode={modal.mode}
-        initialValues={modal.item}
-        onClose={closeModal}
-        onSubmit={handleSubmit}
-        submitting={submitting}
-        error={formError}
+      <DonationProfilePanel
+        open={!!viewTarget}
+        donation={viewTarget}
+        onClose={() => setViewTarget(null)}
+        onStatusChange={(newStatus) => statusMutation.mutate({ id: viewTarget._id, status: newStatus })}
+        statusUpdating={statusMutation.isPending}
       />
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete job"
-        message={deleteTarget ? `Delete "${deleteTarget.title}"? This can't be undone.` : ''}
+        title="Delete donation"
+        message={deleteTarget ? `Delete the donation from ${deleteTarget.donorName}? This can't be undone.` : ''}
         onCancel={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
+        onConfirm={() => deleteMutation.mutate(deleteTarget._id)}
         loading={deleteMutation.isPending}
       />
     </motion.div>

@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { createJob, deleteJob, fetchJobs, updateJob } from '../../services/jobService';
-import JobFormModal from '../../components/JobFormModal';
+import { createCampaign, deleteCampaign, fetchCampaigns, updateCampaign } from '../../services/campaignService';
+import { fetchCampaignSummary } from '../../services/donationService';
+import CampaignFormModal from '../../components/CampaignFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 
 const STATUS_STYLE = {
-  open: { label: 'Open', className: 'bg-success-bg text-success-text' },
+  active: { label: 'Active', className: 'bg-success-bg text-success-text' },
   closed: { label: 'Closed', className: 'bg-neutral-100 text-neutral-500' },
 };
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.6fr_1.4fr_1.2fr_1fr_0.8fr_0.9fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.4fr_1.6fr_0.9fr_0.8fr_0.9fr_0.8fr]';
+
+function money(n) {
+  return `Rs. ${Number(n || 0).toLocaleString()}`;
+}
 
 function RowSkeleton() {
   return (
@@ -24,7 +29,7 @@ function RowSkeleton() {
   );
 }
 
-export default function JobsPage() {
+export default function CampaignsPage() {
   const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -42,35 +47,40 @@ export default function JobsPage() {
   useEffect(() => setPage(1), [search, status]);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['jobs', { search, status, page }],
-    queryFn: () => fetchJobs({ search, status, page, limit: 8 }),
+    queryKey: ['campaigns', { search, status, page }],
+    queryFn: () => fetchCampaigns({ search, status, page, limit: 8 }),
     keepPreviousData: true,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['jobs'] });
+  const { data: summary } = useQuery({ queryKey: ['campaign-summary'], queryFn: fetchCampaignSummary });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+    queryClient.invalidateQueries({ queryKey: ['campaign-summary'] });
+  };
 
   const createMutation = useMutation({
-    mutationFn: createJob,
+    mutationFn: createCampaign,
     onSuccess: () => {
       invalidate();
       setModal({ open: false, mode: 'add', item: null });
       setFormError('');
     },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to add job.'),
+    onError: (err) => setFormError(err.response?.data?.message || 'Failed to add campaign.'),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, payload }) => updateJob(id, payload),
+    mutationFn: ({ id, payload }) => updateCampaign(id, payload),
     onSuccess: () => {
       invalidate();
       setModal({ open: false, mode: 'add', item: null });
       setFormError('');
     },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to update job.'),
+    onError: (err) => setFormError(err.response?.data?.message || 'Failed to update campaign.'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteJob,
+    mutationFn: deleteCampaign,
     onSuccess: () => {
       invalidate();
       setDeleteTarget(null);
@@ -115,7 +125,7 @@ export default function JobsPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search jobs..."
+              placeholder="Search campaigns..."
               className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
             />
           </div>
@@ -125,19 +135,19 @@ export default function JobsPage() {
             className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="all">All statuses</option>
-            <option value="open">Open</option>
+            <option value="active">Active</option>
             <option value="closed">Closed</option>
           </select>
         </div>
 
         <div className="flex items-center gap-2.5">
           <a
-            href="/careers"
+            href="/donate"
             target="_blank"
             rel="noreferrer"
             className="border border-neutral-200 bg-surface text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
           >
-            View Careers Page
+            View Donate Page
           </a>
 
           <button
@@ -148,14 +158,14 @@ export default function JobsPage() {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Add Job
+            Add Campaign
           </button>
         </div>
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Title', 'Company', 'Location', 'Type', 'Status', 'Published'].map((h) => (
+          {['Title', 'Progress', 'Goal', 'Status', 'Published'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -166,35 +176,44 @@ export default function JobsPage() {
         {isLoading ? (
           [0, 1, 2, 3, 4].map((i) => <RowSkeleton key={i} />)
         ) : isError ? (
-          <div className="py-14 px-5 text-center text-danger-600 text-body-sm">Couldn't load jobs. Please try again.</div>
+          <div className="py-14 px-5 text-center text-danger-600 text-body-sm">Couldn't load campaigns. Please try again.</div>
         ) : items.length === 0 ? (
-          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No jobs match this search.</div>
+          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No campaigns match this search.</div>
         ) : (
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
-            {items.map((j) => {
-              const s = STATUS_STYLE[j.status] ?? STATUS_STYLE.open;
+            {items.map((c) => {
+              const s = STATUS_STYLE[c.status] ?? STATUS_STYLE.active;
+              const raised = summary?.[c._id]?.raisedAmount ?? 0;
+              const pct = c.goalAmount > 0 ? Math.min(100, Math.round((raised / c.goalAmount) * 100)) : 0;
               return (
                 <motion.div
-                  key={j._id}
+                  key={c._id}
                   variants={fadeInUp}
                   className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
-                  <span className="text-body-sm font-semibold text-neutral-900 truncate">{j.title}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{j.company}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{j.location || '—'}</span>
-                  <span className="text-body-sm text-neutral-600">{j.type}</span>
+                  <div className="min-w-0">
+                    <div className="text-body-sm font-semibold text-neutral-900 truncate">{c.title}</div>
+                    {c.category && <div className="text-badge text-neutral-400">{c.category}</div>}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="h-[6px] rounded-pill bg-neutral-100 overflow-hidden">
+                      <div className="h-full rounded-pill bg-gradient-to-r from-gold-500 to-gold-600" style={{ width: `${pct}%` }} />
+                    </div>
+                    <span className="text-badge text-neutral-400">{money(raised)} raised</span>
+                  </div>
+                  <span className="text-body-sm text-neutral-600">{money(c.goalAmount)}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
                   <span
                     className={`text-badge px-2.5 py-1 rounded-pill w-fit ${
-                      j.published ? 'bg-success-bg text-success-text' : 'bg-neutral-100 text-neutral-500'
+                      c.published ? 'bg-success-bg text-success-text' : 'bg-neutral-100 text-neutral-500'
                     }`}
                   >
-                    {j.published ? 'Live' : 'Draft'}
+                    {c.published ? 'Live' : 'Draft'}
                   </span>
                   <div className="flex gap-1.5 justify-end">
                     <button
                       type="button"
-                      onClick={() => openEdit(j)}
+                      onClick={() => openEdit(c)}
                       title="Edit"
                       className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
                     >
@@ -205,7 +224,7 @@ export default function JobsPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(j)}
+                      onClick={() => handleDelete(c)}
                       title="Delete"
                       className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
                     >
@@ -226,7 +245,7 @@ export default function JobsPage() {
       {!isLoading && !isError && total > 0 && (
         <div className="flex items-center justify-between text-body-sm text-neutral-400">
           <span>
-            {total} job{total === 1 ? '' : 's'} · Page {page} of {pages}
+            {total} campaign{total === 1 ? '' : 's'} · Page {page} of {pages}
           </span>
           <div className="flex gap-2">
             <button
@@ -249,7 +268,7 @@ export default function JobsPage() {
         </div>
       )}
 
-      <JobFormModal
+      <CampaignFormModal
         open={modal.open}
         mode={modal.mode}
         initialValues={modal.item}
@@ -261,7 +280,7 @@ export default function JobsPage() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete job"
+        title="Delete campaign"
         message={deleteTarget ? `Delete "${deleteTarget.title}"? This can't be undone.` : ''}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}

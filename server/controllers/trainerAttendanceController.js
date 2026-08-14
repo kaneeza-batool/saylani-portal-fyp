@@ -1,6 +1,7 @@
 const Trainer = require('../models/Trainer');
 const TrainerAttendance = require('../models/TrainerAttendance');
 const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
+const { escapeRegex } = require('../utils/regex');
 
 function startOfToday() {
   return new Date(new Date().toDateString());
@@ -87,11 +88,8 @@ exports.getAttendance = async (req, res) => {
 
     const filter = {};
     if (search && search.trim()) {
-      filter.$or = [
-        { trainerName: new RegExp(search.trim(), 'i') },
-        { employeeId: new RegExp(search.trim(), 'i') },
-        { campus: new RegExp(search.trim(), 'i') },
-      ];
+      const re = new RegExp(escapeRegex(search.trim()), 'i');
+      filter.$or = [{ trainerName: re }, { employeeId: re }, { campus: re }];
     }
 
     const [items, total] = await Promise.all([

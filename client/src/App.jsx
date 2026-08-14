@@ -6,6 +6,17 @@ import { SocketProvider } from './context/SocketContext';
 import { getRoleHome } from './utils/roleHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import PublicLayout from './layouts/PublicLayout';
+import DonorPublicLayout from './layouts/DonorPublicLayout';
+import CareersPage from './pages/public/CareersPage';
+import JobDetailPage from './pages/public/JobDetailPage';
+import JobApplyPage from './pages/public/JobApplyPage';
+import StatusCheckPage from './pages/public/StatusCheckPage';
+import DonatePage from './pages/public/DonatePage';
+import CampaignDetailPage from './pages/public/CampaignDetailPage';
+import DonateFormPage from './pages/public/DonateFormPage';
+import DonationStatusPage from './pages/public/DonationStatusPage';
+import DonorWallPage from './pages/public/DonorWallPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SubAdminLayout from './layouts/SubAdminLayout';
@@ -25,6 +36,9 @@ import SlotsPage from './portals/super-admin/administration/SlotsPage';
 import QuizzesPage from './portals/super-admin/QuizzesPage';
 import EmployersPage from './portals/super-admin/EmployersPage';
 import JobsPage from './portals/super-admin/JobsPage';
+import JobApplicationsPage from './portals/super-admin/JobApplicationsPage';
+import CampaignsPage from './portals/super-admin/CampaignsPage';
+import DonationsPage from './portals/super-admin/DonationsPage';
 import Reports from './portals/super-admin/Reports';
 import AuditLog from './portals/super-admin/AuditLog';
 import Updation from './portals/super-admin/Updation';
@@ -73,6 +87,21 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+                <Route element={<PublicLayout />}>
+                  <Route path="/careers" element={<CareersPage />} />
+                  <Route path="/careers/status" element={<StatusCheckPage />} />
+                  <Route path="/careers/:id" element={<JobDetailPage />} />
+                  <Route path="/careers/:id/apply" element={<JobApplyPage />} />
+                </Route>
+
+                <Route element={<DonorPublicLayout />}>
+                  <Route path="/donate" element={<DonatePage />} />
+                  <Route path="/donate/status" element={<DonationStatusPage />} />
+                  <Route path="/donate/wall" element={<DonorWallPage />} />
+                  <Route path="/donate/:id" element={<CampaignDetailPage />} />
+                  <Route path="/donate/:id/give" element={<DonateFormPage />} />
+                </Route>
+
                 <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
                   <Route path="/admin" element={<SuperAdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
@@ -91,6 +120,9 @@ function App() {
                     <Route path="quiz" element={<QuizzesPage />} />
                     <Route path="employers" element={<EmployersPage />} />
                     <Route path="jobportal" element={<JobsPage />} />
+                    <Route path="jobportal/applications" element={<JobApplicationsPage />} />
+                    <Route path="donorportal/campaigns" element={<CampaignsPage />} />
+                    <Route path="donorportal/donations" element={<DonationsPage />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="auditlog" element={<AuditLog />} />
                     <Route path="updation" element={<Updation />} />

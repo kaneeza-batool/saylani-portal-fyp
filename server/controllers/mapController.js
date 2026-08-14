@@ -3,7 +3,7 @@ const Campus = require('../models/Campus');
 const Trainer = require('../models/Trainer');
 const { CITY_COORDS, cityForCampusName } = require('../utils/cityCoords');
 
-// Merges three independent counts (students via their fixed campus-name
+// Merges three independent counts (students via their campus ref's own city
 // field, real Campus records via their own city field, trainers via their
 // city field) into one per-city summary for the map. These collections
 // aren't foreign-keyed to each other, so a city-name join is the honest
@@ -11,7 +11,7 @@ const { CITY_COORDS, cityForCampusName } = require('../utils/cityCoords');
 exports.getCampusMap = async (req, res) => {
   try {
     const [students, campuses, trainers] = await Promise.all([
-      Student.find({}, 'campus'),
+      Student.find({}, 'campus').populate('campus', 'city'),
       Campus.find({}, 'name city status'),
       Trainer.find({}, 'city'),
     ]);
@@ -22,7 +22,10 @@ exports.getCampusMap = async (req, res) => {
     }
 
     for (const s of students) {
-      const city = cityForCampusName(s.campus);
+      // Student.campus is an ObjectId ref (see Student.js), not a name
+      // string — resolve through the populated Campus doc's own city field
+      // rather than string-matching a name that isn't there.
+      const city = s.campus?.city;
       if (city && byCity[city]) byCity[city].studentCount += 1;
     }
     for (const c of campuses) {
