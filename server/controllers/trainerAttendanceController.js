@@ -1,5 +1,6 @@
 const Trainer = require('../models/Trainer');
 const TrainerAttendance = require('../models/TrainerAttendance');
+const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
 
 function startOfToday() {
   return new Date(new Date().toDateString());
@@ -38,6 +39,15 @@ exports.checkIn = async (req, res) => {
           checkIn: new Date(),
         });
 
+    logAudit({
+      actor: req.user,
+      action: existing ? 'update' : 'create',
+      resourceType: 'TrainerAttendance',
+      resourceId: record._id,
+      summary: `Checked in "${record.trainerName}"`,
+      resourceCampus: await resolveCampusIdByName(record.campus),
+    });
+
     return res.status(200).json({ record });
   } catch (err) {
     return res.status(500).json({ message: 'Check-in failed', error: err.message });
@@ -55,6 +65,14 @@ exports.checkOut = async (req, res) => {
     if (existing.checkOut) return res.status(409).json({ message: 'Already checked out today' });
 
     const record = await TrainerAttendance.findByIdAndUpdate(existing._id, { checkOut: new Date() }, { new: true });
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'TrainerAttendance',
+      resourceId: record._id,
+      summary: `Checked out "${record.trainerName}"`,
+      resourceCampus: await resolveCampusIdByName(record.campus),
+    });
     return res.status(200).json({ record });
   } catch (err) {
     return res.status(500).json({ message: 'Check-out failed', error: err.message });

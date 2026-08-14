@@ -12,6 +12,11 @@ const auditLogSchema = new mongoose.Schema(
     resourceType: { type: String, required: true }, // e.g. 'Student', 'Campus'
     resourceId: { type: mongoose.Schema.Types.ObjectId, default: null },
     summary: { type: String, required: true }, // human-readable one-liner
+    // Resolved server-side from the acting user's campus_id (see
+    // auditLogger.js) — never trust a campus from the request. super_admin
+    // has no campus_id, so their entries land here as null; the sub-admin
+    // audit-log endpoint's campusScope filter naturally excludes those.
+    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', default: null, index: true },
   },
   { timestamps: true }
 );

@@ -70,6 +70,7 @@ exports.createSubAdmin = async (req, res) => {
       resourceType: 'SubAdmin',
       resourceId: user._id,
       summary: `Created sub-admin "${user.name}"`,
+      resourceCampus: user.campus_id,
     });
     return res.status(201).json({ item: toSafeUser(user) });
   } catch (err) {
@@ -94,6 +95,7 @@ exports.updateSubAdmin = async (req, res) => {
       resourceType: 'SubAdmin',
       resourceId: user._id,
       summary: `Updated sub-admin "${user.name}"`,
+      resourceCampus: user.campus_id,
     });
     return res.status(200).json({ item: toSafeUser(user) });
   } catch (err) {
@@ -113,6 +115,7 @@ exports.deleteSubAdmin = async (req, res) => {
       resourceType: 'SubAdmin',
       resourceId: user._id,
       summary: `Deleted sub-admin "${user.name}"`,
+      resourceCampus: user.campus_id,
     });
     return res.status(200).json({ message: 'Deleted' });
   } catch (err) {

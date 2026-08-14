@@ -8,4 +8,6 @@ const controller = buildCrudController(Campus, {
   label: (doc) => doc.name,
 });
 
-module.exports = buildCrudRouter(controller);
+// sub_admin can read the campus list (needed for campus pickers), but
+// campus management itself stays super_admin-only.
+module.exports = buildCrudRouter(controller, { readRoles: ['super_admin', 'sub_admin'] });

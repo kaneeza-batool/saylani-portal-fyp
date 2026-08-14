@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { fetchCampuses } from '../services/campusService';
+import { fetchSlots } from '../services/slotService';
 
 const COURSES = [
   'Web Development',
@@ -10,20 +13,12 @@ const COURSES = [
   'Cybersecurity Fundamentals',
 ];
 
-const CAMPUSES = [
-  'Karachi Gulshan Campus',
-  'Lahore Model Town Campus',
-  'Sukkur TITAN Campus',
-  'Islamabad G-9 Campus',
-  'Multan Campus',
-  'Peshawar Campus',
-];
-
 const STATUS_OPTIONS = [
   { value: 'enrolled', label: 'Enrolled' },
   { value: 'pending', label: 'Pending' },
   { value: 'completed', label: 'Completed' },
   { value: 'dropout', label: 'Dropout' },
+  { value: 'rejected', label: 'Rejected' },
 ];
 
 const EMPTY_FORM = {
@@ -33,7 +28,8 @@ const EMPTY_FORM = {
   phone: '',
   email: '',
   course: COURSES[0],
-  campus: CAMPUSES[0],
+  campus: '',
+  batch: '',
   status: 'enrolled',
   address: '',
 };
@@ -43,13 +39,68 @@ const inputClass =
 const labelClass = 'text-caption font-semibold text-neutral-600';
 
 export default function StudentFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
+  const { user } = useAuth();
+  const isCampusLocked = user?.role === 'sub_admin';
+  // Pending/rejected are admissions-applicant states, only reachable through
+  // the Admissions Queue's approve/reject flow — offering them here let a
+  // sub_admin quietly bounce a roster student back to pending and watch them
+  // vanish from the roster (which excludes both statuses). Enforced
+  // server-side too (studentController.updateStudent), this just keeps the
+  // dropdown from offering a value the API will now reject.
+  const statusOptions = user?.role === 'sub_admin' ? STATUS_OPTIONS.filter((s) => !['pending', 'rejected'].includes(s.value)) : STATUS_OPTIONS;
+
   const [form, setForm] = useState(EMPTY_FORM);
+  const [campuses, setCampuses] = useState([]);
+  const [batches, setBatches] = useState([]);
 
   useEffect(() => {
-    if (open) {
-      setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
+    if (!open) return;
+    fetchCampuses({ status: 'active', limit: 100 })
+      .then((data) => setCampuses(data.items ?? []))
+      .catch(() => setCampuses([]));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    // user.campus_id now comes populated ({_id, name}) from authController's
+    // toSafeUser — normalize to the plain id, same as editCampus below.
+    const lockedCampus = isCampusLocked ? user?.campus_id?._id ?? user?.campus_id ?? '' : undefined;
+    // initialValues.campus/.batch come populated ({_id, ...}) from the students
+    // list/detail endpoints — normalize to the plain id the <select>s and submit
+    // payload expect. Falls back to a bare string in case a caller ever passes one.
+    const editCampus = initialValues?.campus?._id ?? initialValues?.campus ?? '';
+    const editBatch = initialValues?.batch?._id ?? initialValues?.batch ?? '';
+    setForm(
+      initialValues
+        ? { ...EMPTY_FORM, ...initialValues, campus: lockedCampus ?? editCampus, batch: editBatch }
+        : { ...EMPTY_FORM, campus: lockedCampus ?? campuses[0]?._id ?? '' }
+    );
+  }, [open, initialValues, isCampusLocked, user, campuses]);
+
+  // Batch options are scoped to whichever campus is currently selected — for
+  // sub_admin that's always their own (server re-validates regardless, see
+  // studentController.resolveBatchAssignment); for super_admin it tracks the
+  // Campus <select> above. Re-fetches on campus change; only active batches
+  // are offered since assigning new students into an inactive one is not a
+  // real workflow. A student's currently-assigned batch is preserved in
+  // `form.batch` even if a campus switch makes it disappear from this list —
+  // submitting unchanged just re-sends the same id.
+  useEffect(() => {
+    if (!open || !form.campus) {
+      setBatches([]);
+      return;
     }
-  }, [open, initialValues]);
+    let cancelled = false;
+    fetchSlots({ status: 'active', limit: 100 })
+      .then((data) => {
+        if (cancelled) return;
+        setBatches((data.items ?? []).filter((b) => (b.campus?._id ?? b.campus) === form.campus));
+      })
+      .catch(() => !cancelled && setBatches([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, form.campus]);
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -167,10 +218,17 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
               <label className={labelClass} htmlFor="student-campus">
                 Campus
               </label>
-              <select id="student-campus" value={form.campus} onChange={setField('campus')} className={`${inputClass} bg-surface`}>
-                {CAMPUSES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+              <select
+                id="student-campus"
+                required
+                value={form.campus}
+                onChange={setField('campus')}
+                disabled={isCampusLocked}
+                className={`${inputClass} bg-surface ${isCampusLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                {campuses.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -180,13 +238,27 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
                 Status
               </label>
               <select id="student-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
-                {STATUS_OPTIONS.map((s) => (
+                {statusOptions.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
                   </option>
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} htmlFor="student-batch">
+              Batch
+            </label>
+            <select id="student-batch" value={form.batch} onChange={setField('batch')} className={`${inputClass} bg-surface`}>
+              <option value="">No batch</option>
+              {batches.map((b) => (
+                <option key={b._id} value={b._id}>
+                  {b.schedule}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-1.5">

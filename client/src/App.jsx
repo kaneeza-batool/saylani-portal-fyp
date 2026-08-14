@@ -1,11 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { getRoleHome } from './utils/roleHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
+import SubAdminLayout from './layouts/SubAdminLayout';
 import DashboardPage from './portals/super-admin/DashboardPage';
 import StudentsPage from './portals/super-admin/StudentsPage';
 import CampusesPage from './portals/super-admin/CampusesPage';
@@ -30,6 +33,15 @@ import Profile from './portals/super-admin/Profile';
 import InsightsPage from './portals/super-admin/InsightsPage';
 import CampusMapPage from './portals/super-admin/CampusMapPage';
 import AlertsPage from './portals/super-admin/AlertsPage';
+import SubAdminDashboardPage from './portals/sub-admin/DashboardPage';
+import AdmissionsQueuePage from './portals/sub-admin/AdmissionsQueuePage';
+import SubAdminTrainersPage from './portals/sub-admin/TrainersPage';
+import SubAdminBatchesPage from './portals/sub-admin/BatchesPage';
+import SubAdminStudentsPage from './portals/sub-admin/StudentsPage';
+import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReportsPage';
+import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
+import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
+import SubAdminAuditLogPage from './portals/sub-admin/AuditLogPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +52,16 @@ const queryClient = new QueryClient({
   },
 });
 
+// Same hardcoded-fallback problem this whole fix addresses, just at the
+// catch-all level — route unmatched paths by the current user's role
+// instead of always assuming /admin/dashboard.
+function CatchAll() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  return <Navigate to={getRoleHome(user.role) || '/unauthorized'} replace />;
+}
+
 function App() {
   return (
     <ThemeProvider>
@@ -49,12 +71,12 @@ function App() {
             <SocketProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
                   <Route path="/admin" element={<SuperAdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="dashboard" element={<DashboardPage />} />
-                    <Route path="students" element={<StudentsPage />} />
                     <Route path="campuses" element={<CampusesPage />} />
                     <Route path="subadmins" element={<SubAdminsPage />} />
                     <Route path="trainers" element={<TrainersPage />} />
@@ -76,11 +98,33 @@ function App() {
                     <Route path="insights" element={<InsightsPage />} />
                     <Route path="campus-map" element={<CampusMapPage />} />
                     <Route path="alerts" element={<AlertsPage />} />
-                    <Route path="profile" element={<Profile />} />
                   </Route>
                 </Route>
 
-                <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route element={<ProtectedRoute allowedRoles={['super_admin', 'sub_admin']} />}>
+                  <Route path="/admin" element={<SuperAdminLayout />}>
+                    <Route path="profile" element={<Profile />} />
+                    <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+                      <Route path="students" element={<StudentsPage />} />
+                    </Route>
+                  </Route>
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['sub_admin']} />}>
+                  <Route path="/sub-admin" element={<SubAdminLayout />}>
+                    <Route path="dashboard" element={<SubAdminDashboardPage />} />
+                    <Route path="students" element={<SubAdminStudentsPage />} />
+                    <Route path="admissions" element={<AdmissionsQueuePage />} />
+                    <Route path="trainers" element={<SubAdminTrainersPage />} />
+                    <Route path="batches" element={<SubAdminBatchesPage />} />
+                    <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
+                    <Route path="feedback" element={<SubAdminFeedbackPage />} />
+                    <Route path="alerts" element={<SubAdminAlertsPage />} />
+                    <Route path="audit-log" element={<SubAdminAuditLogPage />} />
+                  </Route>
+                </Route>
+
+                <Route path="*" element={<CatchAll />} />
               </Routes>
             </SocketProvider>
           </AuthProvider>
