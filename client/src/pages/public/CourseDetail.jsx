@@ -86,16 +86,13 @@ const CurriculumSection = ({ track }) => {
           titleClassName="te-display text-2xl sm:text-3xl font-bold text-neutral-900 mt-3"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {track.curriculum.map((mod, idx) => (
+          {track.curriculum.map((month, idx) => (
             <Card key={idx} className="p-6 bg-neutral-50/40 border border-neutral-100 rounded-xl">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="te-mono text-xs font-bold text-white bg-primary-900 w-7 h-7 flex items-center justify-center rounded-full shrink-0">
-                  {idx + 1}
-                </span>
-                <h3 className="te-display text-sm font-bold text-neutral-900">{mod.module}</h3>
-              </div>
-              <ul className="space-y-2 list-none p-0 m-0 pl-10">
-                {mod.topics.map((topic, tIdx) => (
+              <h3 className="te-display text-sm font-bold text-neutral-900 mb-3">
+                Month {month.monthNumber}: {month.title}
+              </h3>
+              <ul className="space-y-2 list-none p-0 m-0">
+                {month.topics.map((topic, tIdx) => (
                   <li key={tIdx} className="flex items-start gap-2 text-xs text-neutral-600 font-medium leading-relaxed">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#CEA45C" strokeWidth="3" className="mt-0.5 shrink-0"><polyline points="20 6 9 17 4 12" /></svg>
                     <span>{topic}</span>

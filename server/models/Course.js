@@ -1,8 +1,13 @@
 const mongoose = require('mongoose');
 
-const curriculumModuleSchema = new mongoose.Schema(
+// Month-by-month outline (replaced the old flat {module, topics} shape on
+// 2026-08-14 so the curriculum reads as an explicit monthly plan matching
+// the course's duration). monthNumber is positional (1-indexed) and kept in
+// sync with array order by the admin form and migration script.
+const curriculumMonthSchema = new mongoose.Schema(
   {
-    module: { type: String, required: true, trim: true },
+    monthNumber: { type: Number, required: true, min: 1 },
+    title: { type: String, required: true, trim: true },
     topics: { type: [String], default: [] },
   },
   { _id: false }
@@ -28,7 +33,7 @@ const courseSchema = new mongoose.Schema(
     tags: { type: String, trim: true, default: '' },
     roadmap: { type: [String], default: [] },
     tagline: { type: String, trim: true, default: '' },
-    curriculum: { type: [curriculumModuleSchema], default: [] },
+    curriculum: { type: [curriculumMonthSchema], default: [] },
     careerOutcomes: { type: [String], default: [] },
     idealFor: { type: String, trim: true, default: '' },
 
