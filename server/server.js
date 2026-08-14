@@ -27,6 +27,8 @@ const attendanceRequestRoutes = require('./routes/attendanceRequestRoutes');
 const studentAttendanceRoutes = require('./routes/studentAttendanceRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const reportsRoutes = require('./routes/reportsRoutes');
+const admissionRoutes = require('./routes/admissionRoutes');
+const attendanceSummaryRoutes = require('./routes/attendanceSummaryRoutes');
 const mlRoutes = require('./routes/mlRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const mapRoutes = require('./routes/mapRoutes');
@@ -35,6 +37,7 @@ const jobApplicationRoutes = require('./routes/jobApplicationRoutes');
 const publicDonationRoutes = require('./routes/publicDonationRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
 const donationRoutes = require('./routes/donationRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const app = express();
 
@@ -70,9 +73,12 @@ app.use('/api/admin/attendance-requests', attendanceRequestRoutes);
 app.use('/api/admin/student-attendance', studentAttendanceRoutes);
 app.use('/api/admin/audit-logs', auditLogRoutes);
 app.use('/api/admin/reports', reportsRoutes);
+app.use('/api/admin/admissions', admissionRoutes);
+app.use('/api/admin/attendance', attendanceSummaryRoutes);
 app.use('/api/admin/ml', mlRoutes);
 app.use('/api/admin/alerts', alertRoutes);
 app.use('/api/admin/map', mapRoutes);
+app.use('/api/admin/feedback', feedbackRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

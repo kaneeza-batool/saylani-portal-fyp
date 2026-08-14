@@ -11,6 +11,7 @@ const trainerSchema = new mongoose.Schema(
     employeeId: { type: String, required: true, unique: true, trim: true },
     course: { type: String, default: '', trim: true },
     city: { type: String, default: '', trim: true },
+    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', required: true, index: true },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
   },
   { timestamps: true }

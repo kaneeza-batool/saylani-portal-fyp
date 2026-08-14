@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import * as authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,16 +17,24 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const loggedInUser = await authService.login(email, password);
-    setUser(loggedInUser);
-    return loggedInUser;
-  }, []);
+  // React Query's cache is keyed by query params (e.g. ['students', {...}]),
+  // not by who's asking — without clearing it here, a campus-scoped user can
+  // see another user's cached, differently-scoped results for the same key.
+  const login = useCallback(
+    async (email, password) => {
+      queryClient.clear();
+      const loggedInUser = await authService.login(email, password);
+      setUser(loggedInUser);
+      return loggedInUser;
+    },
+    [queryClient]
+  );
 
   const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   const updateProfile = useCallback(async (payload) => {
     const updatedUser = await authService.updateMe(payload);

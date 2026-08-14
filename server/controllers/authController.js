@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Campus = require('../models/Campus');
+const { logAudit } = require('../utils/auditLogger');
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL = '7d';
@@ -26,13 +28,24 @@ function setAuthCookies(res, user) {
   res.cookie('refreshToken', signRefreshToken(user), { ...cookieOptions, maxAge: REFRESH_TOKEN_MAX_AGE_MS });
 }
 
-function toSafeUser(user) {
+// Async because campus_id needs a name attached for display (Profile page,
+// etc.) — req.user itself is left alone (a raw ObjectId there is load-
+// bearing: campusScope.js, checkPermission.js, and every campus-scoped
+// query build off req.user.campus_id being a bare id, not a populated doc),
+// this only shapes the outgoing JSON response.
+async function toSafeUser(user) {
+  let campus = user.campus_id || null;
+  if (campus && !campus.name) {
+    const doc = await Campus.findById(campus).select('name').lean();
+    if (doc) campus = { _id: doc._id, name: doc.name };
+  }
   return {
     id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
-    campus_id: user.campus_id,
+    campus_id: campus,
+    permissions: user.permissions,
     status: user.status,
     avatar_url: user.avatar_url,
   };
@@ -55,8 +68,16 @@ exports.register = async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email is already registered' });
 
     const user = await User.create({ name, email, password, role, campus_id });
+    logAudit({
+      actor: user,
+      action: 'create',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Registered ${user.role} "${user.name}"`,
+      resourceCampus: user.campus_id,
+    });
     setAuthCookies(res, user);
-    return res.status(201).json({ user: toSafeUser(user) });
+    return res.status(201).json({ user: await toSafeUser(user) });
   } catch (err) {
     return res.status(500).json({ message: 'Registration failed', error: err.message });
   }
@@ -78,7 +99,7 @@ exports.login = async (req, res) => {
     }
 
     setAuthCookies(res, user);
-    return res.status(200).json({ user: toSafeUser(user) });
+    return res.status(200).json({ user: await toSafeUser(user) });
   } catch (err) {
     return res.status(500).json({ message: 'Login failed', error: err.message });
   }
@@ -91,7 +112,7 @@ exports.logout = async (_req, res) => {
 };
 
 exports.getMe = async (req, res) => {
-  return res.status(200).json({ user: toSafeUser(req.user) });
+  return res.status(200).json({ user: await toSafeUser(req.user) });
 };
 
 // Powers the Settings page — a user updating their own name/email/password.
@@ -116,7 +137,15 @@ exports.updateMe = async (req, res) => {
     }
 
     await user.save();
-    return res.status(200).json({ user: toSafeUser(user) });
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Updated own profile "${user.name}"`,
+      resourceCampus: user.campus_id,
+    });
+    return res.status(200).json({ user: await toSafeUser(user) });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ message: 'Email is already in use' });
     if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });

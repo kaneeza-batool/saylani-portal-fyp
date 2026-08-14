@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
+import { getAdmissions } from '../services/admissionService';
 
 const ICON_PROPS = {
   width: 18,
@@ -22,7 +25,8 @@ export const NAV_ITEMS = [
   {
     id: 'dashboard',
     label: 'Dashboard',
-    to: '/admin/dashboard',
+    to: { super_admin: '/admin/dashboard', sub_admin: '/sub-admin/dashboard' },
+    roles: ['super_admin', 'sub_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -35,7 +39,9 @@ export const NAV_ITEMS = [
   {
     id: 'students',
     label: 'Students',
-    to: '/admin/students',
+    to: { super_admin: '/admin/students', sub_admin: '/sub-admin/students' },
+    roles: ['super_admin', 'sub_admin'],
+    permission: { module: 'STUDENT', action: 'read' },
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="9" cy="8" r="3" />
@@ -45,10 +51,109 @@ export const NAV_ITEMS = [
       </svg>
     ),
   },
+  // The five items below are Sub-Admin-only — real pages/backends land in
+  // later phases (see project notes), placeholders for now so the nav is
+  // fully clickable rather than dead-ending.
+  {
+    id: 'admissions-queue',
+    label: 'Admissions Queue',
+    to: '/sub-admin/admissions',
+    roles: ['sub_admin'],
+    permission: { module: 'ADMISSIONS', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 4h16v12H4z" />
+        <path d="M4 12h4l2 3h4l2-3h4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'trainers-sub',
+    label: 'Trainers',
+    to: '/sub-admin/trainers',
+    roles: ['sub_admin'],
+    permission: { module: 'TRAINER', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="9" cy="11" r="2" />
+        <path d="M6 16c0-1.7 1.5-3 3-3s3 1.3 3 3" />
+        <path d="M14 9h4M14 13h4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'batches-sub',
+    label: 'Batches',
+    to: '/sub-admin/batches',
+    roles: ['sub_admin'],
+    permission: { module: 'BATCH', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M12 3l9 5-9 5-9-5 9-5z" />
+        <path d="M3 13l9 5 9-5" />
+      </svg>
+    ),
+  },
+  {
+    id: 'attendance-reports-sub',
+    label: 'Attendance Reports',
+    to: '/sub-admin/attendance-reports',
+    roles: ['sub_admin'],
+    permission: { module: 'ATTENDANCE_VIEW', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M8 2v4M16 2v4" />
+        <path d="M8 14l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'feedback-sub',
+    label: 'Feedback',
+    to: '/sub-admin/feedback',
+    roles: ['sub_admin'],
+    permission: { module: 'FEEDBACK', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 4h16v12H8l-4 4z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'alerts-sub',
+    label: 'Alerts',
+    to: '/sub-admin/alerts',
+    roles: ['sub_admin'],
+    permission: { module: 'ALERTS', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
+      </svg>
+    ),
+  },
+  {
+    id: 'auditlog-sub',
+    label: 'Audit Log',
+    to: '/sub-admin/audit-log',
+    roles: ['sub_admin'],
+    permission: { module: 'AUDIT', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 6h16M4 12h16M4 18h10" />
+        <circle cx="19" cy="18" r="2.2" />
+      </svg>
+    ),
+  },
   {
     id: 'campuses',
     label: 'Campuses',
     to: '/admin/campuses',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M4 21V7l8-4 8 4v14" />
@@ -61,6 +166,7 @@ export const NAV_ITEMS = [
     id: 'subadmins',
     label: 'Sub-Admins',
     to: '/admin/subadmins',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
@@ -71,6 +177,7 @@ export const NAV_ITEMS = [
   {
     id: 'trainers',
     label: 'Trainers',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -96,6 +203,7 @@ export const NAV_ITEMS = [
     id: 'courses',
     label: 'Courses',
     to: '/admin/courses',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M4 5c2-1 4-1 6 0v14c-2-1-4-1-6 0V5z" />
@@ -106,6 +214,7 @@ export const NAV_ITEMS = [
   {
     id: 'attendance',
     label: 'Attendance',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="3" y="4" width="18" height="17" rx="2" />
@@ -123,6 +232,7 @@ export const NAV_ITEMS = [
   {
     id: 'administration',
     label: 'Administration',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -136,6 +246,7 @@ export const NAV_ITEMS = [
     id: 'quiz',
     label: 'Quiz Oversight',
     to: '/admin/quiz',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="5" y="3" width="14" height="18" rx="2" />
@@ -149,6 +260,7 @@ export const NAV_ITEMS = [
     id: 'employers',
     label: 'Employers',
     to: '/admin/employers',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="3" y="8" width="18" height="12" rx="2" />
@@ -159,6 +271,7 @@ export const NAV_ITEMS = [
   {
     id: 'jobportal',
     label: 'Job Portal',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="12" cy="12" r="8" />
@@ -173,6 +286,7 @@ export const NAV_ITEMS = [
   {
     id: 'donorportal',
     label: 'Donor Portal',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
@@ -187,6 +301,7 @@ export const NAV_ITEMS = [
     id: 'reports',
     label: 'Reports',
     to: '/admin/reports',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
@@ -197,6 +312,7 @@ export const NAV_ITEMS = [
     id: 'auditlog',
     label: 'Audit Log',
     to: '/admin/auditlog',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M4 6h16M4 12h16M4 18h10" />
@@ -208,6 +324,7 @@ export const NAV_ITEMS = [
     id: 'updation',
     label: 'Updation',
     to: '/admin/updation',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M12 20h9" />
@@ -219,6 +336,7 @@ export const NAV_ITEMS = [
     id: 'settings',
     label: 'Settings',
     to: '/admin/settings',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="12" cy="12" r="3" />
@@ -230,6 +348,7 @@ export const NAV_ITEMS = [
     id: 'insights',
     label: 'AI Insights',
     to: '/admin/insights',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M12 2a7 7 0 0 0-4 12.7V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.3A7 7 0 0 0 12 2z" />
@@ -241,6 +360,7 @@ export const NAV_ITEMS = [
     id: 'campusmap',
     label: 'Campus Map',
     to: '/admin/campus-map',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" />
@@ -252,6 +372,7 @@ export const NAV_ITEMS = [
     id: 'alerts',
     label: 'Alerts',
     to: '/admin/alerts',
+    roles: ['super_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -264,6 +385,7 @@ export const NAV_ITEMS = [
     id: 'profile',
     label: 'Profile',
     to: '/admin/profile',
+    roles: ['super_admin', 'sub_admin'],
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="12" cy="8" r="4" />
@@ -274,14 +396,56 @@ export const NAV_ITEMS = [
 ];
 
 // Flat path -> label lookup, used by TopBar for the view title (walks every
-// depth so nested leaves like "Mark Attendance" resolve too).
+// depth so nested leaves like "Mark Attendance" resolve too). `to` can be a
+// plain path or a { role: path } map (items whose destination differs by
+// portal, e.g. Dashboard) — register every path it contains either way.
 export const NAV_LOOKUP = (function flatten(items, acc = {}) {
   for (const item of items) {
-    if (item.to) acc[item.to] = item.label;
+    if (typeof item.to === 'string') acc[item.to] = item.label;
+    else if (item.to) {
+      for (const path of Object.values(item.to)) acc[path] = item.label;
+    }
     if (item.children) flatten(item.children, acc);
   }
   return acc;
 })(NAV_ITEMS);
+
+// A role sees an item only if it's listed in `roles`; if the item also
+// carries a `permission`, that's an additional per-user gate — except for
+// super_admin, which bypasses permission checks entirely (same rule as
+// middleware/checkPermission.js on the backend).
+function isItemVisible(item, user) {
+  if (item.roles && !item.roles.includes(user.role)) return false;
+  if (item.permission && user.role !== 'super_admin') {
+    return user.permissions?.[item.permission.module]?.[item.permission.action] === true;
+  }
+  return true;
+}
+
+function resolveTo(to, role) {
+  if (!to || typeof to === 'string') return to;
+  return to[role] ?? null;
+}
+
+// Filters the tree to what `user` can see and flattens any per-role `to`
+// map down to the single path that applies to them, so the rendering
+// components below never need to know roles/permissions exist.
+function resolveNavItems(items, user) {
+  return items.reduce((acc, item) => {
+    if (!isItemVisible(item, user)) return acc;
+    const resolved = { ...item, to: resolveTo(item.to, user.role) };
+    if (item.children) resolved.children = resolveNavItems(item.children, user);
+    acc.push(resolved);
+    return acc;
+  }, []);
+}
+
+function roleLabel(role) {
+  return (role || '')
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
 
 // Every group id whose subtree contains `pathname` — used to auto-expand
 // the sidebar to the current route on load/navigation.
@@ -367,7 +531,10 @@ function NavLeaf({ item, depth }) {
       {depth === 0 && item.icon && (
         <span className="w-[18px] h-[18px] shrink-0 flex items-center justify-center">{item.icon}</span>
       )}
-      {item.label}
+      <span className="flex-1 truncate">{item.label}</span>
+      {item.badge > 0 && (
+        <span className="text-badge px-1.5 py-0.5 rounded-pill bg-warning-bg text-warning-text shrink-0">{item.badge}</span>
+      )}
     </NavLink>
   );
 }
@@ -380,13 +547,37 @@ function NavNode({ item, depth, openGroups, onToggle }) {
 }
 
 export default function Sidebar() {
+  const { user } = useAuth();
   const location = useLocation();
-  const [openGroups, setOpenGroups] = useState(() => new Set(findActiveAncestors(NAV_ITEMS, location.pathname) ?? []));
+  const visibleItems = useMemo(() => resolveNavItems(NAV_ITEMS, user ?? { role: null, permissions: {} }), [user]);
+
+  // Same queryKey + args as sub-admin/DashboardPage.jsx's admissions query
+  // (['admissions'], limit: 5) — React Query dedupes by key, so whichever of
+  // the two mounts first fetches and both share the cached result; this
+  // component never fires its own separate request when Dashboard is also
+  // on screen. `enabled` is gated on the nav item actually being visible
+  // (role + ADMISSIONS:read permission, via resolveNavItems above) rather
+  // than just role, so it doesn't fetch for a sub_admin who lacks the
+  // permission either.
+  const hasAdmissionsItem = visibleItems.some((item) => item.id === 'admissions-queue');
+  const pendingAdmissions = useQuery({
+    queryKey: ['admissions'],
+    queryFn: () => getAdmissions({ limit: 5 }),
+    enabled: hasAdmissionsItem,
+  });
+  const itemsWithBadges = useMemo(() => {
+    if (!hasAdmissionsItem) return visibleItems;
+    return visibleItems.map((item) =>
+      item.id === 'admissions-queue' ? { ...item, badge: pendingAdmissions.data?.total } : item
+    );
+  }, [visibleItems, hasAdmissionsItem, pendingAdmissions.data?.total]);
+
+  const [openGroups, setOpenGroups] = useState(() => new Set(findActiveAncestors(visibleItems, location.pathname) ?? []));
 
   // Keep whichever group holds the current route expanded as navigation
   // happens, without collapsing groups the user opened manually.
   useEffect(() => {
-    const ancestors = findActiveAncestors(NAV_ITEMS, location.pathname);
+    const ancestors = findActiveAncestors(visibleItems, location.pathname);
     if (!ancestors || ancestors.length === 0) return;
     setOpenGroups((prev) => {
       const next = new Set(prev);
@@ -399,7 +590,7 @@ export default function Sidebar() {
       }
       return changed ? next : prev;
     });
-  }, [location.pathname]);
+  }, [location.pathname, visibleItems]);
 
   const toggleGroup = (id) => {
     setOpenGroups((prev) => {
@@ -418,11 +609,11 @@ export default function Sidebar() {
         </div>
         <div>
           <div className="font-heading font-bold text-brand text-gold-400 tracking-wide">TITAN</div>
-          <div className="text-[11px] font-medium text-titan-sidebar-text/80">Super Admin</div>
+          <div className="text-[11px] font-medium text-titan-sidebar-text/80">{roleLabel(user?.role)}</div>
         </div>
       </div>
 
-      {NAV_ITEMS.map((item) => (
+      {itemsWithBadges.map((item) => (
         <NavNode key={item.id} item={item} depth={0} openGroups={openGroups} onToggle={toggleGroup} />
       ))}
     </div>

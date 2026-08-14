@@ -10,7 +10,7 @@ const slotSchema = new mongoose.Schema(
     schedule: { type: String, required: true, trim: true }, // e.g. "Sat 11:00 AM - 01:00 PM | Wed 11:00 AM - 01:00 PM"
     trainer: { type: String, required: true, trim: true },
     course: { type: String, required: true, trim: true },
-    campus: { type: String, required: true, trim: true },
+    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', required: true, index: true },
     seatsTotal: { type: Number, required: true, min: 1 },
     seatsFilled: { type: Number, default: 0, min: 0 },
     gender: { type: String, enum: ['Male', 'Female', 'Mixed'], default: 'Mixed' },

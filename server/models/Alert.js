@@ -9,6 +9,12 @@ const alertSchema = new mongoose.Schema(
     severity: { type: String, enum: ['warning', 'critical'], default: 'warning' },
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
     studentName: { type: String, required: true },
+    // Resolved server-side from student.campus at creation time (see
+    // alertEngine.js) — never trust a campus passed in, there's no
+    // user-facing create form for Alert anyway. Real ObjectId ref, so
+    // req.campusFilter is safe to use directly against this field (unlike
+    // StudentAttendance.campus, which is a cached name string).
+    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', required: true, index: true },
     message: { type: String, required: true },
     status: { type: String, enum: ['active', 'resolved'], default: 'active' },
   },

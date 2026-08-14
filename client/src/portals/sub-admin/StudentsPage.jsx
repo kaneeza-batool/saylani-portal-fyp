@@ -1,0 +1,255 @@
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { fetchStudents, updateStudent } from '../../services/studentService';
+import StudentFormModal from '../../components/StudentFormModal';
+
+// Reuses super-admin/StudentsPage.jsx's table shell (same GRID_COLS
+// approach, same classes, same STATUS_STYLE/PAYMENT_STYLE) but trimmed to
+// what a campus manager actually has: no Campus column/filter (a sub_admin
+// only ever has one campus — see req.campusFilter server-side), no Add/
+// Delete (POST and DELETE /admin/students are super_admin-only), Edit only
+// (PATCH already allows sub_admin + STUDENT:update). Batch column is new
+// (Task A). No ID-card/export actions — not part of this page's scope.
+//
+// STATUS_FILTERS deliberately excludes 'pending' and 'rejected' — those are
+// admissions applicants, not roster members (see AdmissionsQueuePage.jsx),
+// and `roster: true` on the fetchStudents call below enforces the same
+// exclusion server-side for the default "All" view too (studentController's
+// getStudents: roster=true adds `status: { $nin: ['pending','rejected'] }`).
+
+const STATUS_FILTERS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'enrolled', label: 'Enrolled' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'dropout', label: 'Dropout' },
+];
+
+const STATUS_STYLE = {
+  enrolled: { label: 'Enrolled', className: 'bg-info-bg text-info-text' },
+  completed: { label: 'Completed', className: 'bg-success-bg text-success-text' },
+  dropout: { label: 'Dropout', className: 'bg-danger-50 text-danger-600' },
+};
+
+const PAYMENT_STYLE = {
+  paid: { label: 'Paid', className: 'bg-success-bg text-success-text' },
+  pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
+  overdue: { label: 'Overdue', className: 'bg-danger-50 text-danger-600' },
+};
+
+function initials(name) {
+  return (
+    (name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
+
+const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
+const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
+const GRID_COLS = 'grid-cols-[1.6fr_1.1fr_1.2fr_1.3fr_1fr_1fr_0.6fr]';
+
+function RowSkeleton() {
+  return (
+    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded bg-neutral-100 animate-pulse shrink-0" />
+        <div className="flex flex-col gap-1.5 w-full">
+          <div className="h-3 w-2/3 bg-neutral-100 rounded animate-pulse" />
+          <div className="h-2.5 w-1/2 bg-neutral-100 rounded animate-pulse" />
+        </div>
+      </div>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
+      ))}
+    </div>
+  );
+}
+
+export default function StudentsPage() {
+  const queryClient = useQueryClient();
+
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
+  const [page, setPage] = useState(1);
+  const [editTarget, setEditTarget] = useState(null);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearch(searchInput.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  useEffect(() => setPage(1), [search, status]);
+
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+    queryKey: ['sub-admin-students', { search, status, page }],
+    queryFn: () => fetchStudents({ search, status, page, limit: 8, roster: true }),
+    keepPreviousData: true,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateStudent(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-students'] });
+      setEditTarget(null);
+      setFormError('');
+    },
+    onError: (err) => setFormError(err.response?.data?.message || 'Failed to update student.'),
+  });
+
+  const openEdit = (student) => {
+    setFormError('');
+    setEditTarget(student);
+  };
+  const closeModal = () => setEditTarget(null);
+  const handleSubmit = (values) => updateMutation.mutate({ id: editTarget._id, payload: values });
+
+  const students = data?.students ?? [];
+  const pages = data?.pages ?? 1;
+  const total = data?.total ?? 0;
+
+  return (
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-gold-500 transition-colors">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search students..."
+              className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
+            />
+          </div>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
+          >
+            {STATUS_FILTERS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
+        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+          {['Student', 'Phone', 'Course', 'Batch', 'Status', 'Payment'].map((h) => (
+            <span key={h} className="text-overline uppercase text-neutral-500">
+              {h}
+            </span>
+          ))}
+          <span className="text-overline uppercase text-neutral-500 text-right">Edit</span>
+        </div>
+
+        {isLoading ? (
+          [0, 1, 2, 3, 4, 5].map((i) => <RowSkeleton key={i} />)
+        ) : isError ? (
+          <div className="py-14 px-5 text-center text-danger-600 text-body-sm flex flex-col items-center gap-3">
+            <span>Couldn't load students. Please try again.</span>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="border-none bg-gold-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-gold-600"
+            >
+              Retry
+            </button>
+          </div>
+        ) : students.length === 0 ? (
+          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No students match this search.</div>
+        ) : (
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+            {students.map((s) => {
+              const statusStyle = STATUS_STYLE[s.status] ?? STATUS_STYLE.enrolled;
+              const paymentStyle = PAYMENT_STYLE[s.payment] ?? PAYMENT_STYLE.pending;
+              return (
+                <motion.div
+                  key={s._id}
+                  variants={fadeInUp}
+                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">
+                      {initials(s.name)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-body-sm font-semibold text-neutral-900 truncate">{s.name}</div>
+                      <div className="text-badge text-neutral-400 font-normal">{s.cnic}</div>
+                    </div>
+                  </div>
+                  <span className="text-body-sm text-neutral-600">{s.phone}</span>
+                  <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
+                  <span className="text-body-sm text-neutral-600 truncate">{s.batch?.schedule || '—'}</span>
+                  <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}>{statusStyle.label}</span>
+                  <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${paymentStyle.className}`}>{paymentStyle.label}</span>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(s)}
+                      title="Edit"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                      </svg>
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </motion.div>
+
+      {!isLoading && !isError && total > 0 && (
+        <div className="flex items-center justify-between text-body-sm text-neutral-400">
+          <span>
+            {total} student{total === 1 ? '' : 's'} · Page {page} of {pages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={page >= pages}
+              onClick={() => setPage((p) => Math.min(pages, p + 1))}
+              className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      <StudentFormModal
+        open={!!editTarget}
+        mode="edit"
+        initialValues={editTarget}
+        onClose={closeModal}
+        onSubmit={handleSubmit}
+        submitting={updateMutation.isPending}
+        error={formError}
+      />
+    </motion.div>
+  );
+}

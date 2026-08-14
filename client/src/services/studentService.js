@@ -1,7 +1,7 @@
 import api from './authService';
 
-export async function fetchStudents({ search = '', status = 'all', page = 1, limit = 10 } = {}) {
-  const { data } = await api.get('/admin/students', { params: { search, status, page, limit } });
+export async function fetchStudents({ search = '', status = 'all', page = 1, limit = 10, roster } = {}) {
+  const { data } = await api.get('/admin/students', { params: { search, status, page, limit, roster } });
   return data;
 }
 

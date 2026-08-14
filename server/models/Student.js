@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
-// Matches the fixed dropdown options from the design file's COURSES/CAMPUSES
-// constants. Plain string enums, not refs — there's no Course/Campus
-// collection in this codebase yet to point at.
+// Matches the fixed dropdown options from the design file's COURSES
+// constant. Plain string enum, not a ref — there's no Course collection
+// in this codebase yet to point at. campus, below, is a ref (see Campus.js).
 const COURSES = [
   'Web Development',
   'AI & Data Science',
@@ -13,16 +13,7 @@ const COURSES = [
   'Cybersecurity Fundamentals',
 ];
 
-const CAMPUSES = [
-  'Karachi Gulshan Campus',
-  'Lahore Model Town Campus',
-  'Sukkur TITAN Campus',
-  'Islamabad G-9 Campus',
-  'Multan Campus',
-  'Peshawar Campus',
-];
-
-const STATUSES = ['enrolled', 'pending', 'completed', 'dropout'];
+const STATUSES = ['enrolled', 'pending', 'completed', 'dropout', 'rejected'];
 const PAYMENT_STATUSES = ['paid', 'pending', 'overdue'];
 
 const studentSchema = new mongoose.Schema(
@@ -40,7 +31,10 @@ const studentSchema = new mongoose.Schema(
     phone: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
     course: { type: String, required: true, enum: COURSES },
-    campus: { type: String, required: true, enum: CAMPUSES },
+    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', required: true, index: true },
+    // Not required — existing records predate this field, and applicants
+    // (status 'pending'/'rejected') are never placed in a batch at all.
+    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot', index: true },
     status: { type: String, enum: STATUSES, default: 'enrolled' },
     payment: { type: String, enum: PAYMENT_STATUSES, default: 'pending' },
     address: { type: String, default: '', trim: true },
@@ -59,7 +53,6 @@ studentSchema.pre('validate', function assignRollNumber() {
 
 const Student = mongoose.model('Student', studentSchema);
 Student.COURSES = COURSES;
-Student.CAMPUSES = CAMPUSES;
 Student.STATUSES = STATUSES;
 Student.PAYMENT_STATUSES = PAYMENT_STATUSES;
 

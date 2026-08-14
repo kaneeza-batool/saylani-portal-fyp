@@ -1,6 +1,7 @@
 const AttendanceRequest = require('../models/AttendanceRequest');
 const TrainerAttendance = require('../models/TrainerAttendance');
 const { sendMail } = require('../utils/mailer');
+const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
 
 exports.getRequests = async (req, res) => {
   try {
@@ -45,6 +46,15 @@ exports.createRequest = async (req, res) => {
       reason,
     });
 
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'AttendanceRequest',
+      resourceId: request._id,
+      summary: `Requested attendance correction for "${request.trainerName}"`,
+      resourceCampus: await resolveCampusIdByName(request.campus),
+    });
+
     return res.status(201).json({ item: request });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to create request', error: err.message });
@@ -71,6 +81,15 @@ exports.resolveRequest = async (req, res) => {
     }
 
     notifyTrainer(request, status);
+
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'AttendanceRequest',
+      resourceId: request._id,
+      summary: `${status === 'approved' ? 'Approved' : 'Rejected'} attendance correction for "${request.trainerName}"`,
+      resourceCampus: await resolveCampusIdByName(request.campus),
+    });
 
     return res.status(200).json({ item: request });
   } catch (err) {
