@@ -2,7 +2,6 @@ require('dotenv').config();
 require('./fixDns');
 const mongoose = require('mongoose');
 const User = require('../models/User');
-
 const EMAIL = 'admin@titan.com';
 const PASSWORD = 'Admin123!';
 

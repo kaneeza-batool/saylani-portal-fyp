@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('./utils/fixDns');
 
+const path = require('path');
 const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
@@ -29,6 +30,11 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const mlRoutes = require('./routes/mlRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const mapRoutes = require('./routes/mapRoutes');
+const publicJobRoutes = require('./routes/publicJobRoutes');
+const jobApplicationRoutes = require('./routes/jobApplicationRoutes');
+const publicDonationRoutes = require('./routes/publicDonationRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');
+const donationRoutes = require('./routes/donationRoutes');
 
 const app = express();
 
@@ -38,10 +44,14 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/public', publicJobRoutes);
+app.use('/api/public', publicDonationRoutes);
 app.use('/api/admin', dashboardRoutes);
 app.use('/api/admin/students', studentRoutes);
 app.use('/api/admin/campuses', campusRoutes);
@@ -52,6 +62,9 @@ app.use('/api/admin/subadmins', subAdminRoutes);
 app.use('/api/admin/slots', slotRoutes);
 app.use('/api/admin/quizzes', quizRoutes);
 app.use('/api/admin/jobs', jobRoutes);
+app.use('/api/admin/job-applications', jobApplicationRoutes);
+app.use('/api/admin/campaigns', campaignRoutes);
+app.use('/api/admin/donations', donationRoutes);
 app.use('/api/admin/trainer-attendance', trainerAttendanceRoutes);
 app.use('/api/admin/attendance-requests', attendanceRequestRoutes);
 app.use('/api/admin/student-attendance', studentAttendanceRoutes);

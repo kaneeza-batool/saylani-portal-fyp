@@ -159,13 +159,29 @@ export const NAV_ITEMS = [
   {
     id: 'jobportal',
     label: 'Job Portal',
-    to: '/admin/jobportal',
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="12" cy="12" r="8" />
         <circle cx="12" cy="12" r="4" />
       </svg>
     ),
+    children: [
+      { id: 'jobportal-jobs', label: 'Jobs', to: '/admin/jobportal' },
+      { id: 'jobportal-applications', label: 'Applications', to: '/admin/jobportal/applications' },
+    ],
+  },
+  {
+    id: 'donorportal',
+    label: 'Donor Portal',
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+      </svg>
+    ),
+    children: [
+      { id: 'donorportal-campaigns', label: 'Campaigns', to: '/admin/donorportal/campaigns' },
+      { id: 'donorportal-donations', label: 'Donations', to: '/admin/donorportal/donations' },
+    ],
   },
   {
     id: 'reports',

@@ -10,6 +10,9 @@ node_modules/
 dist/
 build/
 
+# User-uploaded files (resumes, photos) — local disk storage, not source
+server/uploads/
+
 # Logs
 logs/
 *.log
