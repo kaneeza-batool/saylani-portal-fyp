@@ -42,7 +42,11 @@ async function logAudit({ actor, action, resourceType, resourceId, summary, reso
       campus: actor?.campus_id || resourceCampus || null,
     });
     const io = getIO();
-    if (io) io.emit('audit:new', entry);
+    if (io) {
+      const rooms = ['super-admins'];
+      if (entry.campus) rooms.push(`campus:${entry.campus}`);
+      io.to(rooms).emit('audit:new', entry);
+    }
   } catch (err) {
     console.error('audit log write failed:', err.message);
   }
