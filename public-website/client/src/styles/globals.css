@@ -1,0 +1,73 @@
+@import './variables.css';
+@import './animations.css';
+
+body {
+  background-color: var(--color-neutral-50);
+  color: var(--color-neutral-900);
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Display/mono/body type utilities (Sora / JetBrains Mono / Inter,
+   loaded once via <link> in index.html) */
+.te-display { font-family: var(--font-heading), sans-serif; }
+.te-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+.te-body { font-family: var(--font-body), sans-serif; }
+
+/* Premium Global Card Utility */
+.titan-card-premium {
+  background-color: #ffffff;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: var(--radius-standard);
+  transition: var(--transition-smooth);
+}
+
+.titan-card-premium:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary-800);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+} @keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Premium Tech Border and Shadow for Competition Quality */
+.titan-card-enhanced {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(19, 35, 69, 0.12) !important;
+  box-shadow: 0 4px 20px -2px rgba(19, 35, 69, 0.05), 0 2px 6px -1px rgba(19, 35, 69, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.titan-card-enhanced:hover {
+  border-color: var(--color-accent-500) !important;
+  box-shadow: 0 20px 25px -5px rgba(206, 164, 92, 0.1), 0 10px 10px -5px rgba(206, 164, 92, 0.04);
+  transform: translateY(-4px);
+}
+/* Custom Floating Animations for Subtle Outlined SVGs */
+@keyframes techFloat {
+  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.7; }
+  50% { transform: translateY(-8px) scale(1.03); opacity: 0.9; }
+}
+
+.animate-tech-float {
+  animation: techFloat 5s ease-in-out infinite;
+}
+
+/* AOS-like Scroll Invariants */
+.aos-hidden {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aos-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
