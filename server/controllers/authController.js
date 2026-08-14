@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { logAudit } = require('../utils/auditLogger');
 
 const ACCESS_TOKEN_TTL = '15m';
 const REFRESH_TOKEN_TTL = '7d';
@@ -56,6 +57,14 @@ exports.register = async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email is already registered' });
 
     const user = await User.create({ name, email, password, role, campus_id });
+    logAudit({
+      actor: user,
+      action: 'create',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Registered ${user.role} "${user.name}"`,
+      resourceCampus: user.campus_id,
+    });
     setAuthCookies(res, user);
     return res.status(201).json({ user: toSafeUser(user) });
   } catch (err) {
@@ -117,6 +126,14 @@ exports.updateMe = async (req, res) => {
     }
 
     await user.save();
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Updated own profile "${user.name}"`,
+      resourceCampus: user.campus_id,
+    });
     return res.status(200).json({ user: toSafeUser(user) });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ message: 'Email is already in use' });

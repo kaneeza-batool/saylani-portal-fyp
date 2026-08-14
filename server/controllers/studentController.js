@@ -115,6 +115,7 @@ exports.createStudent = async (req, res) => {
       resourceType: 'Student',
       resourceId: student._id,
       summary: `Created student "${student.name}"`,
+      resourceCampus: student.campus,
     });
     return res.status(201).json({ student });
   } catch (err) {
@@ -167,6 +168,7 @@ exports.updateStudent = async (req, res) => {
       resourceType: 'Student',
       resourceId: student._id,
       summary: `Updated student "${student.name}"`,
+      resourceCampus: student.campus,
     });
     return res.status(200).json({ student });
   } catch (err) {
@@ -190,6 +192,7 @@ exports.deleteStudent = async (req, res) => {
       resourceType: 'Student',
       resourceId: student._id,
       summary: `Deleted student "${student.name}"`,
+      resourceCampus: student.campus,
     });
     return res.status(200).json({ message: 'Student deleted' });
   } catch (err) {

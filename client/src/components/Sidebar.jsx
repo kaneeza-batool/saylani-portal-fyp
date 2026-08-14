@@ -137,6 +137,19 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'auditlog-sub',
+    label: 'Audit Log',
+    to: '/sub-admin/audit-log',
+    roles: ['sub_admin'],
+    permission: { module: 'AUDIT', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 6h16M4 12h16M4 18h10" />
+        <circle cx="19" cy="18" r="2.2" />
+      </svg>
+    ),
+  },
+  {
     id: 'campuses',
     label: 'Campuses',
     to: '/admin/campuses',

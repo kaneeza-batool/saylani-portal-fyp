@@ -6,10 +6,23 @@
 // sub-admins' password handling) intentionally stay as their own
 // hand-written controllers rather than being forced through this.
 
-const { logAudit } = require('./auditLogger');
+const { logAudit, resolveCampusIdByName } = require('./auditLogger');
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// The resource whose own campus should surface on its audit entry when the
+// actor has none (see auditLogger.js's resolution order). A Campus record's
+// "campus" is itself (its own _id) — Trainer/Slot carry a real ObjectId ref,
+// Quiz only a free-text campus name String that needs resolving, and
+// Course/Employer/Job carry no campus at all (genuinely global resources),
+// so this correctly returns null for them.
+async function resolveResourceCampus(resourceType, item) {
+  if (resourceType === 'Campus') return item._id;
+  const c = item.campus;
+  if (!c) return null;
+  return typeof c === 'string' ? resolveCampusIdByName(c) : c;
 }
 
 function buildCrudController(
@@ -90,6 +103,7 @@ function buildCrudController(
           resourceType,
           resourceId: item._id,
           summary: `Created ${resourceType.toLowerCase()} "${label(item)}"`,
+          resourceCampus: await resolveResourceCampus(resourceType, item),
         });
         return res.status(201).json({ item });
       } catch (err) {
@@ -113,6 +127,7 @@ function buildCrudController(
           resourceType,
           resourceId: item._id,
           summary: `Updated ${resourceType.toLowerCase()} "${label(item)}"`,
+          resourceCampus: await resolveResourceCampus(resourceType, item),
         });
         return res.status(200).json({ item });
       } catch (err) {
@@ -132,6 +147,7 @@ function buildCrudController(
           resourceType,
           resourceId: item._id,
           summary: `Deleted ${resourceType.toLowerCase()} "${label(item)}"`,
+          resourceCampus: await resolveResourceCampus(resourceType, item),
         });
         return res.status(200).json({ message: 'Deleted' });
       } catch (err) {

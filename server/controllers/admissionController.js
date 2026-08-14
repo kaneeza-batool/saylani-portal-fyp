@@ -53,6 +53,7 @@ async function transitionAdmission(req, res, { toStatus, actionLabel }) {
       resourceType: 'Student',
       resourceId: student._id,
       summary: `${actionLabel} admission for "${student.name}"`,
+      resourceCampus: student.campus,
     });
 
     return res.status(200).json({ student });

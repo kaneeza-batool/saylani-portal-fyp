@@ -1,6 +1,7 @@
 const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
 const Campus = require('../models/Campus');
+const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
 
 function startOfToday() {
   return new Date(new Date().toDateString());
@@ -46,6 +47,15 @@ exports.markAttendance = async (req, res) => {
       status: status || 'present',
     });
 
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'StudentAttendance',
+      resourceId: record._id,
+      summary: `Marked "${record.studentName}" ${record.status}`,
+      resourceCampus: await resolveCampusIdByName(record.campus),
+    });
+
     return res.status(201).json({ record });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
@@ -77,6 +87,29 @@ exports.markMultiple = async (req, res) => {
       }));
 
     const created = toCreate.length ? await StudentAttendance.insertMany(toCreate) : [];
+
+    // One audit entry for the whole batch, not one per student — this is a
+    // single click marking up to a class-sized roster, and 40 near-identical
+    // "marked present" rows would drown out everything else in the log
+    // without adding information a human would act on differently than the
+    // rollup does. resourceId is null (no single resource represents the
+    // batch); resourceCampus is only set when every created record shares
+    // one campus — a genuinely mixed-campus batch has no single campus to
+    // attribute it to, so it stays visible to super_admin only (the sole
+    // role allowed to call this route) rather than showing under a campus
+    // it wasn't fully about.
+    if (created.length > 0) {
+      const campusNames = new Set(created.map((r) => r.campus).filter(Boolean));
+      const resourceCampus = campusNames.size === 1 ? await resolveCampusIdByName([...campusNames][0]) : null;
+      logAudit({
+        actor: req.user,
+        action: 'create',
+        resourceType: 'StudentAttendance',
+        resourceId: null,
+        summary: `Marked ${created.length} student${created.length === 1 ? '' : 's'} ${status || 'present'} (batch)`,
+        resourceCampus,
+      });
+    }
 
     return res.status(201).json({
       marked: created.length,

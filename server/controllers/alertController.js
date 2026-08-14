@@ -1,4 +1,5 @@
 const Alert = require('../models/Alert');
+const { logAudit } = require('../utils/auditLogger');
 
 // Alert.campus is a real ObjectId ref (see model comment), so
 // req.campusFilter from campusScope is safe to use directly here — for
@@ -19,6 +20,14 @@ exports.resolveAlert = async (req, res) => {
   try {
     const alert = await Alert.findByIdAndUpdate(req.params.id, { status: 'resolved' }, { new: true });
     if (!alert) return res.status(404).json({ message: 'Alert not found' });
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'Alert',
+      resourceId: alert._id,
+      summary: `Resolved ${alert.type} alert for "${alert.studentName}"`,
+      resourceCampus: alert.campus,
+    });
     return res.status(200).json({ item: alert });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to resolve alert', error: err.message });
