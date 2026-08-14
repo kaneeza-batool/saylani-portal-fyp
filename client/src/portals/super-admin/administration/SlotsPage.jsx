@@ -171,7 +171,7 @@ export default function SlotsPage() {
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{s.schedule}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.trainer}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{s.campus}</span>
+                  <span className="text-body-sm text-neutral-600 truncate">{s.campus?.name}</span>
                   <span className="text-body-sm text-neutral-600">
                     {s.seatsFilled}/{s.seatsTotal}
                   </span>

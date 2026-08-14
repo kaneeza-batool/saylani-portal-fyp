@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import SlideOverPanel from './SlideOverPanel';
 import { inputClass, labelClass } from './formFieldStyles';
+import { fetchCampuses } from '../services/campusService';
 
 const EMPTY_FORM = {
   schedule: '',
@@ -15,10 +16,27 @@ const EMPTY_FORM = {
 
 export default function SlotFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
   const [form, setForm] = useState(EMPTY_FORM);
+  const [campuses, setCampuses] = useState([]);
 
   useEffect(() => {
-    if (open) setForm(initialValues ? { ...EMPTY_FORM, ...initialValues } : EMPTY_FORM);
-  }, [open, initialValues]);
+    if (!open) return;
+    fetchCampuses({ status: 'active', limit: 100 })
+      .then((data) => setCampuses(data.items ?? []))
+      .catch(() => setCampuses([]));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    // initialValues.campus comes populated ({_id, name, city}) from the
+    // slots list endpoint — normalize to the plain id the <select> and
+    // submit payload expect, same as StudentFormModal/TrainerFormModal.
+    const editCampus = initialValues?.campus?._id ?? initialValues?.campus ?? '';
+    setForm(
+      initialValues
+        ? { ...EMPTY_FORM, ...initialValues, campus: editCampus }
+        : { ...EMPTY_FORM, campus: campuses[0]?._id ?? '' }
+    );
+  }, [open, initialValues, campuses]);
 
   const setField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -72,7 +90,22 @@ export default function SlotFormModal({ open, mode = 'add', initialValues, onClo
           <label className={labelClass} htmlFor="slot-campus">
             Campus
           </label>
-          <input id="slot-campus" type="text" required value={form.campus} onChange={setField('campus')} className={inputClass} />
+          <select
+            id="slot-campus"
+            required
+            value={form.campus}
+            onChange={setField('campus')}
+            className={`${inputClass} bg-surface`}
+          >
+            <option value="" disabled>
+              Select a campus
+            </option>
+            {campuses.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex gap-3">

@@ -109,6 +109,7 @@ function buildCrudController(
       } catch (err) {
         if (err.code === 11000) return res.status(409).json({ message: 'A record with this value already exists' });
         if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
+        if (err.name === 'CastError') return res.status(400).json({ message: `Invalid ${err.path}: "${err.value}"` });
         return res.status(500).json({ message: 'Failed to create record', error: err.message });
       }
     },
@@ -133,6 +134,7 @@ function buildCrudController(
       } catch (err) {
         if (err.code === 11000) return res.status(409).json({ message: 'A record with this value already exists' });
         if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
+        if (err.name === 'CastError') return res.status(400).json({ message: `Invalid ${err.path}: "${err.value}"` });
         return res.status(500).json({ message: 'Failed to update record', error: err.message });
       }
     },
