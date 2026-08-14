@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import Modal from './Modal';
 import { submitFeedback } from '../services/feedbackService';
-import { ImageIcon } from './icons';
+import { ImageIcon, CheckCircleIcon } from './icons';
 
 const inputClass =
   'w-full rounded-md border border-neutral-300 px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500';
@@ -100,7 +100,7 @@ export default function FeedbackModal({ open, onClose }) {
     >
       {submitted ? (
         <div data-testid="feedback-success" className="flex flex-col items-center text-center gap-3 py-6">
-          <span className="text-4xl">✅</span>
+          <CheckCircleIcon className="w-10 h-10 text-success-text" />
           <p className="font-heading text-lg font-bold text-neutral-900">Thanks for your feedback!</p>
           <p className="text-sm text-neutral-500">
             We've received your {selectedLabel} report and will take a look.

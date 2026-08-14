@@ -4,17 +4,24 @@ import { useQuery } from '@tanstack/react-query';
 import { getFullLeaderboard } from '../services/leaderboardService';
 import { initialsOf } from '../components/Sidebar';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
-import { TrophyIcon } from '../components/icons';
+import { TrophyIcon, CrownIcon, MedalIcon } from '../components/icons';
 
+// Rank 1/2/3 share the same custom-icon family (Crown for the top spot,
+// Medal for 2nd/3rd) instead of medal emoji — tiered by the existing accent
+// shades rather than new gold/silver/bronze colors, so it stays within the
+// established token set.
 function RankBadge({ rank }) {
-  const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+  const tierBg = rank === 1 ? 'bg-accent-500' : rank === 2 ? 'bg-accent-400' : rank === 3 ? 'bg-accent-300' : 'bg-neutral-100';
+  const tierText = rank <= 3 ? 'text-primary-900' : 'text-neutral-600';
   return (
-    <span
-      className={`w-8 h-8 shrink-0 rounded-pill flex items-center justify-center text-sm font-bold ${
-        rank <= 3 ? 'bg-accent-500 text-primary-900' : 'bg-neutral-100 text-neutral-600'
-      }`}
-    >
-      {medal || rank}
+    <span className={`w-8 h-8 shrink-0 rounded-pill flex items-center justify-center text-sm font-bold ${tierBg} ${tierText}`}>
+      {rank === 1 ? (
+        <CrownIcon className="w-4.5 h-4.5" />
+      ) : rank <= 3 ? (
+        <MedalIcon className="w-4.5 h-4.5" />
+      ) : (
+        rank
+      )}
     </span>
   );
 }
@@ -131,7 +138,8 @@ export default function LeaderboardPage() {
                       )}
                       {s.rank === 1 && (
                         <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary-900 bg-accent-500 rounded-pill px-1.5 py-0.5 inline-flex items-center gap-1">
-                          👑 Champion of the Week
+                          <CrownIcon className="w-3 h-3" />
+                          Champion of the Week
                         </span>
                       )}
                     </p>

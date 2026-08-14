@@ -444,3 +444,25 @@ export function MailIcon(props) {
     </svg>
   );
 }
+
+export function CrownIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 18 L5 9 L8.5 13 L12 6 L15.5 13 L19 9 L20 18 Z" />
+      <circle cx="5" cy="9" r="0.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="6" r="0.6" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="9" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function MedalIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M8 3.5 5 10.5" />
+      <path d="M16 3.5 19 10.5" />
+      <circle cx="12" cy="15" r="5.5" />
+      <path d="m9.3 15 1.7 1.7 3.7-3.7" />
+    </svg>
+  );
+}

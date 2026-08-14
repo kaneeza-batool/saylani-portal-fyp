@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import logo from '/images/logo/titan-logo-clean.png';
 import { NAV_LOOKUP, initialsOf } from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useCourseId } from '../hooks/useCourseId';
@@ -153,11 +154,15 @@ export default function TopBar({ onMenuClick }) {
               <span key={i} className="flex items-center gap-1.5">
                 {i > 0 && <span>/</span>}
                 {crumb.to ? (
-                  <Link to={crumb.to} className="hover:text-neutral-600">
+                  <Link to={crumb.to} className="hover:text-neutral-600 inline-flex items-center gap-1">
+                    {i === 0 && <img src={logo} alt="" className="w-3.5 h-3.5 object-contain" />}
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className={i === crumbs.length - 1 ? 'text-neutral-500' : ''}>{crumb.label}</span>
+                  <span className={`inline-flex items-center gap-1 ${i === crumbs.length - 1 ? 'text-neutral-500' : ''}`}>
+                    {i === 0 && <img src={logo} alt="" className="w-3.5 h-3.5 object-contain" />}
+                    {crumb.label}
+                  </span>
                 )}
               </span>
             ))}
@@ -166,6 +171,11 @@ export default function TopBar({ onMenuClick }) {
             <h1 className="font-heading text-lg sm:text-2xl font-bold text-neutral-900 truncate">{pageTitle}</h1>
             <CourseSwitcher courseName={currentCourse?.name} courseId={courseId} courses={courses} />
           </div>
+          {/* Small deliberate flourish so the page header reads as TITAN's
+              own rather than a stock admin-template breadcrumb+title row —
+              echoes the gold border language used on Certificate/pass
+              moments, kept lightweight (no layout change). */}
+          <span className="block w-8 h-[3px] rounded-pill bg-accent-500 mt-1.5" />
         </div>
       </div>
 

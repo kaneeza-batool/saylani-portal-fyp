@@ -180,7 +180,7 @@ export default function CertificatePage() {
           className="relative w-full max-w-2xl overflow-hidden rounded-xl border-[3px] border-accent-500 bg-primary-900 text-white p-8 sm:p-12"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 90% 8%, rgba(208,163,91,0.25) 0%, rgba(208,163,91,0) 45%), repeating-linear-gradient(135deg, rgba(208,163,91,0.06) 0px, rgba(208,163,91,0.06) 1px, transparent 1px, transparent 13px)',
+              'radial-gradient(circle at 90% 8%, rgba(206,164,92,0.25) 0%, rgba(206,164,92,0) 45%), repeating-linear-gradient(135deg, rgba(206,164,92,0.06) 0px, rgba(206,164,92,0.06) 1px, transparent 1px, transparent 13px)',
           }}
         >
           <div className="flex items-center justify-between mb-8 sm:mb-10">
@@ -232,7 +232,7 @@ export default function CertificatePage() {
                 digital crop. Bigger modules + "H" (30% redundancy)
                 error correction make it reliably scannable in practice. */}
             <div className="bg-white rounded-lg p-2.5 shrink-0" data-testid="certificate-qr">
-              <QRCodeCanvas value={cert.verifyUrl} size={100} fgColor="#0F172F" bgColor="#FFFFFF" level="H" />
+              <QRCodeCanvas value={cert.verifyUrl} size={100} fgColor="#0F1930" bgColor="#FFFFFF" level="H" />
             </div>
           </div>
         </div>

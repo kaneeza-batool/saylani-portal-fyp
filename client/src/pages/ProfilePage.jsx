@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { initialsOf } from '../components/Sidebar';
 import Toast from '../components/Toast';
 import { fadeInUp, staggerContainer, cardInteraction } from '../lib/motionVariants';
-import { CameraIcon, EditIcon, LogOutIcon, MailIcon, ProfileIcon, CoursesIcon, RefreshIcon } from '../components/icons';
+import { CameraIcon, EditIcon, LogOutIcon, MailIcon, ProfileIcon, CoursesIcon, RefreshIcon, CheckCircleIcon } from '../components/icons';
 
 const inputClass =
   'w-full rounded-md border border-neutral-300 px-3.5 py-2.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500';
@@ -166,7 +166,11 @@ export default function ProfilePage() {
       setForm(null);
       setAvatarPreview(null);
       setPendingAvatarBase64(null);
-      setToast({ icon: '✅', title: 'Profile updated', message: 'Your changes have been saved.' });
+      setToast({
+        icon: <CheckCircleIcon className="w-5 h-5 text-success-text shrink-0" />,
+        title: 'Profile updated',
+        message: 'Your changes have been saved.',
+      });
       setTimeout(() => setToast(null), 4000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save changes. Please try again.');
@@ -220,6 +224,8 @@ export default function ProfilePage() {
       animate="visible"
       className="flex flex-col gap-4 sm:gap-6"
     >
+      <Toast toast={toast} onDismiss={() => setToast(null)} testId="profile-update-toast" />
+
       <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
         {/* Solid navy backdrop with a subtle gold corner glow + hairline
             diagonal pattern — deliberately not a literal color gradient
@@ -229,7 +235,7 @@ export default function ProfilePage() {
           className="h-32 sm:h-40 bg-primary-900"
           style={{
             backgroundImage:
-              'radial-gradient(circle at 12% 15%, rgba(208,163,91,0.28) 0%, rgba(208,163,91,0) 42%), repeating-linear-gradient(135deg, rgba(208,163,91,0.07) 0px, rgba(208,163,91,0.07) 1px, transparent 1px, transparent 13px)',
+              'radial-gradient(circle at 12% 15%, rgba(206,164,92,0.28) 0%, rgba(206,164,92,0) 42%), repeating-linear-gradient(135deg, rgba(206,164,92,0.07) 0px, rgba(206,164,92,0.07) 1px, transparent 1px, transparent 13px)',
           }}
         />
 
@@ -242,14 +248,14 @@ export default function ProfilePage() {
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   src={displayAvatar}
                   alt={student.fullName}
-                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-[0_0_0_3px_rgba(208,163,91,0.25),0_4px_10px_rgba(15,23,47,0.18)] ${isEditing ? 'cursor-pointer' : ''}`}
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-[0_0_0_3px_rgba(206,164,92,0.25),0_4px_10px_rgba(15,25,48,0.18)] ${isEditing ? 'cursor-pointer' : ''}`}
                   onClick={isEditing ? () => fileInputRef.current?.click() : undefined}
                 />
               ) : (
                 <motion.div
                   whileHover={isEditing ? { scale: 1.04 } : undefined}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-accent-500 text-primary-900 font-bold text-2xl flex items-center justify-center border-4 border-white shadow-[0_0_0_3px_rgba(208,163,91,0.25),0_4px_10px_rgba(15,23,47,0.18)] ${isEditing ? 'cursor-pointer' : ''}`}
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-accent-500 text-primary-900 font-bold text-2xl flex items-center justify-center border-4 border-white shadow-[0_0_0_3px_rgba(206,164,92,0.25),0_4px_10px_rgba(15,25,48,0.18)] ${isEditing ? 'cursor-pointer' : ''}`}
                   onClick={isEditing ? () => fileInputRef.current?.click() : undefined}
                 >
                   {initialsOf(student.fullName)}
@@ -509,8 +515,6 @@ export default function ProfilePage() {
         <LogOutIcon className="w-4 h-4" />
         Log out
       </motion.button>
-
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </motion.div>
   );
 }

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from '/images/logo/titan-logo-clean.png';
 import { resetPassword } from '../services/authService';
-import { EyeIcon, EyeOffIcon } from '../components/icons';
+import { EyeIcon, EyeOffIcon, CheckCircleIcon } from '../components/icons';
 
 const inputClass =
   'w-full rounded-md border border-neutral-300 px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500';
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
 
         {done ? (
           <div data-testid="reset-success" className="flex flex-col items-center text-center gap-3 py-4">
-            <span className="text-4xl">✅</span>
+            <CheckCircleIcon className="w-10 h-10 text-success-text" />
             <p className="text-sm text-neutral-600">Password reset successful. Redirecting you to log in...</p>
             <Link to="/login" className="text-sm font-semibold text-primary-800 hover:text-primary-900">
               Go to Login now

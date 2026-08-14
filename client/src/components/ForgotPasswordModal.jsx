@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import Modal from './Modal';
 import { forgotPassword } from '../services/authService';
+import { MailIcon } from './icons';
 
 const inputClass =
   'w-full rounded-md border border-neutral-300 px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500';
@@ -32,7 +33,7 @@ export default function ForgotPasswordModal({ open, onClose }) {
     <Modal open={open} onClose={handleClose} title="Forgot Password">
       {submitted ? (
         <div className="flex flex-col items-center text-center gap-3 py-4">
-          <span className="text-4xl">📧</span>
+          <MailIcon className="w-10 h-10 text-primary-800" />
           <p className="font-heading text-lg font-bold text-neutral-900">Check your email</p>
           <p className="text-sm text-neutral-500">
             If an account exists for that CNIC, a password reset link has been sent to the email on file. The link

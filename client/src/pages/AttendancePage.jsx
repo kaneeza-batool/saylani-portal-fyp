@@ -6,6 +6,7 @@ import { getAttendanceSummary, getAttendanceByMonth } from '../services/attendan
 import { getProgress } from '../services/progressService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { staggerContainer } from '../lib/motionVariants';
+import { CertificateIcon } from '../components/icons';
 
 const STATUS_STYLE = {
   present: 'bg-success-bg text-success-text',
@@ -32,7 +33,7 @@ function dateLabel(iso) {
 function attendanceMessage(percentage, isCourseComplete) {
   // A finished course reads in the past tense — "keep it up" doesn't make
   // sense once there's nothing left to keep attending.
-  if (isCourseComplete) return { text: `🎓 Course completed with ${percentage}% attendance.`, tone: 'success' };
+  if (isCourseComplete) return { text: `Course completed with ${percentage}% attendance.`, tone: 'success', icon: CertificateIcon };
   if (percentage >= 85) return { text: 'Excellent attendance! Keep it up.', tone: 'success' };
   if (percentage >= 70) return { text: 'Your attendance is good, keep it up!', tone: 'success' };
   if (percentage >= 50) return { text: 'Your attendance needs improvement.', tone: 'warning' };
@@ -137,7 +138,8 @@ export default function AttendancePage() {
                 style={{ width: `${Math.min(summary.percentage, 100)}%` }}
               />
             </div>
-            <p className={`inline-block mt-3 text-sm font-medium rounded-md px-3 py-1.5 ${bannerClass}`}>
+            <p className={`inline-flex items-center gap-1.5 mt-3 text-sm font-medium rounded-md px-3 py-1.5 ${bannerClass}`}>
+              {message.icon && <message.icon className="w-3.5 h-3.5 shrink-0" />}
               {message.text}
             </p>
           </>

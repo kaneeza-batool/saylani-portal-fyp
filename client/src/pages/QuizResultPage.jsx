@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAttemptResult } from '../services/quizService';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
-import { CheckCircleIcon, XCircleIcon, WarningIcon } from '../components/icons';
+import { CheckCircleIcon, XCircleIcon, WarningIcon, TrophyIcon } from '../components/icons';
 import Confetti from '../components/Confetti';
 
 const CONFETTI_DURATION_MS = 4200;
@@ -103,13 +103,22 @@ export default function QuizResultPage() {
         className="w-full max-w-2xl flex flex-col gap-6"
       >
         {passed && (
+          // Same navy/gold-foil "celebratory TITAN moment" family as the
+          // Certificate card (radial glow + diagonal hairline pattern over
+          // primary-900, gold border) — a smaller cousin of it, not a copy,
+          // so a pass and a completed certificate visibly read as related.
           <motion.div
             variants={fadeInUp}
             data-testid="pass-celebration"
-            className="w-full max-w-lg mx-auto rounded-xl shadow-card px-5 py-4 text-center bg-gradient-to-r from-accent-500 to-accent-400"
+            className="w-full max-w-lg mx-auto rounded-xl shadow-card px-5 py-4 text-center bg-primary-900 border-2 border-accent-500 text-white relative overflow-hidden"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 85% 0%, rgba(206,164,92,0.28) 0%, rgba(206,164,92,0) 50%), repeating-linear-gradient(135deg, rgba(206,164,92,0.07) 0px, rgba(206,164,92,0.07) 1px, transparent 1px, transparent 13px)',
+            }}
           >
-            <p className="font-heading font-bold text-base sm:text-lg text-primary-900">
-              🎉 Great job! You passed {quiz.title}
+            <p className="font-heading font-bold text-base sm:text-lg text-accent-400 flex items-center justify-center gap-2">
+              <TrophyIcon className="w-5 h-5 shrink-0" />
+              Great job! You passed {quiz.title}
             </p>
           </motion.div>
         )}

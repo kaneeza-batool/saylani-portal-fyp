@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 
-const COLORS = ['#D0A35B', '#162346', '#1A7F42', '#C0392B', '#1D5FB8'];
+const COLORS = ['#CEA45C', '#132345', '#4F7A5A', '#B84A4A', '#416A8A'];
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);

@@ -88,7 +88,7 @@ function CertificateBanner({ courseId }) {
       <div className="flex items-center gap-3 min-w-0">
         <CertificateIcon className="w-5 h-5 text-accent-400 shrink-0" />
         <div className="min-w-0">
-          <p className="font-heading text-sm sm:text-base font-bold">Certificate Ready 🎓</p>
+          <p className="font-heading text-sm sm:text-base font-bold">Certificate Ready</p>
           <p className="hidden sm:block text-xs text-white/60 truncate">100% complete — your verified certificate is ready.</p>
         </div>
       </div>

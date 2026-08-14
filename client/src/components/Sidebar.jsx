@@ -7,7 +7,6 @@ import logo from '/images/logo/titan-logo-clean.png';
 import { useAuth } from '../context/AuthContext';
 import { useCourseId } from '../hooks/useCourseId';
 import { getAttendanceStreak } from '../services/attendanceService';
-import Toast from './Toast';
 import ProfileMenu from './ProfileMenu';
 import Confetti from './Confetti';
 import {
@@ -66,8 +65,7 @@ export function initialsOf(name) {
     .toUpperCase();
 }
 
-export default function Sidebar({ open, onClose }) {
-  const [toast, setToast] = useState(null);
+export default function Sidebar({ open, onClose, onMilestone }) {
   const { pathname } = useLocation();
   const { student } = useAuth();
   const courseId = useCourseId();
@@ -112,14 +110,12 @@ export default function Sidebar({ open, onClose }) {
     // threshold tier) — the number actually shown must be the live
     // `streak` value, same as the sidebar card and the confetti overlay
     // below, so all three always agree for the current course.
-    setToast({
-      icon: '🔥',
+    onMilestone?.({
+      icon: <FlameIcon className="w-5 h-5 text-accent-400 shrink-0" />,
       title: `${streak}-day streak!`,
       message: `You've attended ${streak} classes in a row. Keep the momentum going.`,
     });
-    const timer = setTimeout(() => setToast(null), 5000);
-    return () => clearTimeout(timer);
-  }, [milestone, streak]);
+  }, [milestone, streak, onMilestone]);
 
   return (
     <>
@@ -254,14 +250,18 @@ export default function Sidebar({ open, onClose }) {
             <Confetti />
             {/* Same containing-block issue as Confetti (the aside's
                 transform), so this also has to portal to document.body
-                rather than render as a normal fixed-position child here. */}
+                rather than render as a normal fixed-position child here.
+                Anchored bottom-left, near the streak card that triggered it
+                (and, on desktop, within/just past the sidebar's own
+                column) — deliberately NOT top-center, which sat directly
+                over every page's title/heading area. */}
             {createPortal(
-              <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-[81] pointer-events-none px-4 w-full flex justify-center">
+              <div className="fixed bottom-6 left-4 lg:left-[276px] z-[81] pointer-events-none">
                 <div
                   data-testid="streak-celebration"
                   className="bg-primary-900 text-white rounded-lg shadow-modal px-5 py-3 border border-accent-500/50 flex items-center gap-2.5"
                 >
-                  <span className="text-2xl leading-none">🔥</span>
+                  <FlameIcon className="w-5 h-5 text-accent-400 shrink-0" />
                   <p className="font-heading font-bold text-sm sm:text-base whitespace-nowrap">
                     {streak} days strong! Keep it up
                   </p>
@@ -300,8 +300,6 @@ export default function Sidebar({ open, onClose }) {
           }
         />
       </div>
-
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
       </aside>
     </>
   );
