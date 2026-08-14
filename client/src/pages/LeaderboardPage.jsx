@@ -119,18 +119,18 @@ export default function LeaderboardPage() {
                   <Avatar student={s} />
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-sm font-semibold truncate flex items-center flex-wrap gap-1.5 ${
+                      className={`text-sm font-semibold flex items-center flex-wrap gap-1.5 ${
                         isYou ? 'text-primary-800' : 'text-neutral-900'
                       }`}
                     >
-                      {s.fullName}
+                      <span className="truncate min-w-0">{s.fullName}</span>
                       {isYou && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-accent-700 bg-accent-500/20 rounded-pill px-1.5 py-0.5">
+                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-accent-700 bg-accent-500/20 rounded-pill px-1.5 py-0.5">
                           You
                         </span>
                       )}
                       {s.rank === 1 && (
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-primary-900 bg-accent-500 rounded-pill px-1.5 py-0.5 inline-flex items-center gap-1">
+                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-primary-900 bg-accent-500 rounded-pill px-1.5 py-0.5 inline-flex items-center gap-1">
                           👑 Champion of the Week
                         </span>
                       )}

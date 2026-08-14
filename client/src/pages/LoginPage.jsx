@@ -102,11 +102,16 @@ function LoginForm() {
       >
         {submitting ? 'Logging in...' : 'Login'}
       </button>
+      {/* Trainer portal isn't built yet (super-admin-portal is still
+          scaffold-only) — disabled rather than a dead click, so it reads as
+          "not available yet" instead of silently doing nothing. */}
       <button
         type="button"
-        className="text-sm font-semibold text-neutral-500 hover:text-neutral-700 text-center mt-1"
+        disabled
+        title="Trainer login is coming soon"
+        className="text-sm font-semibold text-neutral-400 text-center mt-1 cursor-not-allowed"
       >
-        Login as teacher
+        Login as teacher (coming soon)
       </button>
     </form>
     <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
