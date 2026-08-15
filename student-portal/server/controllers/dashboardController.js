@@ -2,18 +2,18 @@ const StudentAttendance = require('../models/StudentAttendance');
 require('../models/Slot'); // registers 'Slot' so .populate('batch') resolves it
 const Enrollment = require('../models/Enrollment');
 require('../models/Course'); // registers the 'Course' model so .populate('course') resolves it
+const FeeVoucher = require('../models/FeeVoucher');
 const { computeProgressStat, computeBatchProgressAverage, computeCourseLeaderboard } = require('../utils/courseStats');
 
 // One course per student now (see Student.js) — course, batch, payment,
 // campus, and rollNumber all live directly on the shared Student document.
-// Enrollment/Course/Assignment/Quiz/FeeVoucher/CourseModule are dead: no
-// data has ever been migrated into those collections for the shared
-// database (see attendanceController's equivalent fix), so every section
-// that used to read from them has no data source and returns an empty
-// array/null instead of querying tables that can only ever be empty.
-// Attendance is the one real, live number here — computed the same way the
-// admin side does: present / (present + absent), leave excluded from the
-// denominator.
+// Enrollment/Course/Assignment/Quiz/CourseModule are still dead: no data
+// has ever been migrated into those collections for the shared database
+// (see attendanceController's equivalent fix), so every section that used
+// to read from them has no data source and returns an empty array/null
+// instead of querying tables that can only ever be empty. FeeVoucher is the
+// exception — real, seeded data (see utils/seedFeeVouchers.js), scoped by
+// student only, same as Attendance below.
 exports.getDashboard = async (req, res) => {
   try {
     const student = req.student;
@@ -40,12 +40,17 @@ exports.getDashboard = async (req, res) => {
         }
       : null;
 
+    // Same 3-row limit and dueDate-desc ordering the pre-rewrite version
+    // used — matches what FeeTable (DashboardPage.jsx) already renders,
+    // full history lives on the Payment page's "View All".
+    const recentFees = await FeeVoucher.find({ student: student._id }).sort({ dueDate: -1 }).limit(3);
+
     return res.status(200).json({
       attendance,
       assignment: { total: 0, submitted: 0 },
       activeCourse,
       classDays: [],
-      recentFees: [],
+      recentFees,
       tabs: { assignments: [], quizzes: [], events: [] },
     });
   } catch (err) {

@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId/history', getFeeHistory);
-router.get('/:courseId/summary', getFeeSummary);
+router.get('/history', getFeeHistory);
+router.get('/summary', getFeeSummary);
 
 module.exports = router;
