@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { getDashboard, getProgressInsight, getLeaderboardPosition } from '../services/dashboardService';
+import { getDashboard } from '../services/dashboardService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
-import { CalendarIcon, TrophyIcon, ClockIcon, CertificateIcon } from '../components/icons';
+import { CalendarIcon, ClockIcon, CertificateIcon } from '../components/icons';
 
 const WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TABS = [
@@ -41,81 +41,6 @@ function CardSkeleton({ className = '' }) {
       <div className="h-4 w-32 bg-neutral-200 rounded" />
       <div className="h-24 w-full bg-neutral-100 rounded mt-4" />
     </div>
-  );
-}
-
-function ProgressInsightCard({ insight, isLoading }) {
-  if (isLoading) return <CardSkeleton />;
-  if (!insight) {
-    return (
-      <div className="rounded-lg shadow-card p-4 sm:p-5 border border-neutral-200 bg-white">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Progress Insight</p>
-        <p className="text-sm text-neutral-400 mt-2">Couldn't load your insight.</p>
-      </div>
-    );
-  }
-
-  const isAhead = insight.tone === 'ahead';
-  return (
-    <motion.div
-      variants={fadeInUp}
-      className={`rounded-lg shadow-card p-4 sm:p-5 h-full border flex flex-col justify-center gap-3 ${
-        isAhead ? 'bg-success-bg border-success-text/20' : 'bg-accent-500/10 border-accent-500/30'
-      }`}
-    >
-      <p className={`text-xs font-semibold uppercase tracking-wide ${isAhead ? 'text-success-text/80' : 'text-accent-700'}`}>
-        Progress Insight
-      </p>
-      <p className={`text-sm font-bold leading-snug ${isAhead ? 'text-success-text' : 'text-primary-800'}`}>
-        {insight.message}
-      </p>
-    </motion.div>
-  );
-}
-
-// Deliberately compact — just enough to answer "where do I stand?" at a
-// glance. The full ranked list (everyone, not just a top-N) lives ONLY on
-// /leaderboard/:courseId now; showing it here too made this card much
-// taller than its Attendance/Assignments/Progress Insight row-mates and
-// stretched all four to match its height.
-function LeaderboardCard({ leaderboard, isLoading, courseId }) {
-  if (isLoading) return <CardSkeleton />;
-  if (!leaderboard) {
-    return (
-      <div className="rounded-lg shadow-card p-4 sm:p-5 h-full border border-neutral-200 bg-white">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Batch Leaderboard</p>
-        <p className="text-sm text-neutral-400 mt-2">Couldn't load your rank.</p>
-      </div>
-    );
-  }
-
-  const { you, batchSize } = leaderboard;
-
-  return (
-    <motion.div
-      variants={fadeInUp}
-      className="rounded-lg shadow-card p-4 sm:p-5 h-full border border-primary-700 bg-primary-900 text-white flex flex-col justify-center gap-2"
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Batch Leaderboard</p>
-        <TrophyIcon className="w-4 h-4 text-accent-400" />
-      </div>
-
-      {you ? (
-        <p className="font-heading text-lg font-bold">
-          You: #{you.rank} <span className="text-white/40 font-medium text-sm">of {batchSize}</span>
-        </p>
-      ) : (
-        <p className="text-sm text-white/60">Not ranked yet.</p>
-      )}
-
-      <Link
-        to={`/leaderboard/${courseId}`}
-        className="text-xs font-semibold text-accent-400 hover:text-accent-300 transition-colors inline-flex items-center gap-1"
-      >
-        View Full Leaderboard →
-      </Link>
-    </motion.div>
   );
 }
 
@@ -414,16 +339,6 @@ export default function DashboardPage() {
     queryFn: () => getDashboard(),
   });
 
-  const { data: insight, isLoading: insightLoading } = useQuery({
-    queryKey: ['dashboard', 'insight', courseId],
-    queryFn: () => getProgressInsight(courseId),
-  });
-
-  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery({
-    queryKey: ['dashboard', 'leaderboard', courseId],
-    queryFn: () => getLeaderboardPosition(courseId),
-  });
-
   if (dashboardError) {
     return (
       <div className="py-16 text-center flex flex-col items-center gap-3">
@@ -456,7 +371,7 @@ export default function DashboardPage() {
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+        className="grid grid-cols-2 gap-3 sm:gap-4"
       >
         {dashboardLoading ? (
           <>
@@ -473,8 +388,6 @@ export default function DashboardPage() {
             <StatCard label="Assignments" value={`${dashboard.assignment.submitted}/${dashboard.assignment.total}`} />
           </>
         )}
-        <ProgressInsightCard insight={insight} isLoading={insightLoading} />
-        <LeaderboardCard leaderboard={leaderboard} isLoading={leaderboardLoading} courseId={courseId} />
       </motion.div>
 
       {dashboard?.activeCourse?.progressPercent === 100 && (
