@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAttendanceSummary, getAttendanceByMonth } from '../services/attendanceService';
@@ -53,7 +52,6 @@ function StatusPill({ status }) {
 function RowSkeleton() {
   return (
     <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100 last:border-b-0 animate-pulse">
-      <div className="h-4 w-16 bg-neutral-200 rounded" />
       <div className="h-4 w-28 bg-neutral-200 rounded" />
       <div className="h-6 w-20 bg-neutral-200 rounded-pill" />
     </div>
@@ -61,31 +59,22 @@ function RowSkeleton() {
 }
 
 export default function AttendancePage() {
-  const { courseId } = useParams();
   const [selectedMonth, setSelectedMonth] = useState(null);
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['attendance', 'summary', courseId],
-    queryFn: () => getAttendanceSummary(courseId),
+    queryKey: ['attendance', 'summary'],
+    queryFn: () => getAttendanceSummary(),
   });
 
   const { data: monthly, isLoading: monthlyLoading } = useQuery({
-    queryKey: ['attendance', 'monthly', courseId, selectedMonth],
-    queryFn: () => getAttendanceByMonth(courseId, selectedMonth),
+    queryKey: ['attendance', 'monthly', selectedMonth],
+    queryFn: () => getAttendanceByMonth(selectedMonth),
   });
 
   const { data: progress } = useQuery({
-    queryKey: ['progress', courseId],
-    queryFn: () => getProgress(courseId),
+    queryKey: ['progress'],
+    queryFn: () => getProgress(),
   });
-
-  // Switching courses (via the breadcrumb switcher) re-renders this page
-  // with a new courseId but doesn't remount it, so reset the month picker —
-  // otherwise a month that only exists in the old course's history would
-  // silently show an empty table for the new one.
-  useEffect(() => {
-    setSelectedMonth(null);
-  }, [courseId]);
 
   useEffect(() => {
     if (!selectedMonth && monthly?.month) setSelectedMonth(monthly.month);
@@ -165,8 +154,7 @@ export default function AttendancePage() {
         </div>
 
         {/* Desktop/tablet table header — hidden on mobile in favor of stacked rows */}
-        <div className="hidden sm:grid grid-cols-3 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-400 bg-neutral-50 border-b border-neutral-100">
-          <span>Class #</span>
+        <div className="hidden sm:grid grid-cols-2 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-400 bg-neutral-50 border-b border-neutral-100">
           <span>Date</span>
           <span className="text-right">Status</span>
         </div>
@@ -182,17 +170,13 @@ export default function AttendancePage() {
             <div key={record._id} className="border-b border-neutral-100 last:border-b-0">
               {/* Mobile: stacked card */}
               <div className="sm:hidden flex items-center justify-between px-4 py-3.5">
-                <div>
-                  <p className="text-sm font-medium text-neutral-700">Class {record.classNumber}</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">{dateLabel(record.date)}</p>
-                </div>
+                <p className="text-sm font-medium text-neutral-700">{dateLabel(record.date)}</p>
                 <StatusPill status={record.status} />
               </div>
 
               {/* Tablet/desktop: table row */}
-              <div className="hidden sm:grid grid-cols-3 items-center px-5 py-4 text-sm">
-                <span className="font-medium text-neutral-700">Class {record.classNumber}</span>
-                <span className="text-neutral-500">{dateLabel(record.date)}</span>
+              <div className="hidden sm:grid grid-cols-2 items-center px-5 py-4 text-sm">
+                <span className="font-medium text-neutral-700">{dateLabel(record.date)}</span>
                 <span className="flex justify-end">
                   <StatusPill status={record.status} />
                 </span>

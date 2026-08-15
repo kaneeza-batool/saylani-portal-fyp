@@ -6,8 +6,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId/summary', getAttendanceSummary);
-router.get('/:courseId/monthly', getAttendanceByMonth);
-router.get('/:courseId/streak', getStreak);
+router.get('/summary', getAttendanceSummary);
+router.get('/monthly', getAttendanceByMonth);
+router.get('/streak', getStreak);
 
 module.exports = router;

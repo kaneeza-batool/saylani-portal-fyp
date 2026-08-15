@@ -410,8 +410,8 @@ export default function DashboardPage() {
     isError: dashboardError,
     refetch: refetchDashboard,
   } = useQuery({
-    queryKey: ['dashboard', courseId],
-    queryFn: () => getDashboard(courseId),
+    queryKey: ['dashboard'],
+    queryFn: () => getDashboard(),
   });
 
   const { data: insight, isLoading: insightLoading } = useQuery({

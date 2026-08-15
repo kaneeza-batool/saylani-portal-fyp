@@ -54,6 +54,15 @@ const studentSchema = new mongoose.Schema(
     // (a plain string) doesn't change for the frontend.
     campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus' },
     city: { type: String, trim: true },
+    // One-course-per-student fields from the shared document (see
+    // server/models/Student.js in the main app) — added for the same
+    // hydration reason as name/father above. course is a plain name string
+    // (no Course collection backs it), batch is a ref to the main app's
+    // Slot model (see Slot.js, a minimal read-only mirror).
+    course: { type: String, trim: true },
+    batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot' },
+    payment: { type: String, trim: true },
+    rollNumber: { type: Number },
     // kept as a field (not yet an enum tied to other portals) so this
     // collection can merge with super-admin-portal's role system later
     role: { type: String, default: 'student' },
