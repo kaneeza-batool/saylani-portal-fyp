@@ -2,6 +2,7 @@
 // Dashboard. Re-runnable: replaces any existing account at ADMIN_EMAIL and
 // prints a freshly generated password each time it's run.
 require('dotenv').config();
+require('../utils/fixDns');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
