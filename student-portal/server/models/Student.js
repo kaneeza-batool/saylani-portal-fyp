@@ -20,8 +20,13 @@ const studentSchema = new mongoose.Schema(
     // strict mode default). toSafeStudent() below sources fullName/
     // fatherName's *output* from these, keeping the JSON response shape
     // the rest of this app's frontend already expects.
-    name: { type: String, trim: true },
-    father: { type: String, trim: true },
+    // required: true to match the canonical schema (server/models/Student.js)
+    // — a raw-collection audit confirmed all 129 documents already have
+    // non-null, non-empty values for these, so this only tightens
+    // validation on future partial saves, it doesn't retroactively affect
+    // any existing document.
+    name: { type: String, trim: true, required: true },
+    father: { type: String, trim: true, required: true },
     cnic: {
       type: String,
       required: true,
@@ -34,8 +39,8 @@ const studentSchema = new mongoose.Schema(
     // reasoning as the password itself) with an expiry, cleared once used.
     resetPasswordTokenHash: { type: String, select: false },
     resetPasswordExpires: { type: Date, select: false },
-    phone: { type: String, trim: true },
-    email: { type: String, trim: true, lowercase: true },
+    phone: { type: String, trim: true, required: true },
+    email: { type: String, trim: true, lowercase: true, required: true },
     address: { type: String, trim: true, default: '' },
     gender: { type: String, enum: ['male', 'female', 'other'] },
     dateOfBirth: { type: Date },
@@ -52,7 +57,7 @@ const studentSchema = new mongoose.Schema(
     // models folder, a minimal read-only mirror). toSafeStudent() below
     // populates this and outputs just the name, so the API response shape
     // (a plain string) doesn't change for the frontend.
-    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus' },
+    campus: { type: mongoose.Schema.Types.ObjectId, ref: 'Campus', required: true },
     city: { type: String, trim: true },
     // One-course-per-student fields from the shared document (see
     // server/models/Student.js in the main app) — added for the same
@@ -63,6 +68,16 @@ const studentSchema = new mongoose.Schema(
     batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot' },
     payment: { type: String, trim: true },
     rollNumber: { type: Number },
+    // Admission/approval state from the shared document (main app's
+    // Student.status — see server/models/Student.js and
+    // admissionController.js, which is the only place this ever changes).
+    // Mirrored read-only for the same hydration reason as course/campus
+    // above: without declaring it here, authMiddleware's portal-access gate
+    // would always see `undefined` and never block anyone, even though the
+    // underlying document genuinely has the field set. Enum values copied
+    // verbatim from the main app's Student.STATUSES — never invent new ones
+    // here, this schema only mirrors what the canonical model declares.
+    status: { type: String, enum: ['enrolled', 'pending', 'completed', 'dropout', 'rejected'], default: 'enrolled' },
     // kept as a field (not yet an enum tied to other portals) so this
     // collection can merge with super-admin-portal's role system later
     role: { type: String, default: 'student' },
@@ -79,4 +94,14 @@ studentSchema.methods.comparePassword = function comparePassword(candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-module.exports = mongoose.model('Student', studentSchema);
+const Student = mongoose.model('Student', studentSchema);
+
+// Allowlist, not a blocklist — anything not explicitly listed here is
+// denied portal access by default, so a status added later to the main
+// app's Student.STATUSES doesn't silently gain access here until someone
+// deliberately opts it in. The three enforcement points (login, refresh,
+// protect in authMiddleware.js) all check membership in this one list
+// rather than each maintaining their own denied-statuses logic.
+Student.PORTAL_ACCESS_STATUSES = ['enrolled', 'completed'];
+
+module.exports = Student;

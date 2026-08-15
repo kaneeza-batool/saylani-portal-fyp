@@ -73,6 +73,18 @@ function toSafeStudent(student) {
 
 exports.toSafeStudent = toSafeStudent;
 
+// One message per denied status, keyed by the exact enum values in
+// Student.STATUSES (main app) — a status with no entry here still gets
+// denied by the allowlist check below, just with DEFAULT_DENIED_MESSAGE
+// instead of a status-specific one, so a future status never has to be
+// added here before it's safely denied.
+const PORTAL_ACCESS_DENIED_MESSAGES = {
+  pending: 'Your enrollment is still pending approval. You’ll be able to log in once a Super Admin reviews your application.',
+  rejected: 'Your application was not approved. Please contact the admissions office for details.',
+  dropout: 'Your enrollment has been marked as withdrawn, so Student Portal access is no longer available. Contact the admissions office if you believe this is a mistake.',
+};
+const DEFAULT_DENIED_MESSAGE = 'Your account does not currently have portal access. Please contact the admissions office.';
+
 exports.login = async (req, res) => {
   try {
     const { cnic, password } = req.body;
@@ -85,6 +97,23 @@ exports.login = async (req, res) => {
       .populate('campus', 'name');
     if (!student || !student.password || !(await student.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid CNIC or password' });
+    }
+
+    // Credentials are valid, but portal access is gated on Student.status —
+    // the same field the Admissions Queue (admissionController.js on the
+    // main server) transitions between pending/enrolled/rejected. Allowlist,
+    // not a blocklist (see Student.PORTAL_ACCESS_STATUSES): anything not
+    // explicitly enrolled/completed is denied, including statuses added to
+    // the main app later that nobody's opted in here yet. A student can set
+    // a password (see verifyCnic/setPassword below) before being approved,
+    // so this is the actual enforcement point: no JWT cookie is ever issued
+    // for a not-yet-approved applicant, regardless of which portal they
+    // try to log into.
+    if (!Student.PORTAL_ACCESS_STATUSES.includes(student.status)) {
+      return res.status(403).json({
+        message: PORTAL_ACCESS_DENIED_MESSAGES[student.status] || DEFAULT_DENIED_MESSAGE,
+        status: student.status,
+      });
     }
 
     setAuthCookies(res, student);
@@ -118,6 +147,9 @@ exports.refresh = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     const student = await Student.findById(decoded.id).populate('campus', 'name');
     if (!student) return res.status(401).json({ message: 'Not authenticated' });
+    if (!Student.PORTAL_ACCESS_STATUSES.includes(student.status)) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
 
     // Only the access token is reissued — the refresh token keeps its
     // original 7-day expiry rather than being rotated on every silent

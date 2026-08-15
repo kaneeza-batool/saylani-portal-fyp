@@ -17,6 +17,17 @@ async function protect(req, res, next) {
     const student = await Student.findById(decoded.id).populate('campus', 'name city');
     if (!student) return res.status(401).json({ message: 'Not authenticated' });
 
+    // Central re-check, not just at login: status is re-read from the DB on
+    // every request (not cached in the JWT), so if a Super Admin revokes an
+    // already-logged-in student's portal access mid-session, their very
+    // next request is cut off here rather than staying valid for the rest
+    // of the access/refresh token's lifetime. Allowlist (Student.
+    // PORTAL_ACCESS_STATUSES), not a blocklist — see that constant's
+    // comment for why.
+    if (!Student.PORTAL_ACCESS_STATUSES.includes(student.status)) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
     req.student = student;
     next();
   } catch {
