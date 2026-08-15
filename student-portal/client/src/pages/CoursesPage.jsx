@@ -102,8 +102,8 @@ export default function CoursesPage() {
 
   const filtered = (courses || []).filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
 
-  function handleViewDetails(courseId) {
-    navigate(`/dashboard/${courseId}`);
+  function handleViewDetails() {
+    navigate('/dashboard');
   }
 
   return (

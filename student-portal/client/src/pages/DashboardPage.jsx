@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -184,7 +184,7 @@ function ClassScheduleCard({ classDays, isLoading }) {
   );
 }
 
-function FeeTable({ vouchers, courseId, isLoading }) {
+function FeeTable({ vouchers, isLoading }) {
   return (
     <motion.div
       variants={fadeInUp}
@@ -194,7 +194,7 @@ function FeeTable({ vouchers, courseId, isLoading }) {
     >
       <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-neutral-200">
         <h3 className="font-heading text-lg font-bold text-neutral-900">Fee History</h3>
-        <Link to={`/fee/${courseId}`} className="text-sm font-semibold text-primary-800 hover:text-primary-900">
+        <Link to="/fee" className="text-sm font-semibold text-primary-800 hover:text-primary-900">
           View All
         </Link>
       </div>
@@ -235,14 +235,8 @@ function FeeTable({ vouchers, courseId, isLoading }) {
   );
 }
 
-function TabsPanel({ courseId, tabs, isLoading }) {
+function TabsPanel({ tabs, isLoading }) {
   const [active, setActive] = useState('assignments');
-
-  // Same fix as AttendancePage/AssignmentPage — this page re-renders with a
-  // new courseId on course switch without remounting, so reset the tab.
-  useEffect(() => {
-    setActive('assignments');
-  }, [courseId]);
 
   return (
     <motion.div
@@ -285,7 +279,7 @@ function TabsPanel({ courseId, tabs, isLoading }) {
                 return (
                   <Link
                     key={a._id}
-                    to={`/assignment/${courseId}`}
+                    to="/assignment"
                     className="flex items-center justify-between gap-3 px-3 py-3 hover:bg-neutral-50 rounded-md transition-colors"
                   >
                     <span className="text-sm font-medium text-neutral-800 truncate">{a.title}</span>
@@ -303,7 +297,7 @@ function TabsPanel({ courseId, tabs, isLoading }) {
               {tabs.quizzes.map((q) => (
                 <Link
                   key={q._id}
-                  to={`/quiz/${courseId}`}
+                  to="/quiz"
                   className="flex items-center justify-between gap-3 px-3 py-3 hover:bg-neutral-50 rounded-md transition-colors"
                 >
                   <div className="min-w-0">
@@ -400,8 +394,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <FeeTable vouchers={dashboard?.recentFees || []} courseId={courseId} isLoading={dashboardLoading} />
-        <TabsPanel courseId={courseId} tabs={dashboard?.tabs || { assignments: [], quizzes: [], events: [] }} isLoading={dashboardLoading} />
+        <FeeTable vouchers={dashboard?.recentFees || []} isLoading={dashboardLoading} />
+        <TabsPanel tabs={dashboard?.tabs || { assignments: [], quizzes: [], events: [] }} isLoading={dashboardLoading} />
       </div>
     </div>
   );

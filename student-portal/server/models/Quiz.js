@@ -16,9 +16,13 @@ const questionSchema = new mongoose.Schema(
   { _id: true }
 );
 
+// One course per student (see Student.js) — course is a plain name string,
+// not an ObjectId, so there's no Course collection to look up (same fix as
+// StudentAttendance.js/Assignment.js). Every handler filters this shared
+// catalog by the logged-in student's own course.
 const quizSchema = new mongoose.Schema(
   {
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    course: { type: String, required: true, trim: true, index: true },
     module: { type: String, required: true, trim: true },
     title: { type: String, required: true, trim: true },
     questions: {

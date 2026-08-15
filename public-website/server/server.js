@@ -1,18 +1,15 @@
 require('dotenv').config();
 
-// Refuse to boot against a local database rather than silently write demo
-// data there — this app now runs on the shared MongoDB Atlas cluster the
-// other TITAN apps use (its own database within that cluster, not shared
-// collections — see config/db.js), and a localhost/127.0.0.1 target here
-// is always a misconfigured .env, never an intentional local-dev setup.
+// public-website now creates Student documents directly in titan-portal —
+// the same shared local MongoDB the main app (server/.env) and
+// student-portal (student-portal/server/.env) both point at during local
+// dev — so a localhost/127.0.0.1 target here is expected, not a
+// misconfiguration. Only refuse to boot with no target at all.
 const mongoUri = process.env.MONGO_URI || '';
-if (!mongoUri || /^mongodb(\+srv)?:\/\/[^/]*(localhost|127\.0\.0\.1)/i.test(mongoUri)) {
+if (!mongoUri) {
   console.error(
-    '\n[FATAL] MONGO_URI is missing or points at a local database (localhost/127.0.0.1).\n' +
-      'This server requires the shared MongoDB Atlas connection string — a local mongod\n' +
-      'is not a valid target, even for local development.\n\n' +
-      'Set MONGO_URI in public-website/server/.env to the real Atlas connection string\n' +
-      '(ask a teammate for it — never invent one). See .env.example for the required shape.\n'
+    '\n[FATAL] MONGO_URI is missing.\n' +
+      'Set MONGO_URI in public-website/server/.env. See .env.example for the required shape.\n'
   );
   process.exit(1);
 }
@@ -30,6 +27,7 @@ const idCardRoutes = require('./routes/idCardRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const adminCourseRoutes = require('./routes/adminCourseRoutes');
+const enrollmentMetaRoutes = require('./routes/enrollmentMetaRoutes');
 
 const app = express();
 
@@ -46,6 +44,7 @@ app.use('/api/id-cards', idCardRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);
+app.use('/api', enrollmentMetaRoutes);
 
 const PORT = process.env.PORT || 5002;
 

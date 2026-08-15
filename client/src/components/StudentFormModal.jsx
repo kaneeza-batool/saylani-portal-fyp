@@ -38,6 +38,46 @@ const inputClass =
   'border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors';
 const labelClass = 'text-caption font-semibold text-neutral-600';
 
+function initials(name) {
+  return (
+    (name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
+
+// Self-reported via the student portal (onboarding/profile edit) — read-only
+// here, not part of the editable form fields above, since an admin
+// overwriting a student's own reported qualification isn't a real workflow.
+// Only lastQualification and the avatar are shown: gender/dateOfBirth are
+// unset for every real student in titan-portal as of this pass (see seed
+// report), so there's nothing honest to display for them yet.
+function StudentProfileSummary({ student }) {
+  return (
+    <div className="flex items-center gap-3.5 pb-1">
+      {student.avatarUrl ? (
+        <img
+          src={student.avatarUrl}
+          alt={student.name}
+          className="w-16 h-16 rounded-full object-cover shrink-0 border border-gold-500/40"
+        />
+      ) : (
+        <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 flex items-center justify-center font-heading font-bold text-h5 shrink-0 border border-gold-500/40">
+          {initials(student.name)}
+        </div>
+      )}
+      <div className="flex flex-col gap-1">
+        <span className={labelClass}>Last Qualification</span>
+        <span className="text-body-sm text-neutral-900">{student.lastQualification || '—'}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function StudentFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
   const { user } = useAuth();
   const isCampusLocked = user?.role === 'sub_admin';
@@ -138,6 +178,8 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
         </div>
 
         <form id="student-form" onSubmit={handleSubmit} className="px-6 py-[22px] overflow-y-auto flex-1 flex flex-col gap-3.5">
+          {mode === 'edit' && initialValues && <StudentProfileSummary student={initialValues} />}
+
           <div className="flex flex-col gap-1.5">
             <label className={labelClass} htmlFor="student-name">
               Full name

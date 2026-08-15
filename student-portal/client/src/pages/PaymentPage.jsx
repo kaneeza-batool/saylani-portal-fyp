@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getFeeHistory } from '../services/feeService';
@@ -114,8 +113,6 @@ function ThisMonthCard({ voucher }) {
 }
 
 export default function PaymentPage() {
-  const { courseId } = useParams();
-
   const {
     data: vouchers,
     isLoading,
@@ -123,8 +120,8 @@ export default function PaymentPage() {
     refetch,
     isFetching,
   } = useQuery({
-    queryKey: ['fee', 'history', courseId],
-    queryFn: () => getFeeHistory(courseId),
+    queryKey: ['fee', 'history'],
+    queryFn: () => getFeeHistory(),
   });
 
   const now = new Date();

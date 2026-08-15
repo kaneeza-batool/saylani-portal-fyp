@@ -11,14 +11,14 @@ function initialState() {
   return { title: '', body: '', moduleTag: '', error: '' };
 }
 
-export default function AskQuestionModal({ open, onClose, courseId }) {
+export default function AskQuestionModal({ open, onClose }) {
   const [state, setState] = useState(initialState);
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (payload) => createQuestion(courseId, payload),
+    mutationFn: (payload) => createQuestion(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['questions', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
       handleClose();
     },
     onError: (err) => {

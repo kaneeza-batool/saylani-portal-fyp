@@ -14,8 +14,8 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/course/:courseId', getQuestions);
-router.post('/course/:courseId', createQuestion);
+router.get('/', getQuestions);
+router.post('/', createQuestion);
 router.get('/:questionId', getQuestionDetail);
 router.post('/:questionId/answers', createAnswer);
 router.patch('/:questionId/upvote', upvoteQuestion);

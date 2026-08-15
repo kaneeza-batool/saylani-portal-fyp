@@ -87,7 +87,7 @@ export default function AgendaPage() {
       <div>
         <h1 className="font-heading text-xl sm:text-2xl font-bold text-neutral-900">My Week</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Everything due, available, or scheduled across both your courses for the next 7 days.
+          Everything due, available, or scheduled for your course over the next 7 days.
         </p>
       </div>
 

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getResourceLibrary } from '../services/resourceService';
@@ -55,12 +54,11 @@ function CardSkeleton() {
 }
 
 export default function ResourceLibraryPage() {
-  const { courseId } = useParams();
   const [search, setSearch] = useState('');
 
   const { data: resources, isLoading, isError, refetch } = useQuery({
-    queryKey: ['resources', courseId],
-    queryFn: () => getResourceLibrary(courseId),
+    queryKey: ['resources'],
+    queryFn: () => getResourceLibrary(),
   });
 
   const filtered = (resources || []).filter((r) => {

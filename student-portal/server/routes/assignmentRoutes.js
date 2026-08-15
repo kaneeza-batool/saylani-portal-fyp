@@ -11,9 +11,9 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId', getAssignments);
-router.get('/:courseId/summary', getSummaryStats);
-router.get('/:courseId/:id', getAssignmentDetail);
-router.post('/:courseId/:id/submit', submitAssignment);
+router.get('/', getAssignments);
+router.get('/summary', getSummaryStats);
+router.get('/:id', getAssignmentDetail);
+router.post('/:id/submit', submitAssignment);
 
 module.exports = router;

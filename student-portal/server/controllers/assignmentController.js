@@ -9,8 +9,7 @@ function daysUntil(dueDate) {
 
 exports.getAssignments = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const assignments = await Assignment.find({ courseId }).sort({ dueDate: 1 });
+    const assignments = await Assignment.find({ course: req.student.course }).sort({ dueDate: 1 });
     const submissions = await AssignmentSubmission.find({ student: req.student._id });
     const byAssignment = new Map(submissions.map((s) => [s.assignment.toString(), s]));
 
@@ -35,8 +34,8 @@ exports.getAssignments = async (req, res) => {
 
 exports.getAssignmentDetail = async (req, res) => {
   try {
-    const { courseId, id } = req.params;
-    const assignment = await Assignment.findOne({ _id: id, courseId });
+    const { id } = req.params;
+    const assignment = await Assignment.findOne({ _id: id, course: req.student.course });
     if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
     const submission = await AssignmentSubmission.findOne({ student: req.student._id, assignment: assignment._id });
@@ -71,13 +70,13 @@ exports.getAssignmentDetail = async (req, res) => {
 
 exports.submitAssignment = async (req, res) => {
   try {
-    const { courseId, id } = req.params;
+    const { id } = req.params;
     const { submissionLink, referenceImages, submissionText } = req.body;
     if (!submissionLink || !submissionText) {
       return res.status(400).json({ message: 'Submission link and submission text are required' });
     }
 
-    const assignment = await Assignment.findOne({ _id: id, courseId });
+    const assignment = await Assignment.findOne({ _id: id, course: req.student.course });
     if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
 
     const now = new Date();
@@ -115,8 +114,7 @@ exports.submitAssignment = async (req, res) => {
 
 exports.getSummaryStats = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const assignments = await Assignment.find({ courseId }, '_id');
+    const assignments = await Assignment.find({ course: req.student.course }, '_id');
     const assignmentIds = assignments.map((a) => a._id);
 
     const submissions = await AssignmentSubmission.find(
