@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { fetchStudents, updateStudent } from '../../services/studentService';
 import StudentFormModal from '../../components/StudentFormModal';
 import ExportButtons from '../../components/ExportButtons';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 // Reuses super-admin/StudentsPage.jsx's table shell (same GRID_COLS
 // approach, same classes, same STATUS_STYLE/PAYMENT_STYLE) but trimmed to
@@ -38,6 +39,12 @@ const PAYMENT_STYLE = {
   overdue: { label: 'Overdue', className: 'bg-danger-50 text-danger-600' },
 };
 
+const DROP_REASON_LABEL = {
+  payment: 'Dropped for overdue payment — will auto-restore if payment is marked paid.',
+  attendance: 'Dropped for attendance below 70% — must be re-enrolled manually.',
+  manual: 'Dropped manually by an admin.',
+};
+
 function initials(name) {
   return (
     (name || '')
@@ -52,7 +59,7 @@ function initials(name) {
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.6fr_1.1fr_1.2fr_1.3fr_1fr_1fr_0.6fr]';
+const GRID_COLS = 'grid-cols-[1.6fr_1.1fr_1.2fr_1.3fr_1fr_1fr_0.9fr]';
 
 const EXPORT_COLUMNS = [
   { header: 'Name', accessor: (s) => s.name },
@@ -90,6 +97,7 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
   const [editTarget, setEditTarget] = useState(null);
   const [formError, setFormError] = useState('');
+  const [dropTarget, setDropTarget] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -114,12 +122,28 @@ export default function StudentsPage() {
     onError: (err) => setFormError(err.response?.data?.message || 'Failed to update student.'),
   });
 
+  // Separate from updateMutation (tied to the edit-form modal's own
+  // open/close state) — these are one-click actions from the row itself.
+  const statusMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateStudent(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-students'] });
+      setDropTarget(null);
+    },
+  });
+
   const openEdit = (student) => {
     setFormError('');
     setEditTarget(student);
   };
   const closeModal = () => setEditTarget(null);
   const handleSubmit = (values) => updateMutation.mutate({ id: editTarget._id, payload: values });
+
+  const handleDrop = (student) => setDropTarget(student);
+  const confirmDrop = () => {
+    if (dropTarget) statusMutation.mutate({ id: dropTarget._id, payload: { status: 'dropout' } });
+  };
+  const handleReenroll = (student) => statusMutation.mutate({ id: student._id, payload: { status: 'enrolled' } });
 
   const students = data?.students ?? [];
   const pages = data?.pages ?? 1;
@@ -165,7 +189,7 @@ export default function StudentsPage() {
               {h}
             </span>
           ))}
-          <span className="text-overline uppercase text-neutral-500 text-right">Edit</span>
+          <span className="text-overline uppercase text-neutral-500 text-right">Actions</span>
         </div>
 
         {isLoading ? (
@@ -206,9 +230,40 @@ export default function StudentsPage() {
                   <span className="text-body-sm text-neutral-600">{s.phone}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.batch?.schedule || '—'}</span>
-                  <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}>{statusStyle.label}</span>
+                  <span
+                    className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}
+                    title={s.status === 'dropout' ? DROP_REASON_LABEL[s.dropReason] || undefined : undefined}
+                  >
+                    {statusStyle.label}
+                  </span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${paymentStyle.className}`}>{paymentStyle.label}</span>
-                  <div className="flex justify-end">
+                  <div className="flex gap-1.5 justify-end">
+                    {s.status === 'dropout' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleReenroll(s)}
+                        disabled={statusMutation.isPending}
+                        title="Re-enroll"
+                        className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-success-bg hover:border-success-text disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B6B45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleDrop(s)}
+                        disabled={statusMutation.isPending}
+                        title="Drop student"
+                        className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M9 9l6 6M15 9l-6 6" />
+                        </svg>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => openEdit(s)}
@@ -262,6 +317,16 @@ export default function StudentsPage() {
         onSubmit={handleSubmit}
         submitting={updateMutation.isPending}
         error={formError}
+      />
+
+      <ConfirmDialog
+        open={!!dropTarget}
+        title="Drop student"
+        message={dropTarget ? `Drop ${dropTarget.name}? They can be re-enrolled from this page at any time.` : ''}
+        confirmLabel="Drop"
+        onCancel={() => setDropTarget(null)}
+        onConfirm={confirmDrop}
+        loading={statusMutation.isPending}
       />
     </motion.div>
   );

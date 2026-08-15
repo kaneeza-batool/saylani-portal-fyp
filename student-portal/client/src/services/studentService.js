@@ -14,3 +14,8 @@ export async function uploadAvatar(imageBase64) {
   const { data } = await api.post('/student/avatar', { imageBase64 });
   return data.student;
 }
+
+export async function skipOnboarding() {
+  const { data } = await api.post('/student/onboarding/skip');
+  return data.student;
+}

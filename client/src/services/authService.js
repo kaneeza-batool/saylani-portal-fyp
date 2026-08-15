@@ -24,4 +24,14 @@ export async function updateMe(payload) {
   return data.user;
 }
 
+export async function registerTrainer(payload) {
+  const { data } = await api.post('/auth/register-trainer', payload);
+  return data.user;
+}
+
+export async function fetchPublicCampuses() {
+  const { data } = await api.get('/public/campuses');
+  return data.items;
+}
+
 export default api;

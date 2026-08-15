@@ -31,6 +31,19 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// Lets a student through the mandatory onboarding gate without a photo —
+// sets the same flag uploadAvatar does, just without writing avatarUrl.
+// They can still add one later from Profile (see ProfilePage.jsx).
+exports.skipOnboarding = async (req, res) => {
+  try {
+    req.student.hasCompletedOnboarding = true;
+    await req.student.save();
+    return res.status(200).json({ student: toSafeStudent(req.student) });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to skip onboarding', error: err.message });
+  }
+};
+
 exports.uploadAvatar = async (req, res) => {
   try {
     const { imageBase64 } = req.body;

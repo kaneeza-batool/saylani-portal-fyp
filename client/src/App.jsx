@@ -6,6 +6,7 @@ import { SocketProvider } from './context/SocketContext';
 import { getRoleHome } from './utils/roleHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
+import TrainerRegisterPage from './pages/TrainerRegisterPage';
 import PublicLayout from './layouts/PublicLayout';
 import DonorPublicLayout from './layouts/DonorPublicLayout';
 import CareersPage from './pages/public/CareersPage';
@@ -56,6 +57,13 @@ import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReports
 import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
 import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
 import SubAdminAuditLogPage from './portals/sub-admin/AuditLogPage';
+import TrainerLayout from './layouts/TrainerLayout';
+import TrainerDashboardPage from './portals/trainer/DashboardPage';
+import TrainerBatchesPage from './portals/trainer/BatchesPage';
+import TrainerAttendancePage from './portals/trainer/AttendancePage';
+import TrainerQuizzesPage from './portals/trainer/QuizzesPage';
+import TrainerStudentsPage from './portals/trainer/StudentsPage';
+import TrainerProfilePage from './portals/trainer/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +93,7 @@ function App() {
             <SocketProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/trainer/register" element={<TrainerRegisterPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route element={<PublicLayout />}>
@@ -154,6 +163,18 @@ function App() {
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
                     <Route path="alerts" element={<SubAdminAlertsPage />} />
                     <Route path="audit-log" element={<SubAdminAuditLogPage />} />
+                  </Route>
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['trainer']} />}>
+                  <Route path="/trainer" element={<TrainerLayout />}>
+                    <Route index element={<Navigate to="/trainer/dashboard" replace />} />
+                    <Route path="dashboard" element={<TrainerDashboardPage />} />
+                    <Route path="batches" element={<TrainerBatchesPage />} />
+                    <Route path="attendance" element={<TrainerAttendancePage />} />
+                    <Route path="quizzes" element={<TrainerQuizzesPage />} />
+                    <Route path="students" element={<TrainerStudentsPage />} />
+                    <Route path="profile" element={<TrainerProfilePage />} />
                   </Route>
                 </Route>
 

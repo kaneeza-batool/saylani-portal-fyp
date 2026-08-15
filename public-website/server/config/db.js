@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('../utils/fixDns');
 
 async function connectDB() {
   await mongoose.connect(process.env.MONGO_URI);

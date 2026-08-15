@@ -9,6 +9,26 @@ const CAMPUSES = [
   { name: 'Saylani TITAN Karachi Campus', city: 'Karachi', country: 'Pakistan', status: 'active' },
 ];
 
+// One sub-admin per campus already in the database (covers the 3 campuses
+// added later by seedExpansionCampuses.js — Lahore, Islamabad, Multan —
+// without needing them hardcoded here too). Email/password follow the same
+// subadmin.<city>@titan.com / SubAdmin123! convention as the two above.
+async function ensureSubAdminForEveryCampus() {
+  const Campus = require('./../models/Campus');
+  const campuses = await Campus.find({});
+  for (const c of campuses) {
+    const slug = c.city.toLowerCase().replace(/[^a-z0-9]/g, '');
+    await ensureUser({
+      name: `${c.city} Sub Admin`,
+      email: `subadmin.${slug}@titan.com`,
+      password: 'SubAdmin123!',
+      role: 'sub_admin',
+      campus_id: c._id,
+      permissions: FULL_ACCESS_PERMISSIONS,
+    });
+  }
+}
+
 async function ensureCampus({ name, city, country, status }) {
   const existing = await Campus.findOne({ name });
   if (existing) {
@@ -34,20 +54,11 @@ async function ensureUser({ name, email, password, role, campus_id, permissions 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
 
-  const campusByName = {};
   for (const c of CAMPUSES) {
-    campusByName[c.name] = await ensureCampus(c);
+    await ensureCampus(c);
   }
-  const sukkur = campusByName['Saylani TITAN Sukkur Campus'];
 
-  await ensureUser({
-    name: 'Sukkur Sub Admin',
-    email: 'subadmin.sukkur@titan.com',
-    password: 'SubAdmin123!',
-    role: 'sub_admin',
-    campus_id: sukkur._id,
-    permissions: FULL_ACCESS_PERMISSIONS,
-  });
+  await ensureSubAdminForEveryCampus();
 
   await mongoose.disconnect();
 }

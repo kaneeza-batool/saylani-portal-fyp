@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import titanLogo from '../../assets/titan-logo.png';
 
+// This site and Student Portal are separate standalone apps with separate
+// backends — there's nothing to authenticate against here, so the Login
+// button goes straight to the real Student Portal login rather than an
+// internal page pretending to be one (see the old public/Login.jsx, no
+// longer linked from anywhere).
+const STUDENT_PORTAL_URL = import.meta.env.VITE_STUDENT_PORTAL_URL || 'http://localhost:5273/login';
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -91,12 +98,12 @@ const Navbar = () => {
 
           {/* Login / Apply Now Action Buttons */}
           <div className="hidden lg:flex items-center space-x-4 xl:space-x-5">
-            <Link
-              to="/login"
+            <a
+              href={STUDENT_PORTAL_URL}
               className="text-sm font-bold no-underline transition-all duration-200 hover:opacity-80 text-neutral-900"
             >
               Login
-            </Link>
+            </a>
             <Link
               to="/apply"
               className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all duration-200 active:scale-95 hover:brightness-110 bg-accent-600"
@@ -162,9 +169,9 @@ const Navbar = () => {
           </div>
 
           <div className="pt-6 border-t border-neutral-200 flex flex-col gap-3 mt-4">
-            <Link to="/login" onClick={() => setIsOpen(false)} className="text-center py-2.5 text-base font-bold no-underline text-neutral-900">
+            <a href={STUDENT_PORTAL_URL} onClick={() => setIsOpen(false)} className="text-center py-2.5 text-base font-bold no-underline text-neutral-900">
               Login
-            </Link>
+            </a>
             <Link to="/apply" onClick={() => setIsOpen(false)} className="text-center text-white py-3 font-bold no-underline bg-accent-600" style={{ borderRadius: 'var(--radius-standard)' }}>
               Apply Now
             </Link>
