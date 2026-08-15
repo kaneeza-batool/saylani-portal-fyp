@@ -4,11 +4,21 @@ import { motion } from 'framer-motion';
 import { createJob, deleteJob, fetchJobs, updateJob } from '../../services/jobService';
 import JobFormModal from '../../components/JobFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExportButtons from '../../components/ExportButtons';
 
 const STATUS_STYLE = {
   open: { label: 'Open', className: 'bg-success-bg text-success-text' },
   closed: { label: 'Closed', className: 'bg-neutral-100 text-neutral-500' },
 };
+
+const EXPORT_COLUMNS = [
+  { header: 'Title', accessor: (j) => j.title },
+  { header: 'Company', accessor: (j) => j.company },
+  { header: 'Location', accessor: (j) => j.location },
+  { header: 'Type', accessor: (j) => j.type },
+  { header: 'Status', accessor: (j) => j.status },
+  { header: 'Published', accessor: (j) => (j.published ? 'Yes' : 'No') },
+];
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
@@ -16,7 +26,7 @@ const GRID_COLS = 'grid-cols-[1.6fr_1.4fr_1.2fr_1fr_0.8fr_0.9fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -130,7 +140,9 @@ export default function JobsPage() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <ExportButtons title="Jobs" filenameBase="titan-jobs" columns={EXPORT_COLUMNS} rows={items} />
+
           <a
             href="/careers"
             target="_blank"
@@ -153,8 +165,8 @@ export default function JobsPage() {
         </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Title', 'Company', 'Location', 'Type', 'Status', 'Published'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -177,7 +189,7 @@ export default function JobsPage() {
                 <motion.div
                   key={j._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{j.title}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{j.company}</span>

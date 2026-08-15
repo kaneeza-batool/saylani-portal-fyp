@@ -4,11 +4,19 @@ import { motion } from 'framer-motion';
 import { createCourse, deleteCourse, fetchCourses, updateCourse } from '../../services/courseService';
 import CourseFormModal from '../../components/CourseFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExportButtons from '../../components/ExportButtons';
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
   inactive: { label: 'Inactive', className: 'bg-neutral-100 text-neutral-500' },
 };
+
+const EXPORT_COLUMNS = [
+  { header: 'Course', accessor: (c) => c.name },
+  { header: 'Description', accessor: (c) => c.description },
+  { header: 'Duration (weeks)', accessor: (c) => c.durationWeeks },
+  { header: 'Status', accessor: (c) => c.status },
+];
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
@@ -16,7 +24,7 @@ const GRID_COLS = 'grid-cols-[1.4fr_2fr_1fr_0.8fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -130,20 +138,24 @@ export default function CoursesPage() {
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={openAdd}
-          className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Course
-        </button>
+        <div className="flex items-center gap-2.5">
+          <ExportButtons title="Courses" filenameBase="titan-courses" columns={EXPORT_COLUMNS} rows={items} />
+
+          <button
+            type="button"
+            onClick={openAdd}
+            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Course
+          </button>
+        </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Course', 'Description', 'Duration', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -166,7 +178,7 @@ export default function CoursesPage() {
                 <motion.div
                   key={c._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{c.name}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{c.description || '—'}</span>

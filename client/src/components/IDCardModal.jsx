@@ -46,7 +46,7 @@ export default function IDCardModal({ open, onClose, type, person }) {
           >
             <div
               id="printable-id-card"
-              className="w-[320px] rounded-2xl overflow-hidden shadow-2xl"
+              className="w-[320px] max-w-[85vw] rounded-2xl overflow-hidden shadow-2xl"
               style={{ background: '#ffffff', border: '1px solid #e7eae6' }}
             >
               <div className="px-5 pt-5 pb-4 flex items-center gap-2.5" style={{ background: 'linear-gradient(135deg,#0D1935,#12234A)' }}>

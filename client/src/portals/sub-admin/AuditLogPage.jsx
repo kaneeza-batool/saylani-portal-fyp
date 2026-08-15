@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchAuditLogs } from '../../services/auditLogService';
+import ExportButtons from '../../components/ExportButtons';
 
 // Same table shell as sub-admin/AlertsPage.jsx and FeedbackPage.jsx
 // (GRID_COLS approach, same classes). Scoping is entirely server-side —
@@ -31,9 +32,17 @@ const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, trans
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
 const GRID_COLS = 'grid-cols-[1fr_0.7fr_0.9fr_2.4fr_1fr]';
 
+const EXPORT_COLUMNS = [
+  { header: 'Actor', accessor: (l) => l.actorName },
+  { header: 'Action', accessor: (l) => l.action },
+  { header: 'Record', accessor: (l) => l.resourceType },
+  { header: 'Summary', accessor: (l) => l.summary },
+  { header: 'Date', accessor: (l) => new Date(l.createdAt).toLocaleString() },
+];
+
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -112,10 +121,12 @@ export default function AuditLogPage() {
             </button>
           )}
         </div>
+
+        <ExportButtons title="Audit Log" filenameBase="titan-subadmin-audit-log" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Actor', 'Action', 'Record', 'Summary', 'Date'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -155,7 +166,7 @@ export default function AuditLogPage() {
                 <motion.div
                   key={log._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{log.actorName}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${a.className}`}>{a.label}</span>

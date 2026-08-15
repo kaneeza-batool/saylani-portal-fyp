@@ -37,7 +37,7 @@ export default function DonatePage() {
           There are no active campaigns right now. Please check back soon.
         </div>
       ) : (
-        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
+        <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {campaigns.map((c) => (
             <motion.div
               key={c._id}

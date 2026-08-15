@@ -8,5 +8,12 @@ import AuditLogList from '../../components/AuditLogList';
 // you meant something else (e.g. a pending-approval queue for
 // student/trainer-submitted profile edits) and it can be rebuilt.
 export default function Updation() {
-  return <AuditLogList fixedAction="update" emptyText="No records have been updated yet." />;
+  return (
+    <AuditLogList
+      fixedAction="update"
+      emptyText="No records have been updated yet."
+      title="Updation Log"
+      filenameBase="titan-updation-log"
+    />
+  );
 }

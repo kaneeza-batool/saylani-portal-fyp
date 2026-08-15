@@ -81,7 +81,7 @@ function ModelInfoCard({ modelInfo }) {
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -150,8 +150,8 @@ export default function InsightsPage() {
           <ModelInfoCard modelInfo={data.modelInfo} />
         )}
 
-        <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-          <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+        <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+          <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
             {['Student', 'Course', 'Campus', 'Attendance', 'Payment'].map((h) => (
               <span key={h} className="text-overline uppercase text-neutral-500">
                 {h}
@@ -174,7 +174,7 @@ export default function InsightsPage() {
                   <motion.div
                     key={s.studentId}
                     variants={fadeInUp}
-                    className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                    className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                   >
                     <div className="min-w-0">
                       <div className="text-body-sm font-semibold text-neutral-900 truncate">{s.name}</div>

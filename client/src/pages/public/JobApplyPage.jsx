@@ -75,7 +75,7 @@ export default function JobApplyPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-surface border border-neutral-200 rounded-xl p-6 flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass} htmlFor="fullName">Full name</label>
             <input id="fullName" type="text" required value={form.fullName} onChange={setField('fullName')} className={inputClass} />
@@ -86,7 +86,7 @@ export default function JobApplyPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass} htmlFor="phone">Phone</label>
             <input id="phone" type="tel" required value={form.phone} onChange={setField('phone')} className={inputClass} />
@@ -112,7 +112,7 @@ export default function JobApplyPage() {
           <textarea id="skills" rows={2} value={form.skills} onChange={setField('skills')} placeholder="e.g. React, Node.js, Networking, Communication" className={inputClass} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass} htmlFor="resume">Resume / CV (PDF or Word, required)</label>
             <input

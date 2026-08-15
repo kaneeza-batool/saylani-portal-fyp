@@ -5,6 +5,7 @@ import { createCampaign, deleteCampaign, fetchCampaigns, updateCampaign } from '
 import { fetchCampaignSummary } from '../../services/donationService';
 import CampaignFormModal from '../../components/CampaignFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExportButtons from '../../components/ExportButtons';
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
@@ -21,7 +22,7 @@ function money(n) {
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -112,6 +113,15 @@ export default function CampaignsPage() {
   const total = data?.total ?? 0;
   const submitting = createMutation.isPending || updateMutation.isPending;
 
+  const exportColumns = [
+    { header: 'Title', accessor: (c) => c.title },
+    { header: 'Category', accessor: (c) => c.category },
+    { header: 'Goal', accessor: (c) => c.goalAmount },
+    { header: 'Raised', accessor: (c) => summary?.[c._id]?.raisedAmount ?? 0 },
+    { header: 'Status', accessor: (c) => c.status },
+    { header: 'Published', accessor: (c) => (c.published ? 'Yes' : 'No') },
+  ];
+
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -140,7 +150,9 @@ export default function CampaignsPage() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <ExportButtons title="Campaigns" filenameBase="titan-campaigns" columns={exportColumns} rows={items} />
+
           <a
             href="/donate"
             target="_blank"
@@ -163,8 +175,8 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Title', 'Progress', 'Goal', 'Status', 'Published'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -189,7 +201,7 @@ export default function CampaignsPage() {
                 <motion.div
                   key={c._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="min-w-0">
                     <div className="text-body-sm font-semibold text-neutral-900 truncate">{c.title}</div>

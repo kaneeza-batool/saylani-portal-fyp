@@ -101,7 +101,7 @@ async function computeBatchProgressAverage(courseId) {
 async function computeCourseLeaderboard(courseId) {
   const enrollments = await Enrollment.find({ course: courseId }).populate(
     'student',
-    'fullName avatarUrl'
+    'name avatarUrl'
   );
   const enrolledStudents = enrollments.filter((e) => e.student);
 
@@ -136,7 +136,7 @@ async function computeCourseLeaderboard(courseId) {
 
       return {
         studentId: studentId.toString(),
-        fullName: enrollment.student.fullName,
+        fullName: enrollment.student.name,
         avatarUrl: enrollment.student.avatarUrl || null,
         attendancePercentage,
         quizAverage,
