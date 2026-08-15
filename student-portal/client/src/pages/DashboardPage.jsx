@@ -285,7 +285,7 @@ function TabsPanel({ courseId, tabs, isLoading }) {
                 return (
                   <Link
                     key={a._id}
-                    to={`/assignment/${courseId}`}
+                    to="/assignment"
                     className="flex items-center justify-between gap-3 px-3 py-3 hover:bg-neutral-50 rounded-md transition-colors"
                   >
                     <span className="text-sm font-medium text-neutral-800 truncate">{a.title}</span>

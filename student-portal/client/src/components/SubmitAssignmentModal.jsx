@@ -18,7 +18,7 @@ function formatTimestamp(iso) {
   });
 }
 
-export default function SubmitAssignmentModal({ courseId, assignmentId, onClose }) {
+export default function SubmitAssignmentModal({ assignmentId, onClose }) {
   const queryClient = useQueryClient();
   const [submissionLink, setSubmissionLink] = useState('');
   const [submissionText, setSubmissionText] = useState('');
@@ -26,8 +26,8 @@ export default function SubmitAssignmentModal({ courseId, assignmentId, onClose 
   const [error, setError] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['assignment', 'detail', courseId, assignmentId],
-    queryFn: () => getAssignmentDetail(courseId, assignmentId),
+    queryKey: ['assignment', 'detail', assignmentId],
+    queryFn: () => getAssignmentDetail(assignmentId),
     enabled: !!assignmentId,
   });
 
@@ -47,7 +47,7 @@ export default function SubmitAssignmentModal({ courseId, assignmentId, onClose 
   }, [submission, assignmentId]);
 
   const mutation = useMutation({
-    mutationFn: (payload) => submitAssignment(courseId, assignmentId, payload),
+    mutationFn: (payload) => submitAssignment(assignmentId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignment'] });
       onClose();

@@ -100,37 +100,42 @@ export default {
         // crest logo: deep navy shield, gold heraldic outline/wordmark,
         // white book+globe mark. Supersedes the earlier Saylani royal/
         // parrot palette (kept nowhere — fully replaced).
+        // Ramp realigned to the Titan Midnight (#132345) / Antique Gold
+        // (#CEA45C) anchors used by student-portal/client/tailwind.config.js
+        // and the public website, so all three properties share one palette
+        // (navy-800/gold-500 are the anchors; every other step mirrors
+        // student-portal's primary/accent ramp 1:1).
         navy: {
-          50: '#EEF1F7',
-          100: '#D7DEEA',
-          200: '#A9B8D2',
-          300: '#7A91BA',
-          400: '#4C6AA2',
-          500: '#2C4680',
-          600: '#1A2F5E',
-          700: '#12234A',
-          800: '#0D1935', // sidebar / crest shield surface
-          900: '#080F22', // deepest — text on gold
+          50: '#F3F4F6',
+          100: '#E5E7EB',
+          200: '#C6CAD2',
+          300: '#A1A7B5',
+          400: '#767F93',
+          500: '#505C75',
+          600: '#2F3D5B',
+          700: '#1D3557',
+          800: '#132345', // Titan Midnight — anchor, sidebar / crest shield surface
+          900: '#0F1930', // deepest — text on gold
         },
         gold: {
-          50: '#FBF3DF',
-          100: '#F5E6BE',
-          200: '#EAD08A',
-          300: '#DFBB5C',
-          400: '#D4AF37', // heraldic gold accent
-          500: '#C9A227', // primary gold — CTAs, active states
-          600: '#A9821C', // button hover/pressed (best contrast w/ white text)
-          700: '#8A6816',
-          800: '#6B4F10',
-          900: '#4D390A',
+          50: '#F7F0E3',
+          100: '#EEE2C6',
+          200: '#E7D5AE',
+          300: '#DDC18D',
+          400: '#D5B273', // heraldic gold accent
+          500: '#CEA45C', // Antique Gold — anchor, primary gold — CTAs, active states
+          600: '#9F7D46', // button hover/pressed (best contrast w/ white text)
+          700: '#7D6136',
+          800: '#5E4727',
+          900: '#43311A',
         },
         titan: {
-          sidebar: '#0D1935', // navy-800 — sidebar surface
+          sidebar: '#0F1930', // navy-900 — sidebar surface (matches student-portal's bg-primary-900, not the navy-800 anchor)
           'sidebar-hover': 'rgba(255,255,255,0.08)',
-          'sidebar-active': '#C9A227', // gold-500 — solid pill for the selected nav item
+          'sidebar-active': '#CEA45C', // gold-500 — solid pill for the selected nav item
           'sidebar-text': '#AAB7D6', // muted navy-white, default nav label
           'sidebar-text-hover': '#FFFFFF',
-          'sidebar-text-active': '#080F22', // navy-900 — dark text on the gold active pill
+          'sidebar-text-active': '#0F1930', // navy-900 — dark text on the gold active pill
         },
       },
 
@@ -170,12 +175,12 @@ export default {
         pill: '9999px', // status badges, progress bar, avatars
       },
 
-      // Shadows carry a navy tint (rgba(13,25,53,*) = navy-800) rather than
+      // Shadows carry a navy tint (rgba(19,35,69,*) = navy-800) rather than
       // pure black, matching the crest theme.
       boxShadow: {
-        card: '0 12px 26px rgba(13,25,53,0.10)', // KPI/list card, on hover
-        panel: '-8px 0 30px rgba(13,25,53,0.16)', // right-side slide-over panel
-        gold: '0 8px 24px rgba(201,162,39,0.35)', // gold glow — primary CTAs, active states
+        card: '0 12px 26px rgba(19,35,69,0.10)', // KPI/list card, on hover
+        panel: '-8px 0 30px rgba(19,35,69,0.16)', // right-side slide-over panel
+        gold: '0 8px 24px rgba(206,164,92,0.35)', // gold glow — primary CTAs, active states
       },
     },
   },

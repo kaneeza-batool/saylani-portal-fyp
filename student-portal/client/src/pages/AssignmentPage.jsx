@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAssignments, getAssignmentSummary } from '../services/assignmentService';
@@ -107,22 +107,14 @@ function ActionIcons({ assignment, onView, onSubmit, onCertificate }) {
 }
 
 export default function AssignmentPage() {
-  const { courseId } = useParams();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [infoModalId, setInfoModalId] = useState(null);
   const [submitModalId, setSubmitModalId] = useState(null);
 
-  // Switching courses re-renders this page with a new courseId without
-  // remounting it — reset to page 1 so we don't strand the student on a
-  // page number that doesn't exist for the new course's assignment count.
-  useEffect(() => {
-    setPage(1);
-  }, [courseId]);
-
   const { data: summary, isLoading: summaryLoading } = useQuery({
-    queryKey: ['assignment', 'summary', courseId],
-    queryFn: () => getAssignmentSummary(courseId),
+    queryKey: ['assignment', 'summary'],
+    queryFn: () => getAssignmentSummary(),
   });
 
   const {
@@ -131,8 +123,8 @@ export default function AssignmentPage() {
     isError: listError,
     refetch,
   } = useQuery({
-    queryKey: ['assignment', 'list', courseId],
-    queryFn: () => getAssignments(courseId),
+    queryKey: ['assignment', 'list'],
+    queryFn: () => getAssignments(),
   });
 
   const totalPages = assignments ? Math.max(1, Math.ceil(assignments.length / PAGE_SIZE)) : 1;
@@ -142,9 +134,14 @@ export default function AssignmentPage() {
   // verifiable course certificate as everywhere else in the app (Dashboard/
   // Progress banners) — there's no separate per-assignment certificate,
   // and this used to just show a "coming soon" toast even after that
-  // feature shipped.
+  // feature shipped. Assignment is courseless now (one course per student),
+  // so there's no courseId in scope here — /certificate/:courseId still
+  // expects one and has no real Course record to resolve it against either
+  // (same dead Enrollment/Course gap noted in dashboardController), so this
+  // is already a dead link in practice; kept as a no-crash no-op shape
+  // rather than wired to a value that doesn't exist.
   function handleCertificateClick() {
-    navigate(`/certificate/${courseId}`);
+    navigate('/certificate');
   }
 
   return (
@@ -304,8 +301,8 @@ export default function AssignmentPage() {
         )}
       </div>
 
-      <AssignmentInfoModal courseId={courseId} assignmentId={infoModalId} onClose={() => setInfoModalId(null)} />
-      <SubmitAssignmentModal courseId={courseId} assignmentId={submitModalId} onClose={() => setSubmitModalId(null)} />
+      <AssignmentInfoModal assignmentId={infoModalId} onClose={() => setInfoModalId(null)} />
+      <SubmitAssignmentModal assignmentId={submitModalId} onClose={() => setSubmitModalId(null)} />
     </div>
   );
 }

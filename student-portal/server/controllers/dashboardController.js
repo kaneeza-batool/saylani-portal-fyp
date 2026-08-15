@@ -3,17 +3,20 @@ require('../models/Slot'); // registers 'Slot' so .populate('batch') resolves it
 const Enrollment = require('../models/Enrollment');
 require('../models/Course'); // registers the 'Course' model so .populate('course') resolves it
 const FeeVoucher = require('../models/FeeVoucher');
+const Assignment = require('../models/Assignment');
+const AssignmentSubmission = require('../models/AssignmentSubmission');
 const { computeProgressStat, computeBatchProgressAverage, computeCourseLeaderboard } = require('../utils/courseStats');
 
 // One course per student now (see Student.js) — course, batch, payment,
 // campus, and rollNumber all live directly on the shared Student document.
-// Enrollment/Course/Assignment/Quiz/CourseModule are still dead: no data
-// has ever been migrated into those collections for the shared database
-// (see attendanceController's equivalent fix), so every section that used
-// to read from them has no data source and returns an empty array/null
-// instead of querying tables that can only ever be empty. FeeVoucher is the
-// exception — real, seeded data (see utils/seedFeeVouchers.js), scoped by
-// student only, same as Attendance below.
+// Enrollment/Course/Quiz/CourseModule are still dead: no data has ever been
+// migrated into those collections for the shared database (see
+// attendanceController's equivalent fix), so every section that used to
+// read from them has no data source and returns an empty array/null
+// instead of querying tables that can only ever be empty. FeeVoucher and
+// Assignment are the exceptions — real, seeded data (see
+// utils/seedFeeVouchers.js and utils/seedAssignments.js), scoped by
+// student/student.course only, same as Attendance below.
 exports.getDashboard = async (req, res) => {
   try {
     const student = req.student;
@@ -45,13 +48,37 @@ exports.getDashboard = async (req, res) => {
     // full history lives on the Payment page's "View All".
     const recentFees = await FeeVoucher.find({ student: student._id }).sort({ dueDate: -1 }).limit(3);
 
+    const courseAssignments = await Assignment.find({ course: student.course }).sort({ dueDate: 1 });
+    const assignmentIds = courseAssignments.map((a) => a._id);
+    const submissions = await AssignmentSubmission.find(
+      { student: student._id, assignment: { $in: assignmentIds } },
+      'assignment status'
+    );
+    const submittedIds = new Set(
+      submissions.filter((s) => ['submitted', 'late_submitted', 'approved', 'not_approved'].includes(s.status)).map((s) => s.assignment.toString())
+    );
+    const assignment = { total: courseAssignments.length, submitted: submittedIds.size };
+
+    // Top 3 not-yet-submitted assignments, soonest due first — same shape
+    // TabsPanel (DashboardPage.jsx) already expects from the old per-course
+    // endpoint (_id/title/daysUntilDue).
+    const now = Date.now();
+    const pendingAssignments = courseAssignments
+      .filter((a) => !submittedIds.has(a._id.toString()))
+      .slice(0, 3)
+      .map((a) => ({
+        _id: a._id,
+        title: a.title,
+        daysUntilDue: Math.ceil((new Date(a.dueDate).getTime() - now) / (1000 * 60 * 60 * 24)),
+      }));
+
     return res.status(200).json({
       attendance,
-      assignment: { total: 0, submitted: 0 },
+      assignment,
       activeCourse,
       classDays: [],
       recentFees,
-      tabs: { assignments: [], quizzes: [], events: [] },
+      tabs: { assignments: pendingAssignments, quizzes: [], events: [] },
     });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load dashboard', error: err.message });

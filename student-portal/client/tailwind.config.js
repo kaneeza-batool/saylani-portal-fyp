@@ -1,18 +1,24 @@
 /**
  * TITAN Student Portal — design tokens
  *
- * Aligned to the refined palette used on the public website (Titan
- * Midnight / Antique Gold / Ivory) so both properties read as one brand.
- * `primary` and `accent` are full 50-900 tint/shade ramps generated from
- * the two exact anchor colors — every other step is interpolated, not
- * picked by eye — with the given "hover" and "soft highlight" colors
- * placed verbatim at the ramp position that matches their intended use
+ * `primary` (navy) and `accent` (gold) are full 50-900 tint/shade ramps —
+ * every step (including neutral.50/200, background, and border) now
+ * mirrors client/tailwind.config.js exactly, which is the source of truth
+ * across all three TITAN properties. `primary`/`accent` were already
+ * identical to the main app's navy/gold ramps; neutral.50/200 and the
+ * background/border aliases were moved off the public website's warmer
+ * Ivory tone (#F7F5F0/#E4E1DA) to the main app's cooler
+ * --neutral-50/--neutral-200 (#F6F8F6/#E7EAE6) — this is a deliberate
+ * divergence from the public website, not an oversight; see the public
+ * website's src/index.css @theme block if reconciling that too.
+ * `primary`/`accent` are interpolated from their anchor colors, not picked
+ * by eye — with the given "hover" and "soft highlight" colors placed
+ * verbatim at the ramp position that matches their intended use
  * (primary-700 = hover, accent-200 = soft highlight).
  *
- * `neutral` is generated the same way from the four ivory/border/slate/
- * charcoal anchors, so every existing `text-neutral-*` / `border-neutral-*`
- * / `bg-neutral-*` usage across the app picks up the refined palette
- * without needing a per-component rename.
+ * `neutral` 100/300-900 are still the original ivory/border/slate/
+ * charcoal-derived ramp, untouched by this pass — only 50/200 (and their
+ * background/border aliases) were in scope.
  *
  * @type {import('tailwindcss').Config}
  */
@@ -50,10 +56,14 @@ export default {
         },
 
         // ---- Neutral — Ivory/Charcoal ramp (background, border, text) ----
+        // 50/200 realigned to match client/tailwind.config.js's light-mode
+        // --neutral-50/--neutral-200 (the main app is the reference now —
+        // see background/surface/border aliases below). 100/300-900 left
+        // untouched — not part of this change.
         neutral: {
-          50: '#F7F5F0', // background — Ivory
+          50: '#F6F8F6', // background — matches main app's --neutral-50 (light)
           100: '#EDEAE4',
-          200: '#E4E1DA', // border
+          200: '#E7EAE6', // border — matches main app's --neutral-200 (light)
           300: '#BEBFC1',
           400: '#969BA5',
           500: '#667085', // text-secondary — Muted Slate
@@ -67,9 +77,9 @@ export default {
         // values to the ramp steps above — same colors, semantic names for
         // call sites that read better as `bg-background`/`border-border`
         // than `bg-neutral-50`/`border-neutral-200`) ----
-        background: '#F7F5F0',
+        background: '#F6F8F6',
         surface: '#FFFFFF',
-        border: '#E4E1DA',
+        border: '#E7EAE6',
 
         // Sage — decorative "positive/verified" accent, distinct from the
         // success status pill colors below. Use sparingly (e.g. a verified

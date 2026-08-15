@@ -6,10 +6,10 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-export default function AssignmentInfoModal({ courseId, assignmentId, onClose }) {
+export default function AssignmentInfoModal({ assignmentId, onClose }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['assignment', 'detail', courseId, assignmentId],
-    queryFn: () => getAssignmentDetail(courseId, assignmentId),
+    queryKey: ['assignment', 'detail', assignmentId],
+    queryFn: () => getAssignmentDetail(assignmentId),
     enabled: !!assignmentId,
   });
 
