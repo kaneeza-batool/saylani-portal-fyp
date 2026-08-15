@@ -40,10 +40,17 @@ const MotionNavLink = motion.create(NavLink);
 // deliberately NOT in this list — it's the one nav item that never needs a
 // courseId, so it's rendered separately above these as the student's
 // always-available way back to the course picker (see Sidebar below).
+//
+// Dashboard and Attendance are `courseless` — one course per student now
+// (see Student.js/attendanceController), so those two link straight to
+// `base` with no id segment and are never gated on hasActiveCourse. The
+// rest still route through Enrollment/CourseModule, which stays empty for
+// every real student in this merge, so they're left gated until that's
+// fixed the same way.
 export const NAV_ITEMS = [
-  { label: 'Dashboard', base: '/dashboard', icon: DashboardIcon },
+  { label: 'Dashboard', base: '/dashboard', icon: DashboardIcon, courseless: true },
   { label: 'Progress', base: '/progress', icon: ProgressIcon },
-  { label: 'Attendance', base: '/attendance', icon: AttendanceIcon },
+  { label: 'Attendance', base: '/attendance', icon: AttendanceIcon, courseless: true },
   { label: 'Payment', base: '/fee', icon: PaymentIcon },
   { label: 'Assignment', base: '/assignment', icon: AssignmentIcon },
   { label: 'Quiz', base: '/quiz', icon: QuizIcon },
@@ -78,9 +85,8 @@ export default function Sidebar({ open, onClose, onMilestone }) {
   const hasActiveCourse = Boolean(courseId) && !onCoursesPage;
 
   const { data: streakData } = useQuery({
-    queryKey: ['attendance', 'streak', courseId],
-    queryFn: () => getAttendanceStreak(courseId),
-    enabled: !!courseId,
+    queryKey: ['attendance', 'streak'],
+    queryFn: () => getAttendanceStreak(),
   });
   const streak = streakData?.streak ?? null;
   const milestone = streak ? highestMilestone(streak) : null;
@@ -190,8 +196,8 @@ export default function Sidebar({ open, onClose, onMilestone }) {
 
         <div className="h-px bg-white/10 my-1" />
 
-        {NAV_ITEMS.map(({ label, base, icon: Icon }) => {
-          if (!hasActiveCourse) {
+        {NAV_ITEMS.map(({ label, base, icon: Icon, courseless }) => {
+          if (!courseless && !hasActiveCourse) {
             return (
               <span
                 key={base}
@@ -204,13 +210,14 @@ export default function Sidebar({ open, onClose, onMilestone }) {
             );
           }
 
+          const to = courseless ? base : `${base}/${courseId}`;
           // isActive judged from the real pathname (not NavLink's own
           // matching) so exactly one item lights up once a course is active.
-          const isActive = pathname.startsWith(`${base}/`);
+          const isActive = courseless ? pathname === base : pathname.startsWith(`${base}/`);
           return (
             <MotionNavLink
               key={base}
-              to={`${base}/${courseId}`}
+              to={to}
               onClick={onClose}
               whileTap={{ scale: 0.97 }}
               className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${

@@ -1,16 +1,16 @@
 import api from './authService';
 
-export async function getAttendanceSummary(courseId) {
-  const { data } = await api.get(`/attendance/${courseId}/summary`);
+export async function getAttendanceSummary() {
+  const { data } = await api.get('/attendance/summary');
   return data;
 }
 
-export async function getAttendanceByMonth(courseId, month) {
-  const { data } = await api.get(`/attendance/${courseId}/monthly`, { params: month ? { month } : {} });
+export async function getAttendanceByMonth(month) {
+  const { data } = await api.get('/attendance/monthly', { params: month ? { month } : {} });
   return data;
 }
 
-export async function getAttendanceStreak(courseId) {
-  const { data } = await api.get(`/attendance/${courseId}/streak`);
+export async function getAttendanceStreak() {
+  const { data } = await api.get('/attendance/streak');
   return data;
 }

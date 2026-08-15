@@ -1,15 +1,21 @@
-const Attendance = require('../models/Attendance');
+const StudentAttendance = require('../models/StudentAttendance');
 
+// One course per student (see Student.js) — course is a plain name string,
+// not an ObjectId, so there's no course to look up. Every handler just
+// filters the shared collection by the logged-in student's own course.
 exports.getAttendanceSummary = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const records = await Attendance.find({ student: req.student._id, courseId });
+    const records = await StudentAttendance.find({ student: req.student._id, course: req.student.course });
 
     const total = records.length;
     const present = records.filter((r) => r.status === 'present').length;
     const leave = records.filter((r) => r.status === 'leave').length;
     const absent = records.filter((r) => r.status === 'absent').length;
-    const percentage = total > 0 ? Math.round((present / total) * 1000) / 10 : 0;
+    // Same formula as the dashboard and the admin side: leave is tracked
+    // and shown as its own stat, but excluded from the ratio — it isn't a
+    // miss the way absent is.
+    const denominator = present + absent;
+    const percentage = denominator > 0 ? Math.round((present / denominator) * 1000) / 10 : 0;
 
     return res.status(200).json({ total, present, leave, absent, percentage });
   } catch (err) {
@@ -19,9 +25,10 @@ exports.getAttendanceSummary = async (req, res) => {
 
 exports.getAttendanceByMonth = async (req, res) => {
   try {
-    const { courseId } = req.params;
     const { month } = req.query; // 'YYYY-MM'
-    const all = await Attendance.find({ student: req.student._id, courseId }).sort({ date: -1 });
+    const all = await StudentAttendance.find({ student: req.student._id, course: req.student.course }).sort({
+      date: -1,
+    });
 
     const availableMonths = [...new Set(all.map((r) => r.date.toISOString().slice(0, 7)))];
 
@@ -36,8 +43,9 @@ exports.getAttendanceByMonth = async (req, res) => {
 
 exports.getStreak = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const records = await Attendance.find({ student: req.student._id, courseId }).sort({ date: -1 });
+    const records = await StudentAttendance.find({ student: req.student._id, course: req.student.course }).sort({
+      date: -1,
+    });
 
     let streak = 0;
     for (const record of records) {
