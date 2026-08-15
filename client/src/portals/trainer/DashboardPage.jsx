@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getTrainerDashboard } from '../../services/trainerDashboardService';
+import { getTrainerDashboard, getPendingReviewCount } from '../../services/trainerDashboardService';
 import { useAuth } from '../../context/AuthContext';
-import { BookIcon, GraduationCapIcon } from '../../components/icons';
+import { BookIcon, GraduationCapIcon, ClipboardIcon } from '../../components/icons';
 
 // Layout sourced from the "MY BATCHES DASHBOARD" section of TITAN Trainer
 // Portal.html — a 2-col grid of batch cards, each with a progress ring and
@@ -29,7 +29,7 @@ function TrendUpIcon(props) {
   );
 }
 
-function buildSummary(batches) {
+function buildSummary(batches, pendingReviewCount) {
   const totalBatches = batches.length;
   const totalStudents = batches.reduce((sum, b) => sum + (b.students || 0), 0);
   const avgProgress = totalBatches ? Math.round(batches.reduce((sum, b) => sum + (b.pct || 0), 0) / totalBatches) : 0;
@@ -38,13 +38,22 @@ function buildSummary(batches) {
     { id: 'batches', label: 'Total Batches', value: totalBatches, bg: 'bg-info-bg', color: 'text-info-text', Icon: BookIcon },
     { id: 'students', label: 'Total Students', value: totalStudents, bg: 'bg-success-bg', color: 'text-success-text', Icon: GraduationCapIcon },
     { id: 'progress', label: 'Average Progress', value: `${avgProgress}%`, bg: 'bg-warning-bg', color: 'text-warning-text', Icon: TrendUpIcon },
+    {
+      id: 'pending-reviews',
+      label: 'Pending Reviews',
+      value: pendingReviewCount ?? 0,
+      bg: (pendingReviewCount ?? 0) > 0 ? 'bg-danger-50' : 'bg-neutral-100',
+      color: (pendingReviewCount ?? 0) > 0 ? 'text-danger-600' : 'text-neutral-500',
+      Icon: ClipboardIcon,
+      linkTo: '/trainer/quizzes',
+    },
   ];
 }
 
 function StatCard({ stat }) {
   const Icon = stat.Icon;
-  return (
-    <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3">
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-overline uppercase text-neutral-500">{stat.label}</span>
         <div className={`w-[34px] h-[34px] rounded flex items-center justify-center ${stat.bg} ${stat.color}`}>
@@ -52,6 +61,23 @@ function StatCard({ stat }) {
         </div>
       </div>
       <div className="font-heading text-h3 text-neutral-900">{stat.value}</div>
+    </>
+  );
+  const className = 'bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3';
+
+  if (stat.linkTo) {
+    return (
+      <motion.div variants={fadeInUp}>
+        <Link to={stat.linkTo} className={`${className} block transition-colors hover:border-[var(--trainer-blue)]`}>
+          {content}
+        </Link>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div variants={fadeInUp} className={className}>
+      {content}
     </motion.div>
   );
 }
@@ -148,6 +174,10 @@ export default function DashboardPage() {
     queryKey: ['trainer-dashboard'],
     queryFn: getTrainerDashboard,
   });
+  const { data: pendingReviewCount } = useQuery({
+    queryKey: ['trainer-pending-review-count'],
+    queryFn: getPendingReviewCount,
+  });
 
   if (isLoading) {
     return (
@@ -176,29 +206,28 @@ export default function DashboardPage() {
 
   const batches = data?.batches ?? [];
 
-  if (batches.length === 0) {
-    return (
-      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] text-body-sm text-neutral-400">
-        No batches assigned to you yet.
-      </div>
-    );
-  }
-
-  // Stats are always computed from the full batches list — only the grid
-  // below is trimmed to a preview. BatchesPage.jsx is the full list.
-  const summary = buildSummary(batches);
+  // Stats (including Pending Reviews) always show, even with zero batches
+  // assigned — a trainer can have assignments/submissions to review
+  // independent of whether Super Admin has linked any Slot to them yet.
+  const summary = buildSummary(batches, pendingReviewCount);
   const recentBatches = batches.slice(0, 3);
 
   return (
     <div className="flex flex-col gap-5">
       <div className="font-heading font-bold text-h5 text-neutral-900">Welcome back, {user?.name}</div>
 
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-3 gap-4">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {summary.map((stat) => (
           <StatCard key={stat.id} stat={stat} />
         ))}
       </motion.div>
 
+      {batches.length === 0 ? (
+        <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] text-body-sm text-neutral-400">
+          No batches assigned to you yet.
+        </div>
+      ) : (
+        <>
       <div className="flex items-center justify-between">
         <div className="font-heading font-bold text-h6 text-neutral-900">Recent Batches</div>
         <Link
@@ -214,6 +243,8 @@ export default function DashboardPage() {
           <BatchCard key={batch.id} batch={batch} />
         ))}
       </motion.div>
+        </>
+      )}
     </div>
   );
 }
