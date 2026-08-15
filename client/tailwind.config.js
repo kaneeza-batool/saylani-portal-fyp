@@ -63,6 +63,7 @@ export default {
         // surface, so this is themed too (lighter blue in dark mode).
         chart: {
           enrollment: 'var(--chart-enrollment)',
+          placement: 'var(--chart-placement)',
         },
 
         // ---- Semantic status — bg/text pairs, reused verbatim across

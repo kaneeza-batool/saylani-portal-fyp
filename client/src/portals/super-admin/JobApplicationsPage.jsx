@@ -15,6 +15,7 @@ const STATUS_STYLE = {
   pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
   reviewed: { label: 'Reviewed', className: 'bg-info-bg text-info-text' },
   shortlisted: { label: 'Shortlisted', className: 'bg-success-bg text-success-text' },
+  hired: { label: 'Hired', className: 'bg-success-bg text-success-text' },
   rejected: { label: 'Rejected', className: 'bg-danger-50 text-danger-600' },
 };
 
@@ -138,6 +139,7 @@ export default function JobApplicationsPage() {
             <option value="pending">Pending</option>
             <option value="reviewed">Reviewed</option>
             <option value="shortlisted">Shortlisted</option>
+            <option value="hired">Hired</option>
             <option value="rejected">Rejected</option>
           </select>
           <select

@@ -34,12 +34,39 @@ exports.getAdmissions = async (req, res) => {
   }
 };
 
-// Shared by approve/reject — only ever transitions a document that is
-// currently 'pending', scoped to req.campusFilter the same way
+// Shared by approve/reject — only pending -> enrolled and pending ->
+// rejected are ever reachable (toStatus is hardcoded per endpoint below,
+// never client-supplied). Scoped to req.campusFilter the same way
 // updateStudent's ownership fix works, so a sub_admin can't act on another
 // campus's applicant (or re-approve/reject an already-decided one).
-async function transitionAdmission(req, res, { toStatus, actionLabel }) {
+//
+// Two-step so a blocked attempt can be told apart from a genuine
+// not-found and get its own audit trail: the existence/scope check runs
+// first (still campus-filtered — an out-of-scope id stays a plain 404,
+// same as before, so a sub_admin can't even learn another campus's
+// applicant exists), then a status check that's now itself logged when it
+// blocks something. The actual write stays gated by the same atomic
+// findOneAndUpdate filter as before (belt-and-suspenders against a
+// status change racing between these two reads).
+async function transitionAdmission(req, res, { toStatus, actionVerb, actionLabel }) {
   try {
+    const existing = await Student.findOne({ _id: req.params.id, ...req.campusFilter });
+    if (!existing) return res.status(404).json({ message: 'Pending admission not found' });
+
+    if (existing.status !== 'pending') {
+      logAudit({
+        actor: req.user,
+        action: 'update',
+        resourceType: 'Student',
+        resourceId: existing._id,
+        summary: `Rejected transition: attempted to ${actionVerb} "${existing.name}", but current status is "${existing.status}" (only a pending admission can be ${actionLabel.toLowerCase()})`,
+        resourceCampus: existing.campus,
+      });
+      return res.status(400).json({
+        message: `Only pending admissions can be ${actionLabel.toLowerCase()} — this student's current status is "${existing.status}".`,
+      });
+    }
+
     const student = await Student.findOneAndUpdate(
       { _id: req.params.id, status: 'pending', ...req.campusFilter },
       { status: toStatus },
@@ -58,10 +85,12 @@ async function transitionAdmission(req, res, { toStatus, actionLabel }) {
 
     return res.status(200).json({ student });
   } catch (err) {
-    return res.status(500).json({ message: `Failed to ${actionLabel.toLowerCase()} admission`, error: err.message });
+    return res.status(500).json({ message: `Failed to ${actionVerb} admission`, error: err.message });
   }
 }
 
-exports.approveAdmission = (req, res) => transitionAdmission(req, res, { toStatus: 'enrolled', actionLabel: 'Approved' });
+exports.approveAdmission = (req, res) =>
+  transitionAdmission(req, res, { toStatus: 'enrolled', actionVerb: 'approve', actionLabel: 'Approved' });
 
-exports.rejectAdmission = (req, res) => transitionAdmission(req, res, { toStatus: 'rejected', actionLabel: 'Rejected' });
+exports.rejectAdmission = (req, res) =>
+  transitionAdmission(req, res, { toStatus: 'rejected', actionVerb: 'reject', actionLabel: 'Rejected' });

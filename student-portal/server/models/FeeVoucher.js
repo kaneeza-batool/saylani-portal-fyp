@@ -9,7 +9,6 @@ const feeVoucherSchema = new mongoose.Schema(
     dueDate: { type: Date, required: true },
     voucherId: { type: String, required: true, unique: true, trim: true },
     status: { type: String, enum: ['paid', 'pending'], default: 'pending' },
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
   },
   { timestamps: true }
 );

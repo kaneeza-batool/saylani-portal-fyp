@@ -217,11 +217,34 @@ function buildStudentPlan(city, campusId, regionPrefix, offset, slotsForCampus) 
   return plan;
 }
 
+// Spreads the 60-student plan's createdAt across the last 6 calendar
+// months so the Dashboard's Enrollment Trend chart (which buckets by
+// Student.createdAt) shows a real multi-month bar chart instead of
+// dumping every seeded student into the current month. Counts rise
+// toward the present month to mirror the old placeholder trend's shape
+// (steadily growing enrollment), oldest bucket first; must sum to the
+// plan length (35 Sukkur + 25 Karachi = 60).
+const ENROLL_MONTH_BUCKETS = [6, 8, 9, 10, 12, 15];
+
+function assignCreatedAt(plan) {
+  const now = new Date();
+  let idx = 0;
+  ENROLL_MONTH_BUCKETS.forEach((count, bucketIdx) => {
+    const monthsAgo = ENROLL_MONTH_BUCKETS.length - 1 - bucketIdx;
+    for (let k = 0; k < count && idx < plan.length; k++, idx++) {
+      const day = 2 + ((idx * 7) % 25);
+      plan[idx].createdAt = new Date(now.getFullYear(), now.getMonth() - monthsAgo, day, 10, 0, 0);
+    }
+  });
+  for (; idx < plan.length; idx++) plan[idx].createdAt = now;
+}
+
 async function seedStudents(campusByCity, slotsByCity) {
   const plan = [
     ...buildStudentPlan('Sukkur', campusByCity.Sukkur, '45401', 1000, slotsByCity.Sukkur),
     ...buildStudentPlan('Karachi', campusByCity.Karachi, '42401', 2000, slotsByCity.Karachi),
   ];
+  assignCreatedAt(plan);
 
   let inserted = 0;
   const enrolled = { Sukkur: [], Karachi: [] };

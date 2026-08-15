@@ -52,14 +52,11 @@ export const NAV_ITEMS = [
       </svg>
     ),
   },
-  // The five items below are Sub-Admin-only — real pages/backends land in
-  // later phases (see project notes), placeholders for now so the nav is
-  // fully clickable rather than dead-ending.
   {
     id: 'admissions-queue',
     label: 'Admissions Queue',
-    to: '/sub-admin/admissions',
-    roles: ['sub_admin'],
+    to: { super_admin: '/admin/admissions', sub_admin: '/sub-admin/admissions' },
+    roles: ['super_admin', 'sub_admin'],
     permission: { module: 'ADMISSIONS', action: 'read' },
     icon: (
       <svg {...ICON_PROPS}>

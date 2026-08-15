@@ -130,6 +130,7 @@ function App() {
                     <Route path="insights" element={<InsightsPage />} />
                     <Route path="campus-map" element={<CampusMapPage />} />
                     <Route path="alerts" element={<AlertsPage />} />
+                    <Route path="admissions" element={<AdmissionsQueuePage />} />
                   </Route>
                 </Route>
 

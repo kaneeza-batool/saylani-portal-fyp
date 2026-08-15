@@ -184,7 +184,7 @@ function ClassScheduleCard({ classDays, isLoading }) {
   );
 }
 
-function FeeTable({ vouchers, courseId, isLoading }) {
+function FeeTable({ vouchers, isLoading }) {
   return (
     <motion.div
       variants={fadeInUp}
@@ -194,7 +194,7 @@ function FeeTable({ vouchers, courseId, isLoading }) {
     >
       <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-neutral-200">
         <h3 className="font-heading text-lg font-bold text-neutral-900">Fee History</h3>
-        <Link to={`/fee/${courseId}`} className="text-sm font-semibold text-primary-800 hover:text-primary-900">
+        <Link to="/fee" className="text-sm font-semibold text-primary-800 hover:text-primary-900">
           View All
         </Link>
       </div>
@@ -400,7 +400,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <FeeTable vouchers={dashboard?.recentFees || []} courseId={courseId} isLoading={dashboardLoading} />
+        <FeeTable vouchers={dashboard?.recentFees || []} isLoading={dashboardLoading} />
         <TabsPanel courseId={courseId} tabs={dashboard?.tabs || { assignments: [], quizzes: [], events: [] }} isLoading={dashboardLoading} />
       </div>
     </div>

@@ -485,7 +485,7 @@ export default function ProfilePage() {
                 whileHover={cardInteraction.whileHover}
                 whileTap={cardInteraction.whileTap}
                 type="button"
-                onClick={() => navigate(`/dashboard/${course._id}`)}
+                onClick={() => navigate('/dashboard')}
                 className="flex items-center justify-between gap-3 rounded-md border border-neutral-200 px-4 py-3 text-left hover:bg-neutral-50 hover:border-neutral-300 transition-colors"
               >
                 <span className="min-w-0">

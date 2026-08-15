@@ -13,6 +13,7 @@
   --neutral-600: #4b5d55;
   --neutral-900: #10231c;
   --chart-enrollment: #12234a;
+  --chart-placement: #c9a227;
   --chart-cursor: rgba(13, 25, 53, 0.04);
 }
 
@@ -30,6 +31,7 @@
   --neutral-600: #b7c0d8;
   --neutral-900: #edf0f7;
   --chart-enrollment: #6E8FE0;
+  --chart-placement: #e8c158;
   --chart-cursor: rgba(255, 255, 255, 0.06);
 }
 

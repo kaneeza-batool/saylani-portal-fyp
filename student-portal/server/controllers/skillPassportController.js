@@ -1,7 +1,4 @@
-const Enrollment = require('../models/Enrollment');
 const Certificate = require('../models/Certificate');
-require('../models/Course');
-const { computeProgressStat } = require('../utils/courseStats');
 
 // Hardcoded per-course skill mapping — there's no curriculum/tagging system
 // to derive this from yet, so this is a reasonable stand-in until courses
@@ -13,48 +10,46 @@ const SKILL_MAP = {
   'AI & Data Science': ['Python', 'Machine Learning', 'Data Analysis', 'Deep Learning', 'SQL', 'Statistics'],
 };
 
-function skillsForCourse(course) {
-  return SKILL_MAP[course.name] || (course.category ? [course.category] : []);
+function skillsForCourse(courseName) {
+  return SKILL_MAP[courseName] || [];
 }
 
-// Lifetime, cross-course view — NOT scoped to whichever course is active,
-// unlike every other page in this portal. Structured with a flat
-// courses[]/skills[] shape (rather than nesting skills inside courses)
-// specifically so a future Job Portal integration can consume
-// courses/certificates and skills independently without reshaping this.
+// One course per student (see Student.js) — course is a plain name string on
+// the shared Student document, not an Enrollment row. "Completed" reads
+// Student.status directly (the same field the admin side transitions via
+// the Admissions/roster flow), not a computed progress percentage that has
+// no real data source. Certificates are queried by student only — the
+// Certificate model still requires a course ObjectId, which nothing in this
+// merge can ever produce, so the collection stays genuinely empty; that's
+// left as an honest empty state rather than faking a certificate into
+// existence.
 exports.getSkillPassport = async (req, res) => {
   try {
-    const studentId = req.student._id;
-    const enrollments = await Enrollment.find({ student: studentId }).populate('course');
-    const certificates = await Certificate.find({ student: studentId });
-    const certByCourse = new Map(certificates.map((c) => [c.course.toString(), c]));
+    const student = req.student;
+    const certificates = await Certificate.find({ student: student._id });
 
-    const skillSet = new Set();
     const courses = [];
+    const skillSet = new Set();
 
-    for (const e of enrollments) {
-      if (!e.course) continue;
-
-      const { percentage } = await computeProgressStat(studentId, e.course._id);
-      const completed = percentage === 100;
-      const certificate = certByCourse.get(e.course._id.toString()) || null;
-      const skills = completed ? skillsForCourse(e.course) : [];
+    if (student.course) {
+      const completed = student.status === 'completed';
+      const skills = completed ? skillsForCourse(student.course) : [];
       skills.forEach((s) => skillSet.add(s));
 
       courses.push({
-        courseId: e.course._id,
-        courseName: e.course.name,
-        category: e.course.category,
-        progressPercent: percentage,
+        courseId: student._id,
+        courseName: student.course,
+        category: null,
+        progressPercent: completed ? 100 : 0,
         completed,
-        finalGrade: certificate?.finalGrade || null,
-        certificateId: certificate?.certificateId || null,
+        finalGrade: null,
+        certificateId: null,
         skills,
       });
     }
 
     return res.status(200).json({
-      studentName: req.student.name,
+      studentName: student.name,
       courses,
       skills: [...skillSet],
       completedCount: courses.filter((c) => c.completed).length,
