@@ -90,13 +90,25 @@ Scoped to exactly one campus. Every query, socket event, and audit entry is filt
 | Audit Log | Who changed what, when — every write path in the system. |
 
 ### Student
-Course-scoped dashboard, quizzes with integrity mode, leaderboard, verifiable certificates, notifications, resource library, skill passport, and Ask-a-Doubt.
+Course-scoped dashboard, quizzes with integrity mode, leaderboard, verifiable certificates, notifications, resource library, skill passport, and Ask-a-Doubt. Lives as a standalone app under `student-portal/` (see below), not inside `client/`.
 
 ### Trainer
-In development.
+Self-service registration (`/trainer/register`) creates a linked `User{role:'trainer'}` + `Trainer` doc — no seed script provisions trainer accounts. Once logged in: Dashboard (batches from `Slot.trainer` name-matched against the trainer), Batches, Attendance (check-in/out), Quizzes, Assignments (create + review submissions, via `trainerDashboardRoutes.js` → `trainerAssignmentController.js`), Students, Profile.
+
+**Known bug:** `client/src/portals/trainer/StudentsPage.jsx` renders a hardcoded mock roster — it never fetches real students, so newly enrolled students never appear there regardless of batch assignment (see Known debt).
 
 ### Jobs
 In development.
+
+### Sibling standalone apps
+Two more TITAN apps live in this repo as siblings to `client/`/`server/`, each with their own client, server, database connection, and `.env` — not merged into the main app's routing or auth:
+
+| App | Client port | Server port | Notes |
+|---|---|---|---|
+| `public-website/` — marketing site + public enroll/donate/careers | `5373` | `5200` | `/login` and `/apply` redirect into Student Portal |
+| `student-portal/` — the Student portal itself | `5273` | `5100` | Shares the main app's MongoDB (`titan-portal` db) for seed/test data, but has its own auth |
+
+Each app also has its own `README.md` with setup instructions specific to it.
 
 ---
 
@@ -154,7 +166,7 @@ client/src/
   portals/
     super-admin/
     sub-admin/
-    student/
+    trainer/
   services/         API client per resource
   layouts/
 
@@ -165,7 +177,12 @@ server/
   routes/
   ml/               dropout model — features, training, scoring
   utils/            seeds, backfills, socket, alert engine, audit logger
+
+public-website/      standalone marketing site (own client + server, see Portals)
+student-portal/      standalone Student portal (own client + server, see Portals)
 ```
+
+`client/` + `server/` at the repo root is the Super Admin / Campus Manager / Trainer app. `public-website/` and `student-portal/` are independent full-stack apps that happen to live in the same repo — each has its own `package.json`, `.env`, and dev server.
 
 ---
 
@@ -174,9 +191,11 @@ server/
 | Branch | Contents |
 |---|---|
 | `main` | Stable |
-| `dev` | Integration branch |
-| `feature/sub-admin-campus-portal` | Campus manager portal |
-| `student-portal` | Student portal |
+| `dev` | Integration branch — includes `client/`+`server/`, `public-website/`, and `student-portal/` as merged subfolders |
+| `feature/sub-admin-campus-portal` | Campus manager portal — fully merged into `dev`, `dev` is now ahead |
+| `origin/feature/trainer-portal` (remote-only, no local branch) | Earlier trainer portal work — not yet merged into `dev`; `dev` already has its own, further-along trainer portal history |
+
+`student-portal` and `publicwebsite`/`publicwebsite-integration` are older branches — their work has already been merged into `dev` as subfolders and they're not the current source of truth for those apps.
 
 Branch from `dev`, merge back into `dev` via pull request.
 
@@ -191,14 +210,16 @@ Branch from `dev`, merge back into `dev` via pull request.
 | Tooba Malik | Super Admin portal, ML model, alert engine, real-time infrastructure, Jobs portal |
 | Kaneeza Batool | Campus Manager portal, campus scoping architecture, socket authentication, audit system |
 | Rabbia Sachana | Student portal |
-| Areeba Ansari | Trainer portal |
+| Areeba | Trainer portal |
 
 ---
 
 ## Known debt
 
 - Attendance models store campus as a cached string rather than a reference (see Architecture)
-- `Slot.trainer` is free text, not a reference to `Trainer` — renaming a trainer requires updating both records
+- `Slot.trainer` is free text, not a reference to `Trainer` — renaming a trainer requires updating both records, and a campus/course combo with no matching `Slot` has no trainer to assign
 - The dropout model is trained on synthetic data
 - `authController.register` exists but is not wired to a route
 - Campus manager profile still routes under the super admin URL namespace
+- Trainer Portal's Students page renders hardcoded mock data instead of fetching real students — no "students in my batches" endpoint exists yet
+- Sub-Admin's own Students page still borrows the Super Admin's `StudentsPage` component as a testing shortcut, rather than having its own
