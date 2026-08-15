@@ -1,4 +1,5 @@
 const Slot = require('../models/Slot');
+const Student = require('../models/Student');
 
 // Matches a Slot to the logged-in trainer two ways: the real link
 // (assignedTrainer, set when a slot is created/edited with this trainer's
@@ -21,21 +22,36 @@ function escapeRegex(str) {
 
 // "Batch progress" (% of course completed) isn't tracked anywhere in the
 // data model — Slot only has seat counts. The progress figure here is
-// seat-fill % (seatsFilled/seatsTotal), which is honest data rather than a
+// seat-fill % (studentCount/seatsTotal), which is honest data rather than a
 // fabricated completion number.
+//
+// studentCount is a live count of Student.batch, not the stored
+// Slot.seatsFilled field — that field is only ever written at slot-creation
+// time and nothing updates it as students are later assigned/reassigned/
+// dropped (see studentController.updateStudent), so it drifts from reality.
+// Same fix/reasoning as slotRoutes.js's withStudentCounts.
 exports.getMyBatches = async (req, res) => {
   try {
     const slots = await Slot.find(myBatchesFilter(req.user)).populate('campus', 'name city').sort({ createdAt: -1 });
 
-    const batches = slots.map((slot) => ({
-      id: slot._id,
-      course: slot.course,
-      schedule: slot.schedule,
-      campus: slot.campus?.name || null,
-      students: slot.seatsFilled,
-      seatsTotal: slot.seatsTotal,
-      pct: slot.seatsTotal > 0 ? Math.round((slot.seatsFilled / slot.seatsTotal) * 100) : 0,
-    }));
+    const counts = await Student.aggregate([
+      { $match: { batch: { $in: slots.map((s) => s._id) } } },
+      { $group: { _id: '$batch', count: { $sum: 1 } } },
+    ]);
+    const countBySlotId = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    const batches = slots.map((slot) => {
+      const students = countBySlotId.get(String(slot._id)) ?? 0;
+      return {
+        id: slot._id,
+        course: slot.course,
+        schedule: slot.schedule,
+        campus: slot.campus?.name || null,
+        students,
+        seatsTotal: slot.seatsTotal,
+        pct: slot.seatsTotal > 0 ? Math.round((students / slot.seatsTotal) * 100) : 0,
+      };
+    });
 
     return res.status(200).json({ batches });
   } catch (err) {

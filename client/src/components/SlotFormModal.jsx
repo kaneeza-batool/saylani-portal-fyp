@@ -9,7 +9,6 @@ const EMPTY_FORM = {
   course: '',
   campus: '',
   seatsTotal: 30,
-  seatsFilled: 0,
   gender: 'Mixed',
   status: 'active',
 };
@@ -42,7 +41,7 @@ export default function SlotFormModal({ open, mode = 'add', initialValues, onClo
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ ...form, seatsTotal: Number(form.seatsTotal) || 1, seatsFilled: Number(form.seatsFilled) || 0 });
+    onSubmit({ ...form, seatsTotal: Number(form.seatsTotal) || 1 });
   };
 
   return (
@@ -108,19 +107,11 @@ export default function SlotFormModal({ open, mode = 'add', initialValues, onClo
           </select>
         </div>
 
-        <div className="flex gap-3">
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className={labelClass} htmlFor="slot-seatsTotal">
-              Total seats
-            </label>
-            <input id="slot-seatsTotal" type="number" min="1" required value={form.seatsTotal} onChange={setField('seatsTotal')} className={inputClass} />
-          </div>
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className={labelClass} htmlFor="slot-seatsFilled">
-              Seats filled
-            </label>
-            <input id="slot-seatsFilled" type="number" min="0" value={form.seatsFilled} onChange={setField('seatsFilled')} className={inputClass} />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass} htmlFor="slot-seatsTotal">
+            Total seats
+          </label>
+          <input id="slot-seatsTotal" type="number" min="1" required value={form.seatsTotal} onChange={setField('seatsTotal')} className={inputClass} />
         </div>
 
         <div className="flex gap-3">
