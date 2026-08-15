@@ -35,7 +35,7 @@ exports.getDashboard = async (req, res) => {
           batch: student.batch?.schedule || null,
           rollNumber: student.rollNumber || null,
           campus: student.campus?.name || null,
-          city: null,
+          city: student.campus?.city || null,
           progressPercent: 0,
         }
       : null;

@@ -202,7 +202,8 @@ export default function Sidebar({ open, onClose, onMilestone }) {
               <span
                 key={base}
                 title="Select a course first"
-                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-white/25 cursor-not-allowed select-none"
+                aria-disabled="true"
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-white/70 opacity-40 cursor-not-allowed select-none pointer-events-none"
               >
                 <Icon className="w-5 h-5" />
                 {label}
