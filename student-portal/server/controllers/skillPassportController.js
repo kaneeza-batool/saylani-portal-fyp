@@ -54,7 +54,7 @@ exports.getSkillPassport = async (req, res) => {
     }
 
     return res.status(200).json({
-      studentName: req.student.fullName,
+      studentName: req.student.name,
       courses,
       skills: [...skillSet],
       completedCount: courses.filter((c) => c.completed).length,

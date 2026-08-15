@@ -24,7 +24,7 @@ exports.getQuestions = async (req, res) => {
 
     const sortSpec = sort === 'top' ? { upvoteCount: -1, createdAt: -1 } : { createdAt: -1 };
 
-    const questions = await Question.find(filter).sort(sortSpec).populate('student', 'fullName avatarUrl');
+    const questions = await Question.find(filter).sort(sortSpec).populate('student', 'name avatarUrl');
     const counts = await answerCountsFor(questions.map((q) => q._id));
 
     const results = questions
@@ -37,7 +37,7 @@ exports.getQuestions = async (req, res) => {
           moduleTag: q.moduleTag,
           upvoteCount: q.upvoteCount,
           createdAt: q.createdAt,
-          authorName: q.student.fullName,
+          authorName: q.student.name,
           authorAvatarUrl: q.student.avatarUrl || null,
           answerCount: stat?.count || 0,
           hasAcceptedAnswer: !!stat?.hasAccepted,
@@ -78,7 +78,7 @@ exports.createQuestion = async (req, res) => {
 // sorted by upvotes.
 exports.getQuestionDetail = async (req, res) => {
   try {
-    const question = await Question.findById(req.params.questionId).populate('student', 'fullName avatarUrl');
+    const question = await Question.findById(req.params.questionId).populate('student', 'name avatarUrl');
     if (!question || !question.student) return res.status(404).json({ message: 'Question not found' });
 
     const answers = await Answer.find({ question: question._id }).sort({
@@ -96,7 +96,7 @@ exports.getQuestionDetail = async (req, res) => {
         courseId: question.course,
         upvoteCount: question.upvoteCount,
         createdAt: question.createdAt,
-        authorName: question.student.fullName,
+        authorName: question.student.name,
         authorAvatarUrl: question.student.avatarUrl || null,
         isOwnQuestion: question.student._id.toString() === req.student._id.toString(),
       },
@@ -129,7 +129,7 @@ exports.createAnswer = async (req, res) => {
       authorRole: 'student',
       authorModelName: 'Student',
       author: req.student._id,
-      authorName: req.student.fullName,
+      authorName: req.student.name,
       body: body.trim(),
     });
 

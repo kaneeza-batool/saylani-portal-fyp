@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId', getDashboard);
+router.get('/', getDashboard);
 router.get('/:courseId/insight', getProgressInsight);
 router.get('/:courseId/leaderboard', getLeaderboardPosition);
 

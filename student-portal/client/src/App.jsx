@@ -58,9 +58,9 @@ function App() {
 
               <Route element={<StudentLayout />}>
                 <Route path="/courses" element={<CoursesPage />} />
-                <Route path="/dashboard/:courseId" element={<DashboardPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/progress/:courseId" element={<ProgressPage />} />
-                <Route path="/attendance/:courseId" element={<AttendancePage />} />
+                <Route path="/attendance" element={<AttendancePage />} />
                 <Route path="/fee/:courseId" element={<PaymentPage />} />
                 <Route path="/assignment/:courseId" element={<AssignmentPage />} />
                 <Route path="/quiz/:courseId" element={<QuizListPage />} />

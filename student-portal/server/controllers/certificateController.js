@@ -158,7 +158,7 @@ exports.getCertificateForCourse = async (req, res) => {
     if (percentage < 100) return res.status(200).json({ eligible: false, percentage });
 
     const certificate = await getOrCreateCertificate(req.student, courseId, enrollment.course.name);
-    const view = await toOwnerView(certificate, req.student.fullName, enrollment.course.name, enrollment);
+    const view = await toOwnerView(certificate, req.student.name, enrollment.course.name, enrollment);
 
     return res.status(200).json({ eligible: true, certificate: view });
   } catch (err) {
@@ -172,7 +172,7 @@ exports.getCertificateForCourse = async (req, res) => {
 exports.getCertificate = async (req, res) => {
   try {
     const certificate = await Certificate.findOne({ certificateId: req.params.certificateId })
-      .populate('student', 'fullName')
+      .populate('student', 'name')
       .populate('course', 'name');
 
     if (!certificate || certificate.student._id.toString() !== req.student._id.toString()) {
@@ -180,7 +180,7 @@ exports.getCertificate = async (req, res) => {
     }
 
     const enrollment = await Enrollment.findOne({ student: certificate.student._id, course: certificate.course._id });
-    const view = await toOwnerView(certificate, certificate.student.fullName, certificate.course.name, enrollment);
+    const view = await toOwnerView(certificate, certificate.student.name, certificate.course.name, enrollment);
 
     return res.status(200).json({ certificate: view });
   } catch (err) {
@@ -194,7 +194,7 @@ exports.getCertificate = async (req, res) => {
 exports.verifyCertificate = async (req, res) => {
   try {
     const certificate = await Certificate.findOne({ certificateId: req.params.certificateId })
-      .populate('student', 'fullName')
+      .populate('student', 'name')
       .populate('course', 'name');
 
     if (!certificate) return res.status(200).json({ valid: false, reason: 'not_found' });
@@ -214,7 +214,7 @@ exports.verifyCertificate = async (req, res) => {
       valid: true,
       certificate: {
         certificateId: certificate.certificateId,
-        studentName: certificate.student.fullName,
+        studentName: certificate.student.name,
         courseName: certificate.course.name,
         issueDate: certificate.issueDate,
         finalGrade: certificate.finalGrade,
