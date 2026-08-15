@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchSlots } from '../../services/slotService';
+import ExportButtons from '../../components/ExportButtons';
 
 // Read-only mirror of super-admin's slot/batch data (same GRID_COLS approach,
 // same classes as sub-admin/TrainersPage.jsx) minus any Actions column —
@@ -25,13 +26,25 @@ const GRID_COLS = 'grid-cols-[1.5fr_1.1fr_0.9fr_1.1fr_0.7fr_0.9fr_0.7fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
   );
 }
+
+const EXPORT_COLUMNS = [
+  { header: 'Schedule', accessor: (b) => b.schedule },
+  { header: 'Course', accessor: (b) => b.course },
+  { header: 'Trainer', accessor: (b) => b.trainer },
+  { header: 'Campus', accessor: (b) => b.campus?.name },
+  { header: 'Seats Filled', accessor: (b) => b.seatsFilled },
+  { header: 'Seats Total', accessor: (b) => b.seatsTotal },
+  { header: 'Gender', accessor: (b) => b.gender },
+  { header: 'Status', accessor: (b) => b.status },
+  { header: 'Students', accessor: (b) => b.studentCount },
+];
 
 export default function BatchesPage() {
   const [searchInput, setSearchInput] = useState('');
@@ -83,10 +96,12 @@ export default function BatchesPage() {
             <option value="inactive">Inactive</option>
           </select>
         </div>
+
+        <ExportButtons title="Batches" filenameBase="titan-subadmin-batches" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Schedule', 'Course', 'Trainer', 'Campus', 'Seats', 'Gender', 'Status', 'Students'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -122,7 +137,7 @@ export default function BatchesPage() {
                 <motion.div
                   key={b._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{b.schedule}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{b.course}</span>

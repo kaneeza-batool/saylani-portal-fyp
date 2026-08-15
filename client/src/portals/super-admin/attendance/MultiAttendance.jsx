@@ -93,8 +93,8 @@ export default function MultiAttendance() {
         </div>
       )}
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200 items-center">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] min-w-[520px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200 items-center">
           <input type="checkbox" checked={students.length > 0 && selected.size === students.length} onChange={toggleAll} className="cursor-pointer" />
           <span className="text-overline uppercase text-neutral-500">Student</span>
           <span className="text-overline uppercase text-neutral-500">Roll No.</span>
@@ -103,7 +103,7 @@ export default function MultiAttendance() {
 
         {isLoading ? (
           [0, 1, 2, 3].map((i) => (
-            <div key={i} className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100">
+            <div key={i} className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] min-w-[520px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100">
               <div className="h-4 w-4 bg-neutral-100 rounded animate-pulse" />
               <div className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
               <div className="h-3 w-1/2 bg-neutral-100 rounded animate-pulse" />
@@ -118,7 +118,7 @@ export default function MultiAttendance() {
               <motion.label
                 key={s._id}
                 variants={fadeInUp}
-                className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50 cursor-pointer"
+                className="grid grid-cols-[40px_1.5fr_1fr_1.2fr] min-w-[520px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50 cursor-pointer"
               >
                 <input type="checkbox" checked={selected.has(s.rollNumber)} onChange={() => toggle(s.rollNumber)} className="cursor-pointer" />
                 <div className="flex items-center gap-2.5 min-w-0">

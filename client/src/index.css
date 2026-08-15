@@ -41,6 +41,7 @@ html.dark {
 }
 
 body {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 

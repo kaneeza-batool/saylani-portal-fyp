@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchAlerts } from '../../services/alertService';
+import ExportButtons from '../../components/ExportButtons';
 
 // Same table shell as sub-admin/BatchesPage.jsx and FeedbackPage.jsx
 // (GRID_COLS approach, same classes) — the super-admin AlertsPage.jsx uses
@@ -39,13 +40,22 @@ const GRID_COLS = 'grid-cols-[0.8fr_0.8fr_1.2fr_2.5fr_0.8fr_1fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
   );
 }
+
+const EXPORT_COLUMNS = [
+  { header: 'Type', accessor: (a) => TYPE_LABEL[a.type] ?? a.type },
+  { header: 'Severity', accessor: (a) => a.severity },
+  { header: 'Student', accessor: (a) => a.studentName },
+  { header: 'Message', accessor: (a) => a.message },
+  { header: 'Status', accessor: (a) => a.status },
+  { header: 'Date', accessor: (a) => fmtDate(a.createdAt) },
+];
 
 export default function AlertsPage() {
   const [status, setStatus] = useState('active');
@@ -76,10 +86,12 @@ export default function AlertsPage() {
             System-detected — 3+ consecutive absences or overdue payment, checked automatically every 2 minutes.
           </span>
         </div>
+
+        <ExportButtons title="Alerts" filenameBase="titan-subadmin-alerts" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Type', 'Severity', 'Student', 'Message', 'Status', 'Date'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -113,7 +125,7 @@ export default function AlertsPage() {
                 <motion.div
                   key={a._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <span className="text-body-sm text-neutral-600">{TYPE_LABEL[a.type] ?? a.type}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${sev.className}`}>{sev.label}</span>

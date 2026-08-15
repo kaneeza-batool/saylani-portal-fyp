@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { getAttendanceReports } from '../../services/studentAttendanceService';
 import { fetchSlots } from '../../services/slotService';
+import ExportButtons from '../../components/ExportButtons';
 
 // Same table shell as sub-admin/BatchesPage.jsx (GRID_COLS approach, same
 // classes) — filters are a date range + batch instead of search/status,
@@ -29,13 +30,22 @@ const GRID_COLS = 'grid-cols-[1.6fr_1.6fr_0.8fr_0.8fr_0.8fr_1fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
   );
 }
+
+const EXPORT_COLUMNS = [
+  { header: 'Student', accessor: (r) => r.name },
+  { header: 'Batch', accessor: (r) => r.batch?.schedule },
+  { header: 'Present', accessor: (r) => r.present },
+  { header: 'Absent', accessor: (r) => r.absent },
+  { header: 'Leave', accessor: (r) => r.leave },
+  { header: 'Attendance %', accessor: (r) => r.percentage ?? '' },
+];
 
 function pctLabel(pct) {
   if (pct == null) return '—';
@@ -104,10 +114,12 @@ export default function AttendanceReportsPage() {
             ))}
           </select>
         </div>
+
+        <ExportButtons title="Attendance Reports" filenameBase="titan-attendance-reports" columns={EXPORT_COLUMNS} rows={rows} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Student', 'Batch', 'Present', 'Absent', 'Leave', 'Attendance %'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -141,7 +153,7 @@ export default function AttendanceReportsPage() {
               <motion.div
                 key={r.studentId}
                 variants={fadeInUp}
-                className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
               >
                 <span className="text-body-sm font-semibold text-neutral-900 truncate">{r.name}</span>
                 <span className="text-body-sm text-neutral-600 truncate">{r.batch?.schedule || '—'}</span>

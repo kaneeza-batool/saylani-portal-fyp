@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchTrainers } from '../../services/trainerService';
+import ExportButtons from '../../components/ExportButtons';
 
 // Read-only mirror of super-admin/TrainersPage.jsx's list (same GRID_COLS
 // approach, same classes) minus the Actions column — sub_admin has no
@@ -32,13 +33,22 @@ const GRID_COLS = 'grid-cols-[1.5fr_1.2fr_1fr_1fr_1fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
   );
 }
+
+const EXPORT_COLUMNS = [
+  { header: 'Name', accessor: (t) => t.name },
+  { header: 'Email', accessor: (t) => t.email },
+  { header: 'Employee ID', accessor: (t) => t.employeeId },
+  { header: 'Course', accessor: (t) => t.course },
+  { header: 'City', accessor: (t) => t.city },
+  { header: 'Status', accessor: (t) => t.status },
+];
 
 export default function TrainersPage() {
   const [searchInput, setSearchInput] = useState('');
@@ -90,10 +100,12 @@ export default function TrainersPage() {
             <option value="inactive">Inactive</option>
           </select>
         </div>
+
+        <ExportButtons title="Trainers" filenameBase="titan-subadmin-trainers" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Trainer', 'Email', 'Employee ID', 'Course', 'City', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -129,7 +141,7 @@ export default function TrainersPage() {
                 <motion.div
                   key={t._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-neutral-100 text-primary-600 flex items-center justify-center font-heading font-bold text-caption shrink-0">

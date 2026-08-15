@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchStudents, updateStudent } from '../../services/studentService';
 import StudentFormModal from '../../components/StudentFormModal';
+import ExportButtons from '../../components/ExportButtons';
 
 // Reuses super-admin/StudentsPage.jsx's table shell (same GRID_COLS
 // approach, same classes, same STATUS_STYLE/PAYMENT_STYLE) but trimmed to
@@ -53,9 +54,19 @@ const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, trans
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
 const GRID_COLS = 'grid-cols-[1.6fr_1.1fr_1.2fr_1.3fr_1fr_1fr_0.6fr]';
 
+const EXPORT_COLUMNS = [
+  { header: 'Name', accessor: (s) => s.name },
+  { header: 'CNIC', accessor: (s) => s.cnic },
+  { header: 'Phone', accessor: (s) => s.phone },
+  { header: 'Course', accessor: (s) => s.course },
+  { header: 'Batch', accessor: (s) => s.batch?.schedule },
+  { header: 'Status', accessor: (s) => s.status },
+  { header: 'Payment', accessor: (s) => s.payment },
+];
+
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded bg-neutral-100 animate-pulse shrink-0" />
         <div className="flex flex-col gap-1.5 w-full">
@@ -143,10 +154,12 @@ export default function StudentsPage() {
             ))}
           </select>
         </div>
+
+        <ExportButtons title="Students" filenameBase="titan-subadmin-students" columns={EXPORT_COLUMNS} rows={students} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Student', 'Phone', 'Course', 'Batch', 'Status', 'Payment'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -179,7 +192,7 @@ export default function StudentsPage() {
                 <motion.div
                   key={s._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">

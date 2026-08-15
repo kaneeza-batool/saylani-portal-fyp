@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { fetchTrainerAttendance } from '../../../services/trainerAttendanceService';
 import { createAttendanceRequest } from '../../../services/attendanceRequestService';
 import AttendanceCorrectionModal from '../../../components/AttendanceCorrectionModal';
+import ExportButtons from '../../../components/ExportButtons';
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
@@ -23,13 +24,22 @@ function duration(checkIn, checkOut) {
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
   );
 }
+
+const EXPORT_COLUMNS = [
+  { header: 'Trainer', accessor: (r) => r.trainerName },
+  { header: 'Date', accessor: (r) => fmtDate(r.date) },
+  { header: 'Campus', accessor: (r) => r.campus },
+  { header: 'Check In', accessor: (r) => fmtTime(r.checkIn) },
+  { header: 'Check Out', accessor: (r) => fmtTime(r.checkOut) },
+  { header: 'Duration', accessor: (r) => duration(r.checkIn, r.checkOut) },
+];
 
 export default function TrainersAttendanceView() {
   const queryClient = useQueryClient();
@@ -67,24 +77,28 @@ export default function TrainersAttendanceView() {
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by trainer, employee ID, campus..."
-            className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
-          />
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by trainer, employee ID, campus..."
+              className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
+            />
+          </div>
         </div>
+
+        <ExportButtons title="Trainer Attendance" filenameBase="titan-trainer-attendance" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Trainer', 'Campus', 'Check In', 'Check Out', 'Duration'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -105,7 +119,7 @@ export default function TrainersAttendanceView() {
               <motion.div
                 key={r._id}
                 variants={fadeInUp}
-                className={`grid ${GRID_COLS} gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
               >
                 <div className="min-w-0">
                   <div className="text-body-sm font-semibold text-neutral-900 truncate">{r.trainerName}</div>

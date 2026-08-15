@@ -66,7 +66,7 @@ const GRID_COLS = 'grid-cols-[1.5fr_1.1fr_1.3fr_1.1fr_1fr_1fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded bg-neutral-100 animate-pulse shrink-0" />
         <div className="flex flex-col gap-1.5 w-full">
@@ -222,8 +222,8 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Student', 'Phone', 'Course', 'Campus', 'Status', 'Payment'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -247,7 +247,7 @@ export default function StudentsPage() {
                 <motion.div
                   key={s._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">

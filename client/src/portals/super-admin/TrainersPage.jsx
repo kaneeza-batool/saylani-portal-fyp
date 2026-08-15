@@ -5,11 +5,21 @@ import { createTrainer, deleteTrainer, fetchTrainers, updateTrainer } from '../.
 import TrainerFormModal from '../../components/TrainerFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import IDCardModal from '../../components/IDCardModal';
+import ExportButtons from '../../components/ExportButtons';
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
   inactive: { label: 'Inactive', className: 'bg-neutral-100 text-neutral-500' },
 };
+
+const EXPORT_COLUMNS = [
+  { header: 'Name', accessor: (t) => t.name },
+  { header: 'Email', accessor: (t) => t.email },
+  { header: 'Employee ID', accessor: (t) => t.employeeId },
+  { header: 'Course', accessor: (t) => t.course },
+  { header: 'City', accessor: (t) => t.city },
+  { header: 'Status', accessor: (t) => t.status },
+];
 
 function initials(name) {
   return (
@@ -29,7 +39,7 @@ const GRID_COLS = 'grid-cols-[1.5fr_1.2fr_1fr_1fr_1fr_0.8fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -144,20 +154,24 @@ export default function TrainersPage() {
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={openAdd}
-          className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Trainer
-        </button>
+        <div className="flex items-center gap-2.5">
+          <ExportButtons title="Trainers" filenameBase="titan-trainers" columns={EXPORT_COLUMNS} rows={items} />
+
+          <button
+            type="button"
+            onClick={openAdd}
+            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Trainer
+          </button>
+        </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Trainer', 'Email', 'Employee ID', 'Course', 'City', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -180,7 +194,7 @@ export default function TrainersPage() {
                 <motion.div
                   key={t._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">

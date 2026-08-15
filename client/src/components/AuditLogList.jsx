@@ -2,6 +2,14 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchAuditLogs } from '../services/auditLogService';
+import ExportButtons from './ExportButtons';
+
+const EXPORT_COLUMNS = [
+  { header: 'Action', accessor: (l) => l.action },
+  { header: 'Summary', accessor: (l) => l.summary },
+  { header: 'Actor', accessor: (l) => l.actorName },
+  { header: 'Date', accessor: (l) => new Date(l.createdAt).toLocaleString() },
+];
 
 const ACTION_STYLE = {
   create: { label: 'Created', className: 'bg-success-bg text-success-text' },
@@ -18,7 +26,7 @@ function fmt(d) {
 
 // Shared list for Audit Log (fixedAction=null, shows an action filter) and
 // Updation (fixedAction='update', no filter — it IS the filter).
-export default function AuditLogList({ fixedAction = null, emptyText }) {
+export default function AuditLogList({ fixedAction = null, emptyText, title = 'Audit Log', filenameBase = 'titan-audit-log' }) {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [action, setAction] = useState(fixedAction || 'all');
@@ -42,32 +50,36 @@ export default function AuditLogList({ fixedAction = null, emptyText }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search actions..."
-            className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
-          />
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[280px] focus-within:border-gold-500 transition-colors">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9A93" strokeWidth="2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search actions..."
+              className="border-none bg-transparent outline-none text-body-sm w-full font-sans text-neutral-900"
+            />
+          </div>
+          {!fixedAction && (
+            <select
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+              className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
+            >
+              <option value="all">All actions</option>
+              <option value="create">Created</option>
+              <option value="update">Updated</option>
+              <option value="delete">Deleted</option>
+            </select>
+          )}
         </div>
-        {!fixedAction && (
-          <select
-            value={action}
-            onChange={(e) => setAction(e.target.value)}
-            className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
-          >
-            <option value="all">All actions</option>
-            <option value="create">Created</option>
-            <option value="update">Updated</option>
-            <option value="delete">Deleted</option>
-          </select>
-        )}
+
+        <ExportButtons title={title} filenameBase={filenameBase} columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
       <motion.div variants={fadeInUp} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
