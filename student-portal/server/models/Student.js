@@ -78,6 +78,11 @@ const studentSchema = new mongoose.Schema(
     // verbatim from the main app's Student.STATUSES — never invent new ones
     // here, this schema only mirrors what the canonical model declares.
     status: { type: String, enum: ['enrolled', 'pending', 'completed', 'dropout', 'rejected'], default: 'enrolled' },
+    // Mirrored for the same reason as status above — why a 'dropout'
+    // happened (auto-dropout on overdue payment/low attendance, vs a
+    // manual admin action). Enum copied verbatim from the canonical
+    // schema (server/models/Student.js) — never invent new values here.
+    dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
     // kept as a field (not yet an enum tied to other portals) so this
     // collection can merge with super-admin-portal's role system later
     role: { type: String, default: 'student' },
