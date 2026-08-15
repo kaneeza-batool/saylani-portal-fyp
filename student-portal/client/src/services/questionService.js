@@ -1,12 +1,12 @@
 import api from './authService';
 
-export async function getQuestions(courseId, { sort, search } = {}) {
-  const { data } = await api.get(`/questions/course/${courseId}`, { params: { sort, search } });
+export async function getQuestions({ sort, search } = {}) {
+  const { data } = await api.get('/questions', { params: { sort, search } });
   return data.questions;
 }
 
-export async function createQuestion(courseId, payload) {
-  const { data } = await api.post(`/questions/course/${courseId}`, payload);
+export async function createQuestion(payload) {
+  const { data } = await api.post('/questions', payload);
   return data.question;
 }
 

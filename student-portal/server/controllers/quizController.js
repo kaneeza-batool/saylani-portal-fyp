@@ -3,8 +3,7 @@ const QuizAttempt = require('../models/QuizAttempt');
 
 exports.getQuizzes = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const quizzes = await Quiz.find({ courseId }).sort({ createdAt: 1 });
+    const quizzes = await Quiz.find({ course: req.student.course }).sort({ createdAt: 1 });
     const attempts = await QuizAttempt.find({ student: req.student._id }).sort({ attemptNumber: -1 });
 
     const latestByQuiz = new Map();
@@ -41,8 +40,8 @@ exports.getQuizzes = async (req, res) => {
 
 exports.getQuizForTaking = async (req, res) => {
   try {
-    const { courseId, id } = req.params;
-    const quiz = await Quiz.findOne({ _id: id, courseId });
+    const { id } = req.params;
+    const quiz = await Quiz.findOne({ _id: id, course: req.student.course });
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
     return res.status(200).json({
@@ -67,8 +66,8 @@ exports.getQuizForTaking = async (req, res) => {
 
 exports.startAttempt = async (req, res) => {
   try {
-    const { courseId, id } = req.params;
-    const quiz = await Quiz.findOne({ _id: id, courseId }, 'durationMinutes');
+    const { id } = req.params;
+    const quiz = await Quiz.findOne({ _id: id, course: req.student.course }, 'durationMinutes');
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
     const previousAttempts = await QuizAttempt.countDocuments({ student: req.student._id, quiz: quiz._id });
@@ -85,10 +84,10 @@ exports.startAttempt = async (req, res) => {
 
 exports.submitAttempt = async (req, res) => {
   try {
-    const { courseId, id } = req.params;
+    const { id } = req.params;
     const { answers, startedAt, tabSwitchCount, fullscreenExitCount } = req.body;
 
-    const quiz = await Quiz.findOne({ _id: id, courseId });
+    const quiz = await Quiz.findOne({ _id: id, course: req.student.course });
     if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
 
     if (!Array.isArray(answers) || answers.length !== quiz.questions.length) {
@@ -171,7 +170,7 @@ exports.getAttemptResult = async (req, res) => {
       },
       quiz: {
         _id: quiz._id,
-        courseId: quiz.courseId,
+        course: quiz.course,
         title: quiz.title,
         module: quiz.module,
         questions,

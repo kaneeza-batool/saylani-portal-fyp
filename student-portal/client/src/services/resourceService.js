@@ -1,6 +1,6 @@
 import api from './authService';
 
-export async function getResourceLibrary(courseId) {
-  const { data } = await api.get(`/resources/${courseId}`);
+export async function getResourceLibrary() {
+  const { data } = await api.get('/resources');
   return data.resources;
 }

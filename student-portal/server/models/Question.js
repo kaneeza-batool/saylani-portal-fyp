@@ -3,7 +3,11 @@ const mongoose = require('mongoose');
 const questionSchema = new mongoose.Schema(
   {
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true, index: true }, // author
-    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    // One course per student (see Student.js) — course is a plain name
+    // string, not an ObjectId, so there's no Course collection to look up
+    // (same fix as Assignment.js/Quiz.js). Matched against the logged-in
+    // student's own Student.course in questionController.
+    course: { type: String, required: true, trim: true, index: true },
     title: { type: String, required: true, trim: true },
     body: { type: String, required: true, trim: true },
     // Free-text module/topic name, not an ObjectId ref — CourseModule docs

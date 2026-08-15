@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getQuestions } from '../services/questionService';
@@ -18,11 +18,11 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function QuestionCard({ question, courseId }) {
+function QuestionCard({ question }) {
   return (
     <motion.div variants={fadeInUp} whileHover={cardInteraction.whileHover}>
       <Link
-        to={`/doubts/${courseId}/${question._id}`}
+        to={`/doubts/${question._id}`}
         data-testid="question-card"
         className="flex items-start gap-3 sm:gap-4 bg-white border border-neutral-200 rounded-lg shadow-card p-4 sm:p-5"
       >
@@ -90,14 +90,13 @@ function CardSkeleton() {
 }
 
 export default function DoubtsListPage() {
-  const { courseId } = useParams();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('newest');
   const [askOpen, setAskOpen] = useState(false);
 
   const { data: questions, isLoading, isError, refetch } = useQuery({
-    queryKey: ['questions', courseId, sort, search],
-    queryFn: () => getQuestions(courseId, { sort, search: search.trim() || undefined }),
+    queryKey: ['questions', sort, search],
+    queryFn: () => getQuestions({ sort, search: search.trim() || undefined }),
   });
 
   return (
@@ -173,12 +172,12 @@ export default function DoubtsListPage() {
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-col gap-3">
           {questions.map((q) => (
-            <QuestionCard key={q._id} question={q} courseId={courseId} />
+            <QuestionCard key={q._id} question={q} />
           ))}
         </motion.div>
       )}
 
-      <AskQuestionModal open={askOpen} onClose={() => setAskOpen(false)} courseId={courseId} />
+      <AskQuestionModal open={askOpen} onClose={() => setAskOpen(false)} />
     </div>
   );
 }

@@ -13,9 +13,9 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/result/:attemptId', getAttemptResult);
-router.get('/:courseId', getQuizzes);
-router.get('/:courseId/:id/take', getQuizForTaking);
-router.post('/:courseId/:id/start', startAttempt);
-router.post('/:courseId/:id/submit', submitAttempt);
+router.get('/', getQuizzes);
+router.get('/:id/take', getQuizForTaking);
+router.post('/:id/start', startAttempt);
+router.post('/:id/submit', submitAttempt);
 
 module.exports = router;

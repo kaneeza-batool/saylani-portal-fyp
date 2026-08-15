@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import useCourses from '../../hooks/useCourses';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 
@@ -14,18 +12,7 @@ const STEPS = ['Personal Info', 'Education', 'Program Selection', 'Review & Subm
 const QUALIFICATIONS = ['Matric', 'Intermediate', "Bachelor's", "Master's", 'Other'];
 const BATCH_OPTIONS = ['Morning', 'Evening', 'Weekend', 'Online-Only'];
 
-const CATEGORY_LABELS = {
-  all: 'All Categories',
-  basic: 'Basic Computer Operations',
-  web: 'Web Engineering',
-  data: 'Data Intelligence',
-  cloud: 'Cloud Infrastructure',
-  security: 'Networking & Security',
-  creative: 'Creative Assets',
-  vocational: 'Vocational Skills',
-};
-
-function initialFormFromProgram(preselected) {
+function initialForm() {
   return {
     fullName: '',
     fatherName: '',
@@ -37,8 +24,8 @@ function initialFormFromProgram(preselected) {
     address: '',
     lastQualification: '',
     hasLaptop: '',
-    selectedProgramId: preselected ? preselected.id : null,
-    selectedProgram: preselected ? preselected.title : '',
+    course: '',
+    campusId: '',
     preferredBatch: '',
   };
 }
@@ -59,7 +46,8 @@ function validateStep(step, form) {
     if (!form.lastQualification) errors.lastQualification = 'Please select your last qualification.';
     if (form.hasLaptop === '') errors.hasLaptop = 'Please let us know if you have a laptop.';
   } else if (step === 2) {
-    if (!form.selectedProgram) errors.selectedProgram = 'Please select a program to apply for.';
+    if (!form.course) errors.course = 'Please select a course.';
+    if (!form.campusId) errors.campusId = 'Please select a campus.';
   }
   return errors;
 }
@@ -99,36 +87,25 @@ const labelClass = 'block text-xs font-bold uppercase tracking-wider mb-1 text-n
 const errorClass = 'mt-1 text-xs text-danger-text';
 
 const EnrollNow = () => {
-  const [searchParams] = useSearchParams();
-  const { courses } = useCourses();
-  const preselectedId = searchParams.get('program');
-
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState(() => initialFormFromProgram(null));
+  const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [serverError, setServerError] = useState('');
   const [application, setApplication] = useState(null);
 
-  const [programSearch, setProgramSearch] = useState('');
-  const [programCategory, setProgramCategory] = useState('all');
+  const [campuses, setCampuses] = useState([]);
+  const [courseOptions, setCourseOptions] = useState([]);
 
-  // Once the course list has loaded, apply a ?program=<id> preselection
-  // from a CourseCard/detail-page "Enroll Now" link, if present.
+  // Campus list and the course picker both come straight from the server —
+  // campuses because the public site has no campus data of its own, and
+  // courses because Student.COURSES (the 7-value enum a Student document
+  // will actually accept) is the only valid source, not this site's own
+  // marketing course catalog.
   useEffect(() => {
-    if (!preselectedId || courses.length === 0 || form.selectedProgramId) return;
-    const match = courses.find((t) => t._id === preselectedId);
-    if (match) {
-      setForm((prev) => ({ ...prev, selectedProgramId: match._id, selectedProgram: match.title }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preselectedId, courses]);
-
-  const filteredPrograms = courses.filter((track) => {
-    const matchesCategory = programCategory === 'all' || track.category === programCategory;
-    const matchesSearch = track.title.toLowerCase().includes(programSearch.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+    axios.get(`${API_URL}/api/campuses`).then((res) => setCampuses(res.data.campuses)).catch(() => {});
+    axios.get(`${API_URL}/api/course-options`).then((res) => setCourseOptions(res.data.courses)).catch(() => {});
+  }, []);
 
   const updateField = (field) => (e) => {
     const value = e.target ? e.target.value : e;
@@ -140,11 +117,6 @@ const EnrollNow = () => {
     const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 13);
     setForm((prev) => ({ ...prev, cnic: digitsOnly }));
     setErrors((prev) => ({ ...prev, cnic: undefined }));
-  };
-
-  const selectProgram = (track) => {
-    setForm((prev) => ({ ...prev, selectedProgramId: track._id, selectedProgram: track.title }));
-    setErrors((prev) => ({ ...prev, selectedProgram: undefined }));
   };
 
   const goNext = () => {
@@ -170,7 +142,9 @@ const EnrollNow = () => {
         dateOfBirth: form.dateOfBirth,
         gender: form.gender,
         lastQualification: form.lastQualification,
-        selectedProgram: form.selectedProgram,
+        course: form.course,
+        selectedProgram: form.course,
+        campusId: form.campusId,
         preferredBatch: form.preferredBatch,
         hasLaptop: form.hasLaptop === 'yes',
       });
@@ -191,11 +165,13 @@ const EnrollNow = () => {
           Thanks, {application.fullName.split(' ')[0]}. We've received your application for{' '}
           <span className="font-semibold text-neutral-900">{application.selectedProgram}</span>. A confirmation email has been sent to {application.email}.
         </p>
-        <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200" style={{ borderRadius: 'var(--radius-standard)' }}>
-          <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Your Reference Number</p>
-          <p className="mt-1 text-xl font-black te-mono text-primary-800">{application.referenceNumber}</p>
-          <p className="mt-2 text-xs text-neutral-500">Keep this number to check your application status later.</p>
-        </div>
+        {application.referenceNumber && (
+          <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200" style={{ borderRadius: 'var(--radius-standard)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Your Reference Number</p>
+            <p className="mt-1 text-xl font-black te-mono text-primary-800">{application.referenceNumber}</p>
+            <p className="mt-2 text-xs text-neutral-500">Keep this number to check your application status later.</p>
+          </div>
+        )}
         <p className="mt-6 text-sm text-neutral-600">We'll review your application and get back to you within 48 hours.</p>
       </div>
     );
@@ -306,53 +282,27 @@ const EnrollNow = () => {
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-neutral-900">Select Your Program</h2>
 
-            {form.selectedProgram && (
-              <div className="p-3 bg-accent-50 border border-accent-500/30 text-sm font-semibold text-primary-800" style={{ borderRadius: 'var(--radius-standard)' }}>
-                Selected: {form.selectedProgram}
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={programSearch}
-                onChange={(e) => setProgramSearch(e.target.value)}
-                placeholder="Search programs..."
-                className={`${inputClass} sm:flex-1`}
-                style={{ borderRadius: 'var(--radius-standard)' }}
-              />
-              <select value={programCategory} onChange={(e) => setProgramCategory(e.target.value)} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
-                {Object.entries(CATEGORY_LABELS).map(([id, label]) => (
-                  <option key={id} value={id}>{label}</option>
+            <div>
+              <label className={labelClass}>Course</label>
+              <select value={form.course} onChange={updateField('course')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
+                <option value="">Select...</option>
+                {courseOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
+              {errors.course && <p className={errorClass}>{errors.course}</p>}
             </div>
 
-            <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
-              {filteredPrograms.length === 0 && (
-                <p className="text-sm text-neutral-500 text-center py-6">No programs match your search.</p>
-              )}
-              {filteredPrograms.map((track) => (
-                <button
-                  key={track._id}
-                  type="button"
-                  onClick={() => selectProgram(track)}
-                  className={`w-full text-left p-3 border flex items-center justify-between gap-3 transition-colors ${
-                    form.selectedProgramId === track._id ? 'border-primary-800 bg-primary-50/40' : 'border-neutral-200 hover:border-neutral-400'
-                  }`}
-                  style={{ borderRadius: 'var(--radius-standard)' }}
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-neutral-900">{track.title}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">{CATEGORY_LABELS[track.category]} · {track.duration}</p>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${form.selectedProgramId === track._id ? 'border-primary-800 bg-primary-800' : 'border-neutral-300'}`}>
-                    {form.selectedProgramId === track._id && <span className="w-2 h-2 rounded-full bg-white" />}
-                  </div>
-                </button>
-              ))}
+            <div>
+              <label className={labelClass}>Campus</label>
+              <select value={form.campusId} onChange={updateField('campusId')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
+                <option value="">Select...</option>
+                {campuses.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+              {errors.campusId && <p className={errorClass}>{errors.campusId}</p>}
             </div>
-            {errors.selectedProgram && <p className={errorClass}>{errors.selectedProgram}</p>}
 
             <div>
               <label className={labelClass}>Preferred Batch / Timing</label>
@@ -413,8 +363,14 @@ const EnrollNow = () => {
                 <span className="font-semibold text-neutral-900">{form.hasLaptop === 'yes' ? 'Yes' : 'No'}</span>
               </div>
               <div className="flex justify-between border-b border-neutral-100 pb-2">
-                <span className="text-neutral-500">Selected Program</span>
-                <span className="font-semibold text-neutral-900 text-right max-w-[60%]">{form.selectedProgram}</span>
+                <span className="text-neutral-500">Course</span>
+                <span className="font-semibold text-neutral-900 text-right max-w-[60%]">{form.course}</span>
+              </div>
+              <div className="flex justify-between border-b border-neutral-100 pb-2">
+                <span className="text-neutral-500">Campus</span>
+                <span className="font-semibold text-neutral-900 text-right max-w-[60%]">
+                  {campuses.find((c) => c._id === form.campusId)?.name || ''}
+                </span>
               </div>
               <div className="flex justify-between pb-2">
                 <span className="text-neutral-500">Preferred Batch</span>

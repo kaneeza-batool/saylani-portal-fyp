@@ -34,8 +34,7 @@ function inferTitle(url, source) {
 
 exports.getResourceLibrary = async (req, res) => {
   try {
-    const { courseId } = req.params;
-    const assignments = await Assignment.find({ courseId }).sort({ dueDate: 1 });
+    const assignments = await Assignment.find({ course: req.student.course }).sort({ dueDate: 1 });
 
     const resources = [];
     for (const a of assignments) {

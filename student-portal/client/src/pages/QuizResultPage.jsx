@@ -50,7 +50,7 @@ function QuestionReviewItem({ q, index }) {
 }
 
 export default function QuizResultPage() {
-  const { courseId, attemptId } = useParams();
+  const { attemptId } = useParams();
   const navigate = useNavigate();
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -79,7 +79,7 @@ export default function QuizResultPage() {
           <p className="text-sm font-medium text-neutral-500">Couldn't load this result.</p>
           <button
             type="button"
-            onClick={() => navigate(`/quiz/${courseId}`)}
+            onClick={() => navigate('/quiz')}
             className="rounded-md px-4 py-2 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900"
           >
             Back to Quizzes
@@ -197,7 +197,7 @@ export default function QuizResultPage() {
           variants={fadeInUp}
           type="button"
           whileTap={{ scale: 0.97 }}
-          onClick={() => navigate(`/quiz/${courseId}`)}
+          onClick={() => navigate('/quiz')}
           className="rounded-md px-5 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 w-full max-w-lg mx-auto"
         >
           Back to Quizzes

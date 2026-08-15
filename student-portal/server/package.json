@@ -18,7 +18,8 @@
     "seed:notifications": "node utils/seedNotifications.js",
     "seed:clear-onboarding": "node utils/seedClearOnboardingTest.js",
     "seed:complete-webdev": "node utils/seedCompleteWebDevProgress.js",
-    "seed:doubts": "node utils/seedDoubts.js"
+    "seed:doubts": "node utils/seedDoubts.js",
+    "seed:resources": "node utils/seedResources.js"
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getQuizzes } from '../services/quizService';
@@ -74,7 +74,6 @@ function RowSkeleton() {
 
 export default function QuizListPage() {
   const navigate = useNavigate();
-  const { courseId } = useParams();
 
   const {
     data: quizzes,
@@ -82,16 +81,16 @@ export default function QuizListPage() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['quiz', 'list', courseId],
-    queryFn: () => getQuizzes(courseId),
+    queryKey: ['quiz', 'list'],
+    queryFn: () => getQuizzes(),
   });
 
   function handleStart(quizId) {
-    navigate(`/quiz/${courseId}/take/${quizId}`);
+    navigate(`/quiz/take/${quizId}`);
   }
 
   function handleReview(attemptId) {
-    navigate(`/quiz/${courseId}/result/${attemptId}`);
+    navigate(`/quiz/result/${attemptId}`);
   }
 
   return (

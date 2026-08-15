@@ -62,24 +62,24 @@ function App() {
                 <Route path="/progress/:courseId" element={<ProgressPage />} />
                 <Route path="/attendance" element={<AttendancePage />} />
                 <Route path="/fee" element={<PaymentPage />} />
-                <Route path="/assignment/:courseId" element={<AssignmentPage />} />
-                <Route path="/quiz/:courseId" element={<QuizListPage />} />
+                <Route path="/assignment" element={<AssignmentPage />} />
+                <Route path="/quiz" element={<QuizListPage />} />
                 <Route path="/leaderboard/:courseId" element={<LeaderboardPage />} />
                 <Route path="/certificate/:courseId" element={<CertificatePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/feedback" element={<MyFeedbackPage />} />
                 <Route path="/agenda" element={<AgendaPage />} />
-                <Route path="/resources/:courseId" element={<ResourceLibraryPage />} />
+                <Route path="/resources" element={<ResourceLibraryPage />} />
                 <Route path="/skill-passport" element={<SkillPassportPage />} />
-                <Route path="/doubts/:courseId" element={<DoubtsListPage />} />
-                <Route path="/doubts/:courseId/:questionId" element={<DoubtDetailPage />} />
+                <Route path="/doubts" element={<DoubtsListPage />} />
+                <Route path="/doubts/:questionId" element={<DoubtDetailPage />} />
               </Route>
 
               {/* Quiz-taking runs outside the sidebar shell — distraction-free
                   fullscreen proctored experience, per Integrity Mode. */}
-              <Route path="/quiz/:courseId/take/:quizId" element={<QuizTakingPage />} />
-              <Route path="/quiz/:courseId/result/:attemptId" element={<QuizResultPage />} />
+              <Route path="/quiz/take/:quizId" element={<QuizTakingPage />} />
+              <Route path="/quiz/result/:attemptId" element={<QuizResultPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/courses" replace />} />

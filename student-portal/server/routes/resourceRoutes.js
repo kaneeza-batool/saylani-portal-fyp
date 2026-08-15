@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId', getResourceLibrary);
+router.get('/', getResourceLibrary);
 
 module.exports = router;
