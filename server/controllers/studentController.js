@@ -143,6 +143,14 @@ exports.updateStudent = async (req, res) => {
       return res.status(403).json({ message: 'Use the Admissions Queue to set a student to pending or rejected' });
     }
 
+    // Needed before the write either way now: resolveBatchAssignment's
+    // campus fallback (unchanged, see below) and the enrolled/dropout
+    // cascade both have to know the student's pre-update state. Scoped by
+    // req.campusFilter same as the final write, so a sub_admin gets the
+    // same 404 for an out-of-campus id here as they would have anyway.
+    const existing = await Student.findOne({ _id: req.params.id, ...req.campusFilter });
+    if (!existing) return res.status(404).json({ message: 'Student not found' });
+
     // sub_admin can only ever target students in their own campus (see
     // req.campusFilter above), but the payload itself could still carry a
     // different campus id — drop it silently rather than let them reassign
@@ -151,6 +159,34 @@ exports.updateStudent = async (req, res) => {
     const updates = { name, father, cnic, phone, email, course, status, payment, address };
     if (req.user.role === 'super_admin') {
       updates.campus = campus;
+    }
+
+    // Enrolled/dropout cascade — two independent triggers, `status` always
+    // wins when both are present in the same request:
+    //  - An ACTUAL status change (status !== existing.status, not just
+    //    "status was in the payload") is always an intentional admin
+    //    decision, tagged 'manual' and always allowed, overriding whatever
+    //    dropReason was there before. Can't just check `status !==
+    //    undefined` — StudentFormModal's edit form is a controlled <select>
+    //    that always submits the current status, even on a request that
+    //    only changed the phone number, so that alone isn't a reliable
+    //    signal of intent.
+    //  - A payment-only change (status didn't change in this request)
+    //    cascades automatically: overdue while enrolled drops them
+    //    ('payment' reason); recovering from overdue only re-enrolls them
+    //    if that's *why* they were dropped — an attendance or manual
+    //    dropout is never silently reopened just because a fee got marked
+    //    paid.
+    if (status !== undefined && status !== existing.status) {
+      updates.dropReason = status === 'dropout' ? 'manual' : null;
+    } else if (payment !== undefined && payment !== existing.payment) {
+      if (payment === 'overdue' && existing.status === 'enrolled') {
+        updates.status = 'dropout';
+        updates.dropReason = 'payment';
+      } else if (payment !== 'overdue' && existing.status === 'dropout' && existing.dropReason === 'payment') {
+        updates.status = 'enrolled';
+        updates.dropReason = null;
+      }
     }
 
     // batch is optional and only touched when the client actually sent a
@@ -163,11 +199,7 @@ exports.updateStudent = async (req, res) => {
     // check entirely. Fall back to the student's existing campus in that
     // case, so a Sukkur student can't be silently pointed at a Karachi batch.
     if (batch !== undefined) {
-      let targetCampusId = req.user.role === 'super_admin' ? campus : req.user.campus_id;
-      if (req.user.role === 'super_admin' && !targetCampusId) {
-        const existing = await Student.findById(req.params.id).select('campus').lean();
-        targetCampusId = existing?.campus;
-      }
+      const targetCampusId = req.user.role === 'super_admin' ? campus || existing.campus : req.user.campus_id;
       const batchResult = await resolveBatchAssignment(req.user, targetCampusId, batch);
       if (!batchResult.ok) return res.status(batchResult.status).json({ message: batchResult.message });
       updates.batch = batchResult.batch;
@@ -180,12 +212,24 @@ exports.updateStudent = async (req, res) => {
     );
 
     if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    // Surface the cascade in the audit trail when it fired, not just "Updated
+    // student" — an admin reading the log should see *why* status changed
+    // even though they only touched the payment field.
+    let summary = `Updated student "${student.name}"`;
+    if (existing.status !== student.status) {
+      summary =
+        student.status === 'dropout'
+          ? `Dropped "${student.name}" (${updates.dropReason === 'payment' ? 'payment overdue' : 'manual'})`
+          : `Re-enrolled "${student.name}"${updates.dropReason === null && existing.dropReason === 'payment' ? ' (payment cleared)' : ''}`;
+    }
+
     logAudit({
       actor: req.user,
       action: 'update',
       resourceType: 'Student',
       resourceId: student._id,
-      summary: `Updated student "${student.name}"`,
+      summary,
       resourceCampus: student.campus,
     });
     return res.status(200).json({ student });

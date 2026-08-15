@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
 import logo from '/images/logo/titan-logo-clean.png';
-import { uploadAvatar } from '../services/studentService';
+import { uploadAvatar, skipOnboarding } from '../services/studentService';
 import { useAuth } from '../context/AuthContext';
 import { CameraIcon } from '../components/icons';
 
@@ -25,6 +25,17 @@ export default function OnboardingPage() {
     },
     onError: (err) => {
       setError(err.response?.data?.message || 'Failed to upload. Please try again.');
+    },
+  });
+
+  const skipMutation = useMutation({
+    mutationFn: skipOnboarding,
+    onSuccess: async () => {
+      await refreshStudent();
+      navigate('/courses');
+    },
+    onError: (err) => {
+      setError(err.response?.data?.message || 'Failed to skip. Please try again.');
     },
   });
 
@@ -78,7 +89,7 @@ export default function OnboardingPage() {
           <h2 className="font-heading text-lg font-bold text-neutral-900">
             Welcome{student?.fullName ? `, ${student.fullName.split(' ')[0]}` : ''}!
           </h2>
-          <p className="text-sm text-neutral-500 mt-1">Please upload a profile picture to continue.</p>
+          <p className="text-sm text-neutral-500 mt-1">Add a profile picture to personalize your account, or skip for now.</p>
         </div>
 
         <motion.button
@@ -115,11 +126,21 @@ export default function OnboardingPage() {
           whileTap={!imageBase64 || mutation.isPending ? undefined : { scale: 0.97 }}
           type="button"
           onClick={handleContinue}
-          disabled={!imageBase64 || mutation.isPending}
+          disabled={!imageBase64 || mutation.isPending || skipMutation.isPending}
           className="w-full rounded-md px-5 py-2.5 text-sm font-semibold uppercase tracking-wide bg-primary-800 text-white transition-colors hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {mutation.isPending ? 'Uploading...' : 'Continue'}
         </motion.button>
+
+        <button
+          type="button"
+          onClick={() => skipMutation.mutate()}
+          disabled={mutation.isPending || skipMutation.isPending}
+          data-testid="onboarding-skip"
+          className="text-sm font-semibold text-neutral-500 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {skipMutation.isPending ? 'Skipping...' : 'Skip for now'}
+        </button>
       </motion.div>
     </div>
   );

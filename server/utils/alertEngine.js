@@ -4,6 +4,7 @@ const Alert = require('../models/Alert');
 const User = require('../models/User');
 const { getIO } = require('./socket');
 const { sendMail } = require('./mailer');
+const { logAudit } = require('./auditLogger');
 
 // Targets the alert's campus room plus the super-admins room (see
 // socket.js's connection handler for how sockets join these) instead of a
@@ -80,6 +81,72 @@ async function checkAttendanceAlerts() {
   }
 }
 
+const ATTENDANCE_WINDOW_DAYS = 30;
+const ATTENDANCE_DROP_THRESHOLD = 70;
+// Below this many present+absent records in the window, a rate isn't
+// meaningful yet — a student in their first few days shouldn't be dropped
+// off 1 or 2 absences. Same present/(present+absent) formula as
+// dashboardController's attendanceRate/studentAttendanceController's
+// getAttendanceSummary, 'leave' excluded from the denominator both places.
+const ATTENDANCE_MIN_SAMPLE = 5;
+
+function since30d() {
+  const d = new Date();
+  d.setDate(d.getDate() - ATTENDANCE_WINDOW_DAYS);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// One-way: drops a student below the attendance floor, but — unlike
+// checkPaymentAlerts' underlying payment cascade in studentController — never
+// auto-restores. An attendance-caused dropout (dropReason: 'attendance')
+// only clears when a super_admin or sub_admin manually re-enrolls from the
+// Students page, by design (see Student.js's dropReason comment).
+async function checkAttendanceDropouts() {
+  const since = since30d();
+  const students = await Student.find({ status: 'enrolled' });
+
+  for (const student of students) {
+    const rows = await StudentAttendance.aggregate([
+      { $match: { student: student._id, date: { $gte: since } } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+    const counts = { present: 0, absent: 0 };
+    for (const r of rows) {
+      if (r._id in counts) counts[r._id] = r.count;
+    }
+    const denom = counts.present + counts.absent;
+    if (denom < ATTENDANCE_MIN_SAMPLE) continue;
+
+    const rate = (counts.present / denom) * 100;
+    if (rate >= ATTENDANCE_DROP_THRESHOLD) continue;
+
+    student.status = 'dropout';
+    student.dropReason = 'attendance';
+    await student.save();
+
+    logAudit({
+      actor: null,
+      action: 'update',
+      resourceType: 'Student',
+      resourceId: student._id,
+      summary: `Auto-dropped "${student.name}" — attendance fell to ${Math.round(rate)}% (below ${ATTENDANCE_DROP_THRESHOLD}% minimum)`,
+      resourceCampus: student.campus,
+    });
+
+    const alert = await Alert.create({
+      type: 'attendance',
+      severity: 'critical',
+      student: student._id,
+      studentName: student.name,
+      campus: student.campus,
+      message: `${student.name} was dropped out — attendance fell to ${Math.round(rate)}% over the last ${ATTENDANCE_WINDOW_DAYS} days.`,
+    });
+    emitAlert(alert);
+    notifyAdmin(alert);
+  }
+}
+
 async function checkPaymentAlerts() {
   const overdueStudents = await Student.find({ status: { $in: ['enrolled', 'pending'] }, payment: 'overdue' });
   const overdueIds = new Set(overdueStudents.map((s) => String(s._id)));
@@ -112,6 +179,7 @@ async function checkPaymentAlerts() {
 async function runAlertChecks() {
   try {
     await checkAttendanceAlerts();
+    await checkAttendanceDropouts();
     await checkPaymentAlerts();
   } catch (err) {
     console.error('Alert engine run failed:', err.message);

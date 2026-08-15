@@ -44,6 +44,15 @@ const studentSchema = new mongoose.Schema(
     batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot', index: true },
     status: { type: String, enum: STATUSES, default: 'enrolled' },
     payment: { type: String, enum: PAYMENT_STATUSES, default: 'pending' },
+    // Only meaningful while status is 'dropout' — tracks WHY, so the
+    // automatic transitions in studentController.updateStudent and
+    // alertEngine.js know which drops they're allowed to touch: a 'payment'
+    // drop auto-restores when payment clears; an 'attendance' drop never
+    // auto-restores (an admin must re-enroll manually); a 'manual' drop
+    // (an admin explicitly chose it) is likewise never auto-restored. Never
+    // set directly from client input — always derived server-side from
+    // which field actually changed.
+    dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
     address: { type: String, default: '', trim: true },
 
     // ---- Student-portal auth + profile fields (merged in from
