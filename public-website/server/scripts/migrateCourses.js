@@ -3,6 +3,7 @@
 // Safe to re-run: it skips migration entirely if the Course collection is
 // not empty, so it never creates duplicates.
 require('dotenv').config();
+require('../utils/fixDns');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');

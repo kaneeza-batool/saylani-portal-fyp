@@ -5,6 +5,7 @@ import { fetchStudents } from '../../services/studentService';
 import { fetchSlots } from '../../services/slotService';
 import { getAdmissions, approveAdmission, rejectAdmission } from '../../services/admissionService';
 import { getAttendanceSummary } from '../../services/studentAttendanceService';
+import { GraduationCapIcon, HourglassIcon, BookIcon, CalendarIcon } from '../../components/icons';
 
 const PREVIEW_LIMIT = 5;
 
@@ -19,10 +20,10 @@ function fmtDate(d) {
 // of introducing a new shared-component pattern.
 
 const KPI_ICON = {
-  students: { bg: 'bg-success-bg', color: 'text-success-text', emoji: '🎓' },
-  admissions: { bg: 'bg-warning-bg', color: 'text-warning-text', emoji: '📥' },
-  batches: { bg: 'bg-info-bg', color: 'text-info-text', emoji: '📚' },
-  attendance: { bg: 'bg-danger-50', color: 'text-danger-600', emoji: '📊' },
+  students: { bg: 'bg-success-bg', color: 'text-success-text', Icon: GraduationCapIcon },
+  admissions: { bg: 'bg-warning-bg', color: 'text-warning-text', Icon: HourglassIcon },
+  batches: { bg: 'bg-info-bg', color: 'text-info-text', Icon: BookIcon },
+  attendance: { bg: 'bg-danger-50', color: 'text-danger-600', Icon: CalendarIcon },
 };
 
 const TAG_TONE = {
@@ -54,12 +55,13 @@ function SkeletonBlock({ className = '' }) {
 
 function KpiCard({ label, value, icon, tag, loading }) {
   const iconStyle = KPI_ICON[icon] ?? KPI_ICON.students;
+  const Icon = iconStyle.Icon;
   return (
     <CardShell className="p-5 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-overline uppercase text-neutral-500">{label}</span>
-        <div className={`w-[34px] h-[34px] rounded flex items-center justify-center text-base ${iconStyle.bg} ${iconStyle.color}`}>
-          {iconStyle.emoji}
+        <div className={`w-[34px] h-[34px] rounded flex items-center justify-center ${iconStyle.bg} ${iconStyle.color}`}>
+          <Icon width="17" height="17" />
         </div>
       </div>
       {loading ? (

@@ -15,6 +15,11 @@
   --chart-enrollment: #12234a;
   --chart-placement: #c9a227;
   --chart-cursor: rgba(13, 25, 53, 0.04);
+  /* Trainer Portal's accent — deliberately its own color (not gold), so the
+     portal reads as visually distinct from Super/Sub Admin at a glance.
+     Reuses the existing info.text blue (tailwind.config.js) rather than
+     inventing a new one. */
+  --trainer-blue: #2557a6;
 }
 
 /* Dark theme is navy-tinted (not generic gray) to stay cohesive with the
@@ -33,6 +38,7 @@
   --chart-enrollment: #6E8FE0;
   --chart-placement: #e8c158;
   --chart-cursor: rgba(255, 255, 255, 0.06);
+  --trainer-blue: #6ea3e0;
 }
 
 html {
