@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { inputClass, labelClass } from '../../components/formFieldStyles';
+import { inputClass, labelClass } from './formFieldStyles';
 
 // Layout/content sourced from the "QUIZ BUILDER" section of
 // TITAN Trainer Portal.html: quiz meta (title/batch/duration/marks/
@@ -49,7 +49,7 @@ function Toggle({ on, onToggle }) {
       type="button"
       onClick={onToggle}
       aria-pressed={on}
-      className={`w-[42px] h-6 rounded-pill relative shrink-0 border-none cursor-pointer transition-colors ${on ? 'bg-royal-500' : 'bg-neutral-200'}`}
+      className={`w-[42px] h-6 rounded-pill relative shrink-0 border-none cursor-pointer transition-colors ${on ? 'bg-[var(--trainer-blue)]' : 'bg-neutral-200'}`}
     >
       <span
         className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-[left] duration-150 ${on ? 'left-[20px]' : 'left-0.5'}`}
@@ -60,7 +60,7 @@ function Toggle({ on, onToggle }) {
 
 function QuestionCard({ question, index, onChangeMarks, onChangeText, onChangeOptionText, onSetCorrect }) {
   return (
-    <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl p-[18px] flex flex-col gap-3">
+    <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl p-[18px] flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-bold text-neutral-400">Question {index + 1}</span>
         <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ function QuestionCard({ question, index, onChangeMarks, onChangeText, onChangeOp
             min="0"
             value={question.marks}
             onChange={(e) => onChangeMarks(question.id, e.target.value)}
-            className="w-[52px] border border-neutral-200 rounded px-1.5 py-1 text-[12.5px] font-sans outline-none focus:border-royal-500 transition-colors"
+            className="w-[52px] border border-neutral-200 rounded px-1.5 py-1 text-[12.5px] font-sans outline-none focus:border-[var(--trainer-blue)] transition-colors"
           />
         </div>
       </div>
@@ -88,7 +88,7 @@ function QuestionCard({ question, index, onChangeMarks, onChangeText, onChangeOp
           <label
             key={opt.id}
             className={`flex items-center gap-2 rounded px-3 py-[9px] border cursor-pointer transition-colors ${
-              opt.correct ? 'border-success-text bg-success-bg' : 'border-neutral-200 bg-white'
+              opt.correct ? 'border-success-text bg-success-bg' : 'border-neutral-200 bg-surface'
             }`}
           >
             <input
@@ -96,13 +96,15 @@ function QuestionCard({ question, index, onChangeMarks, onChangeText, onChangeOp
               name={`q-${question.id}-correct`}
               checked={opt.correct}
               onChange={() => onSetCorrect(question.id, opt.id)}
-              className="accent-royal-500"
+              className="accent-[var(--trainer-blue)]"
             />
             <input
               type="text"
               value={opt.text}
               onChange={(e) => onChangeOptionText(question.id, opt.id, e.target.value)}
-              className="flex-1 min-w-0 border-none bg-transparent outline-none text-body-sm text-neutral-900 font-sans"
+              className={`flex-1 min-w-0 border-none bg-transparent outline-none text-body-sm font-sans ${
+                opt.correct ? 'text-success-text' : 'text-neutral-900'
+              }`}
             />
           </label>
         ))}
@@ -149,7 +151,7 @@ export default function QuizzesPage() {
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4 max-w-[760px]">
-      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl p-5 flex flex-col gap-3.5">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3.5">
         <div className="flex flex-col gap-1.5">
           <label className={labelClass}>Quiz Title</label>
           <input
@@ -164,7 +166,7 @@ export default function QuizzesPage() {
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col gap-1.5">
             <label className={labelClass}>Batch</label>
-            <select value={batch} onChange={(e) => setBatch(e.target.value)} className={`${inputClass} bg-white`}>
+            <select value={batch} onChange={(e) => setBatch(e.target.value)} className={`${inputClass} bg-surface`}>
               {BATCH_OPTIONS.map((label) => (
                 <option key={label} value={label}>
                   {label}
@@ -229,7 +231,7 @@ export default function QuizzesPage() {
         variants={fadeInUp}
         type="button"
         onClick={addQuestion}
-        className="border-2 border-dashed border-neutral-300 rounded-xl py-[22px] text-center text-body-sm font-semibold text-neutral-400 cursor-pointer transition-colors hover:border-royal-500 hover:text-royal-500"
+        className="border-2 border-dashed border-neutral-300 rounded-xl py-[22px] text-center text-body-sm font-semibold text-neutral-400 cursor-pointer transition-colors hover:border-[var(--trainer-blue)] hover:text-[var(--trainer-blue)]"
       >
         + Add Question
       </motion.button>

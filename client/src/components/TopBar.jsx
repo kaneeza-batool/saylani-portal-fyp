@@ -33,6 +33,7 @@ function roleLabel(role) {
 
 export default function TopBar() {
   const title = useViewTitle();
+  const { pathname } = useLocation();
   const { user, logout } = useAuth();
   const { liveAlerts, unreadAlertCount, clearUnread } = useSocketData();
   const { theme, toggleTheme } = useTheme();
@@ -53,9 +54,14 @@ export default function TopBar() {
     navigate('/admin/alerts');
   };
 
+  // Falls back to the pathname when `user` isn't populated yet (e.g. login
+  // is currently bypassed for testing, so there's no real role to read).
+  const isTrainerView = user?.role === 'trainer' || pathname.startsWith('/trainer');
+  const titleColor = isTrainerView ? 'text-[var(--trainer-blue)]' : 'text-gold-700';
+
   return (
     <div className="h-[66px] shrink-0 bg-surface border-b-2 border-gold-500 flex items-center justify-between px-[26px] sticky top-0 z-[5]">
-      <div className="font-heading font-bold text-h4 text-gold-700">{title}</div>
+      <div className={`font-heading font-bold text-h4 ${titleColor}`}>{title}</div>
 
       <div className="flex items-center gap-[18px]">
         <button

@@ -29,6 +29,7 @@ const reportsRoutes = require('./routes/reportsRoutes');
 const mlRoutes = require('./routes/mlRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const mapRoutes = require('./routes/mapRoutes');
+const trainerDashboardRoutes = require('./routes/trainerDashboardRoutes');
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api/admin/reports', reportsRoutes);
 app.use('/api/admin/ml', mlRoutes);
 app.use('/api/admin/alerts', alertRoutes);
 app.use('/api/admin/map', mapRoutes);
+app.use('/api/trainer', trainerDashboardRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

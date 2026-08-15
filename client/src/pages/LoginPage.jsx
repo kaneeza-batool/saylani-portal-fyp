@@ -3,6 +3,10 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 
+function defaultRouteFor(role) {
+  return role === 'trainer' ? '/trainer/dashboard' : '/admin/dashboard';
+}
+
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
   const navigate = useNavigate();
@@ -14,7 +18,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   if (!loading && user) {
-    const redirectTo = location.state?.from?.pathname || '/admin/dashboard';
+    const redirectTo = location.state?.from?.pathname || defaultRouteFor(user.role);
     return <Navigate to={redirectTo} replace />;
   }
 
@@ -23,8 +27,8 @@ export default function LoginPage() {
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate(location.state?.from?.pathname || '/admin/dashboard', { replace: true });
+      const loggedInUser = await login(email, password);
+      navigate(location.state?.from?.pathname || defaultRouteFor(loggedInUser.role), { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     } finally {
@@ -76,7 +80,7 @@ export default function LoginPage() {
               className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(201,162,39,0.45)]"
             />
           </motion.div>
-          <div className="text-caption text-navy-300 font-normal mt-1">Super Admin Portal</div>
+          <div className="text-caption text-navy-300 font-normal mt-1">Sign in to your account</div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

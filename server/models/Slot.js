@@ -9,6 +9,11 @@ const slotSchema = new mongoose.Schema(
   {
     schedule: { type: String, required: true, trim: true }, // e.g. "Sat 11:00 AM - 01:00 PM | Wed 11:00 AM - 01:00 PM"
     trainer: { type: String, required: true, trim: true },
+    // Optional link to the actual trainer-role User who owns this slot, for
+    // the trainer portal's "My Batches"/dashboard queries — kept separate
+    // from `trainer` (the free-text label the admin Slots CRUD form already
+    // uses) so that existing admin flow doesn't change at all.
+    assignedTrainer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     course: { type: String, required: true, trim: true },
     campus: { type: String, required: true, trim: true },
     seatsTotal: { type: Number, required: true, min: 1 },

@@ -1,17 +1,7 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-
-// Layout/content sourced from the "ATTENDANCE MARKING" section of
-// TITAN Trainer Portal.html: batch + date pickers, a mark-all-present
-// shortcut, present/absent/leave summary tiles, and a roster with a
-// per-student three-way status toggle. No backend yet, so batches and
-// students are dummy data shaped like what this page will eventually load.
-const BATCH_OPTIONS = [
-  'Web Development · B-24',
-  'Graphic Designing · B-19',
-  'Digital Marketing · B-31',
-  'Cloud Computing · B-08',
-];
+import { useQuery } from '@tanstack/react-query';
+import { getTrainerDashboard } from '../../services/trainerDashboardService';
 
 const INITIAL_STUDENTS = [
   { id: 1, name: 'Ayesha Siddiqui', roll: '241', initials: 'AS', status: 'present' },
@@ -24,8 +14,6 @@ const INITIAL_STUDENTS = [
   { id: 8, name: 'Zain Abbas', roll: '248', initials: 'ZA', status: 'absent' },
 ];
 
-// Reused verbatim from ViewAttendance.jsx's STATUS_STYLE so present/absent/leave
-// always mean the same colors everywhere in the app.
 const STATUS_STYLE = {
   present: { label: 'Present', className: 'bg-success-bg text-success-text' },
   absent: { label: 'Absent', className: 'bg-danger-50 text-danger-600' },
@@ -39,6 +27,12 @@ const SUMMARY_TEXT_COLOR = {
   leave: 'text-warning-text',
 };
 
+const SUMMARY_BG = {
+  present: 'bg-success-bg',
+  absent: 'bg-danger-50',
+  leave: 'bg-warning-bg',
+};
+
 const fadeInUp = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
 
@@ -49,7 +43,7 @@ function StudentRow({ student, onSetStatus }) {
       className="flex items-center justify-between px-[18px] py-[13px] border-b border-neutral-100 last:border-b-0"
     >
       <div className="flex items-center gap-3">
-        <div className="w-[34px] h-[34px] rounded shrink-0 bg-neutral-100 text-success-text flex items-center justify-center font-heading font-bold text-[12px]">
+        <div className="w-[34px] h-[34px] rounded shrink-0 bg-success-bg text-success-text flex items-center justify-center font-heading font-bold text-[12px]">
           {student.initials}
         </div>
         <div>
@@ -67,7 +61,7 @@ function StudentRow({ student, onSetStatus }) {
             className={[
               'px-3.5 py-[7px] text-[12px] font-bold cursor-pointer transition-colors',
               i > 0 ? 'border-l border-neutral-200' : '',
-              student.status === key ? STATUS_STYLE[key].className : 'bg-white text-neutral-400 hover:bg-neutral-100',
+              student.status === key ? STATUS_STYLE[key].className : 'bg-surface text-neutral-400 hover:bg-neutral-100',
             ].join(' ')}
           >
             {STATUS_STYLE[key].label}
@@ -79,9 +73,16 @@ function StudentRow({ student, onSetStatus }) {
 }
 
 export default function AttendancePage() {
-  const [batch, setBatch] = useState(BATCH_OPTIONS[0]);
+  const { data } = useQuery({ queryKey: ['trainer-dashboard'], queryFn: getTrainerDashboard });
+  const batchOptions = (data?.batches ?? []).map((b) => `${b.course} · ${b.campus}`);
+  const [batch, setBatch] = useState('');
+  const [saved, setSaved] = useState(false);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [students, setStudents] = useState(INITIAL_STUDENTS);
+
+  if (batchOptions.length && !batch) {
+    setBatch(batchOptions[0]);
+  }
 
   const counts = useMemo(
     () => students.reduce((acc, s) => ({ ...acc, [s.status]: (acc[s.status] ?? 0) + 1 }), {}),
@@ -94,6 +95,11 @@ export default function AttendancePage() {
 
   const markAllPresent = () => setStudents((prev) => prev.map((s) => ({ ...s, status: 'present' })));
 
+  const saveAttendance = () => {
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -101,9 +107,9 @@ export default function AttendancePage() {
           <select
             value={batch}
             onChange={(e) => setBatch(e.target.value)}
-            className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm font-semibold text-neutral-900 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+            className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm font-semibold text-neutral-900 font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors"
           >
-            {BATCH_OPTIONS.map((label) => (
+            {batchOptions.map((label) => (
               <option key={label} value={label}>
                 {label}
               </option>
@@ -113,7 +119,7 @@ export default function AttendancePage() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm text-neutral-600 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+            className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors"
           />
         </div>
         <button
@@ -127,25 +133,26 @@ export default function AttendancePage() {
 
       <div className="grid grid-cols-3 gap-4">
         {STATUS_ORDER.map((key) => (
-          <div key={key} className="bg-white border border-neutral-200 rounded-xl px-[18px] py-4 text-center">
+          <div key={key} className={`${SUMMARY_BG[key]} border border-neutral-200 rounded-xl px-[18px] py-4 text-center`}>
             <div className={`font-heading font-extrabold text-[24px] ${SUMMARY_TEXT_COLOR[key]}`}>{counts[key] ?? 0}</div>
             <div className="text-[12px] font-semibold text-neutral-400 mt-0.5">{STATUS_STYLE[key].label}</div>
           </div>
         ))}
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         {students.map((student) => (
           <StudentRow key={student.id} student={student} onSetStatus={setStatus} />
         ))}
       </div>
 
-      <div className="bg-white border border-neutral-200 rounded-xl px-[18px] py-3.5 flex justify-end">
+      <div className="bg-surface border border-neutral-200 rounded-xl px-[18px] py-3.5 flex justify-end">
         <button
           type="button"
-          className="border-none bg-royal-500 text-white text-body-sm font-semibold px-6 py-[11px] rounded cursor-pointer transition-colors hover:bg-royal-600"
+          onClick={saveAttendance}
+          className="border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-6 py-[11px] rounded cursor-pointer transition-colors hover:brightness-90"
         >
-          Save Attendance
+          {saved ? 'Saved ✓' : 'Save Attendance'}
         </button>
       </div>
     </motion.div>

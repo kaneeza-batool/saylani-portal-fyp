@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { inputClass, labelClass } from '../../components/formFieldStyles';
+import { inputClass, labelClass } from './formFieldStyles';
 
 // No dedicated design exists for this page — built from the same card
 // shell/typography/form patterns as the super-admin's Profile.jsx (info
@@ -74,14 +74,19 @@ export default function ProfilePage() {
   };
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="max-w-[560px] flex flex-col gap-4">
-      <motion.div variants={fadeIn} className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-5">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="show"
+      className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr] gap-4 items-start"
+    >
+      <motion.div variants={fadeIn} className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div className="font-heading font-bold text-h6 text-neutral-900">Profile Information</div>
           <button
             type="button"
             onClick={handleLogout}
-            className="border-none bg-royal-500 text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:bg-royal-600 flex items-center gap-1.5"
+            className="border-none bg-[var(--trainer-blue)] text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-colors hover:brightness-90 flex items-center gap-1.5"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -93,7 +98,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex items-center gap-3.5">
-          <div className="w-16 h-16 rounded-full bg-parrot-500 text-white flex items-center justify-center font-heading font-bold text-h5 shrink-0">
+          <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 border border-gold-500/40 flex items-center justify-center font-heading font-bold text-h5 shrink-0">
             {initials(user?.name)}
           </div>
           <div>
@@ -122,7 +127,7 @@ export default function ProfilePage() {
         </div>
       </motion.div>
 
-      <motion.div variants={fadeIn} className="bg-white border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
+      <motion.div variants={fadeIn} className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
         <div>
           <div className="font-heading font-bold text-h6 text-neutral-900">Account Settings</div>
           <div className="text-body-sm text-neutral-400 mt-0.5">Update your name, email, or password.</div>
@@ -190,7 +195,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="mt-1 self-start border-none bg-royal-500 text-white text-body-sm font-semibold px-4.5 py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-1 self-start border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-6 py-[11px] rounded cursor-pointer transition-colors hover:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

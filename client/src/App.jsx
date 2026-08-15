@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { CommandPaletteProvider } from './context/CommandPaletteContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import SuperAdminLayout from './layouts/SuperAdminLayout';
@@ -54,53 +55,55 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <SocketProvider>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
+              <CommandPaletteProvider>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
 
-                <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
-                  <Route path="/admin" element={<SuperAdminLayout />}>
-                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                    <Route path="dashboard" element={<DashboardPage />} />
-                    <Route path="students" element={<StudentsPage />} />
-                    <Route path="campuses" element={<CampusesPage />} />
-                    <Route path="subadmins" element={<SubAdminsPage />} />
-                    <Route path="trainers" element={<TrainersPage />} />
-                    <Route path="trainers/attendance/mark" element={<TrainersAttendanceMark />} />
-                    <Route path="trainers/attendance/view" element={<TrainersAttendanceView />} />
-                    <Route path="trainers/attendance/request" element={<TrainersAttendanceRequest />} />
-                    <Route path="courses" element={<CoursesPage />} />
-                    <Route path="attendance/mark" element={<MarkAttendance />} />
-                    <Route path="attendance/view" element={<ViewAttendance />} />
-                    <Route path="attendance/multi" element={<MultiAttendance />} />
-                    <Route path="administration/slots" element={<SlotsPage />} />
-                    <Route path="quiz" element={<QuizzesPage />} />
-                    <Route path="employers" element={<EmployersPage />} />
-                    <Route path="jobportal" element={<JobsPage />} />
-                    <Route path="reports" element={<Reports />} />
-                    <Route path="auditlog" element={<AuditLog />} />
-                    <Route path="updation" element={<Updation />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="insights" element={<InsightsPage />} />
-                    <Route path="campus-map" element={<CampusMapPage />} />
-                    <Route path="alerts" element={<AlertsPage />} />
-                    <Route path="profile" element={<Profile />} />
+                  <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
+                    <Route path="/admin" element={<SuperAdminLayout />}>
+                      <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                      <Route path="dashboard" element={<DashboardPage />} />
+                      <Route path="students" element={<StudentsPage />} />
+                      <Route path="campuses" element={<CampusesPage />} />
+                      <Route path="subadmins" element={<SubAdminsPage />} />
+                      <Route path="trainers" element={<TrainersPage />} />
+                      <Route path="trainers/attendance/mark" element={<TrainersAttendanceMark />} />
+                      <Route path="trainers/attendance/view" element={<TrainersAttendanceView />} />
+                      <Route path="trainers/attendance/request" element={<TrainersAttendanceRequest />} />
+                      <Route path="courses" element={<CoursesPage />} />
+                      <Route path="attendance/mark" element={<MarkAttendance />} />
+                      <Route path="attendance/view" element={<ViewAttendance />} />
+                      <Route path="attendance/multi" element={<MultiAttendance />} />
+                      <Route path="administration/slots" element={<SlotsPage />} />
+                      <Route path="quiz" element={<QuizzesPage />} />
+                      <Route path="employers" element={<EmployersPage />} />
+                      <Route path="jobportal" element={<JobsPage />} />
+                      <Route path="reports" element={<Reports />} />
+                      <Route path="auditlog" element={<AuditLog />} />
+                      <Route path="updation" element={<Updation />} />
+                      <Route path="settings" element={<Settings />} />
+                      <Route path="insights" element={<InsightsPage />} />
+                      <Route path="campus-map" element={<CampusMapPage />} />
+                      <Route path="alerts" element={<AlertsPage />} />
+                      <Route path="profile" element={<Profile />} />
+                    </Route>
                   </Route>
-                </Route>
 
-                <Route element={<ProtectedRoute allowedRoles={['trainer']} />}>
-                  <Route path="/trainer" element={<TrainerLayout />}>
-                    <Route index element={<Navigate to="/trainer/dashboard" replace />} />
-                    <Route path="dashboard" element={<TrainerDashboardPage />} />
-                    <Route path="batches" element={<TrainerBatchesPage />} />
-                    <Route path="attendance" element={<TrainerAttendancePage />} />
-                    <Route path="quizzes" element={<TrainerQuizzesPage />} />
-                    <Route path="students" element={<TrainerStudentsPage />} />
-                    <Route path="profile" element={<TrainerProfilePage />} />
+                  <Route element={<ProtectedRoute allowedRoles={['trainer']} />}>
+                    <Route path="/trainer" element={<TrainerLayout />}>
+                      <Route index element={<Navigate to="/trainer/dashboard" replace />} />
+                      <Route path="dashboard" element={<TrainerDashboardPage />} />
+                      <Route path="batches" element={<TrainerBatchesPage />} />
+                      <Route path="attendance" element={<TrainerAttendancePage />} />
+                      <Route path="quizzes" element={<TrainerQuizzesPage />} />
+                      <Route path="students" element={<TrainerStudentsPage />} />
+                      <Route path="profile" element={<TrainerProfilePage />} />
+                    </Route>
                   </Route>
-                </Route>
 
-                <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
-              </Routes>
+                  <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+                </Routes>
+              </CommandPaletteProvider>
             </SocketProvider>
           </AuthProvider>
         </BrowserRouter>

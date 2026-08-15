@@ -65,6 +65,16 @@ export default {
           enrollment: 'var(--chart-enrollment)',
         },
 
+        // Trainer portal accent — navy-800 in light mode (readable on
+        // white/pale cards), the same lighter blue as --chart-enrollment's
+        // dark value in dark mode (navy-800 itself disappears against the
+        // dark surface). Used for trainer buttons, focus rings, the
+        // progress-ring stroke, the integrity toggle, and radio accents.
+        // NOTE: not registered as a `trainer-blue` color token here — the
+        // trainer portal references it directly as `bg-[var(--trainer-blue)]`
+        // etc. so it doesn't depend on Tailwind re-scanning this config file.
+        // The var itself still lives in index.css (:root / .dark).
+
         // ---- Semantic status — bg/text pairs, reused verbatim across
         // student status, payment status, quiz status, and approval badges ----
         success: {

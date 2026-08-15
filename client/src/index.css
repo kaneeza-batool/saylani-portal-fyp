@@ -14,6 +14,7 @@
   --neutral-900: #10231c;
   --chart-enrollment: #12234a;
   --chart-cursor: rgba(13, 25, 53, 0.04);
+  --trainer-blue: #0d1935;
 }
 
 /* Dark theme is navy-tinted (not generic gray) to stay cohesive with the
@@ -31,6 +32,7 @@
   --neutral-900: #edf0f7;
   --chart-enrollment: #6E8FE0;
   --chart-cursor: rgba(255, 255, 255, 0.06);
+  --trainer-blue: #6e8fe0; /* same light blue as --chart-enrollment dark — navy-800 is unreadable on a dark surface */
 }
 
 html {

@@ -105,8 +105,8 @@ function NavLeaf({ item }) {
         [
           'flex items-center gap-[11px] rounded py-[9px] pl-3 text-body font-medium cursor-pointer transition-colors duration-150',
           isActive
-            ? 'bg-saylani-sidebar-active text-saylani-sidebar-text-active'
-            : 'text-saylani-sidebar-text hover:bg-saylani-sidebar-hover hover:text-saylani-sidebar-text-active',
+            ? 'bg-titan-sidebar-active text-titan-sidebar-text-active font-semibold shadow-[0_2px_10px_rgba(201,162,39,0.35)]'
+            : 'text-titan-sidebar-text hover:bg-titan-sidebar-hover hover:text-titan-sidebar-text-hover',
         ].join(' ')
       }
     >
@@ -118,20 +118,14 @@ function NavLeaf({ item }) {
 
 export default function TrainerSidebar() {
   return (
-    <div className="w-[252px] shrink-0 bg-saylani-sidebar flex flex-col gap-1 sticky top-0 h-screen py-[22px] px-3.5 overflow-y-auto">
+    <div className="w-[252px] shrink-0 bg-titan-sidebar flex flex-col gap-1 sticky top-0 h-screen py-[22px] px-3.5 overflow-y-auto">
       <div className="flex items-center gap-2.5 pt-1.5 px-2.5 pb-[22px]">
-        <div className="w-[34px] h-[34px] rounded-full shrink-0 bg-white flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-parrot-500">
-            <path d="M12 3c4 2 6 5 6 9a6 6 0 0 1-12 0c0-4 2-7 6-9z" />
-            <path d="M12 9v9" />
-          </svg>
+        <div className="w-[40px] h-[40px] shrink-0 flex items-center justify-center">
+          <img src="/logo.png" alt="TITAN crest" className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(201,162,39,0.4)]" />
         </div>
         <div>
-          <div className="font-heading font-bold text-brand">
-            <span className="text-parrot-500">Sayl</span>
-            <span className="text-royal-500">ani</span>
-          </div>
-          <div className="text-[11px] font-medium text-saylani-sidebar-text/80">Trainer Portal</div>
+          <div className="font-heading font-bold text-brand text-gold-400 tracking-wide">TITAN</div>
+          <div className="text-[11px] font-medium text-titan-sidebar-text/80">Trainer Portal</div>
         </div>
       </div>
 

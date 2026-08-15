@@ -1,19 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-
-// Layout/content/seed data sourced from the "GRADING / PERFORMANCE"
-// section of TITAN Trainer Portal.html — gated by `isStudents` there and
-// titled "Grading & Performance", i.e. this is the Students nav item's
-// view: a batch picker, a Publish Results action, and a roster table
-// with attendance %, quiz average, assignment submission status, and an
-// editable grade per student. No backend yet, so seeded with the same
-// dummy roster the design source used.
-const BATCH_OPTIONS = [
-  'Web Development · B-24',
-  'Graphic Designing · B-19',
-  'Digital Marketing · B-31',
-  'Cloud Computing · B-08',
-];
+import { useQuery } from '@tanstack/react-query';
+import { getTrainerDashboard } from '../../services/trainerDashboardService';
 
 const GRADE_OPTIONS = ['A+', 'A', 'B', 'C', 'D'];
 
@@ -48,10 +36,22 @@ const fadeInUp = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, trans
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
 
 export default function StudentsPage() {
-  const [batch, setBatch] = useState(BATCH_OPTIONS[0]);
+  const { data } = useQuery({ queryKey: ['trainer-dashboard'], queryFn: getTrainerDashboard });
+  const batchOptions = (data?.batches ?? []).map((b) => `${b.course} · ${b.campus}`);
+  const [batch, setBatch] = useState('');
+  const [published, setPublished] = useState(false);
   const [students, setStudents] = useState(INITIAL_STUDENTS);
 
+  if (batchOptions.length && !batch) {
+    setBatch(batchOptions[0]);
+  }
+
   const setGrade = (name, grade) => setStudents((prev) => prev.map((s) => (s.name === name ? { ...s, grade } : s)));
+
+  const publishResults = () => {
+    setPublished(true);
+    setTimeout(() => setPublished(false), 2500);
+  };
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
@@ -59,9 +59,9 @@ export default function StudentsPage() {
         <select
           value={batch}
           onChange={(e) => setBatch(e.target.value)}
-          className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm font-semibold text-neutral-900 font-sans bg-white outline-none focus:border-royal-500 transition-colors"
+          className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm font-semibold text-neutral-900 font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors"
         >
-          {BATCH_OPTIONS.map((label) => (
+          {batchOptions.map((label) => (
             <option key={label} value={label}>
               {label}
             </option>
@@ -69,13 +69,14 @@ export default function StudentsPage() {
         </select>
         <button
           type="button"
-          className="border-none bg-royal-500 text-white text-body-sm font-semibold px-[18px] py-[10px] rounded cursor-pointer transition-colors hover:bg-royal-600"
+          onClick={publishResults}
+          className="border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-[18px] py-[10px] rounded cursor-pointer transition-colors hover:brightness-90"
         >
-          Publish Results
+          {published ? 'Published ✓' : 'Publish Results'}
         </button>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-4 px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Student', 'Attendance', 'Quiz Avg', 'Assignment', 'Grade'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
@@ -94,7 +95,7 @@ export default function StudentsPage() {
                 className={`grid ${GRID_COLS} gap-4 px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded shrink-0 bg-neutral-100 text-success-text flex items-center justify-center font-heading font-bold text-[12px]">
+                  <div className="w-8 h-8 rounded shrink-0 bg-success-bg text-success-text flex items-center justify-center font-heading font-bold text-[12px]">
                     {initials(s.name)}
                   </div>
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{s.name}</span>
@@ -105,7 +106,7 @@ export default function StudentsPage() {
                 <select
                   value={s.grade}
                   onChange={(e) => setGrade(s.name, e.target.value)}
-                  className="border border-neutral-200 rounded px-2.5 py-[7px] text-caption font-sans bg-white outline-none focus:border-royal-500 transition-colors w-fit"
+                  className="border border-neutral-200 rounded px-2.5 py-[7px] text-caption font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors w-fit"
                 >
                   {GRADE_OPTIONS.map((g) => (
                     <option key={g} value={g}>
