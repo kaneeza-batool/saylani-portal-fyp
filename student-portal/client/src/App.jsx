@@ -72,8 +72,8 @@ function App() {
                 <Route path="/agenda" element={<AgendaPage />} />
                 <Route path="/resources" element={<ResourceLibraryPage />} />
                 <Route path="/skill-passport" element={<SkillPassportPage />} />
-                <Route path="/doubts/:courseId" element={<DoubtsListPage />} />
-                <Route path="/doubts/:courseId/:questionId" element={<DoubtDetailPage />} />
+                <Route path="/doubts" element={<DoubtsListPage />} />
+                <Route path="/doubts/:questionId" element={<DoubtDetailPage />} />
               </Route>
 
               {/* Quiz-taking runs outside the sidebar shell — distraction-free

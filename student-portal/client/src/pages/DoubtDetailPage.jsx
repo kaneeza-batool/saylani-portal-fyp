@@ -94,7 +94,7 @@ function AnswerCard({ answer, canAccept, onUpvote, onAccept }) {
 }
 
 export default function DoubtDetailPage() {
-  const { courseId, questionId } = useParams();
+  const { questionId } = useParams();
   const queryClient = useQueryClient();
   const [answerBody, setAnswerBody] = useState('');
 
@@ -110,7 +110,7 @@ export default function DoubtDetailPage() {
     onSuccess: () => {
       setAnswerBody('');
       invalidate();
-      queryClient.invalidateQueries({ queryKey: ['questions', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
     },
   });
 
@@ -120,7 +120,7 @@ export default function DoubtDetailPage() {
     mutationFn: (answerId) => markAcceptedAnswer(answerId),
     onSuccess: () => {
       invalidate();
-      queryClient.invalidateQueries({ queryKey: ['questions', courseId] });
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
     },
   });
 
@@ -159,7 +159,7 @@ export default function DoubtDetailPage() {
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <Link
-        to={`/doubts/${courseId}`}
+        to="/doubts"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 hover:text-primary-900 transition-colors self-start"
       >
         ← Back to Questions

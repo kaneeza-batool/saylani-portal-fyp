@@ -10,14 +10,14 @@ async function answerCountsFor(questionIds) {
   return byQuestion;
 }
 
-// List questions for a course — sortable by newest (default) or most
-// upvoted. Strictly scoped to one course (`course: courseId`), never global.
+// List questions for the logged-in student's course — sortable by newest
+// (default) or most upvoted. Strictly scoped to their own course
+// (`course: req.student.course`), never global.
 exports.getQuestions = async (req, res) => {
   try {
-    const { courseId } = req.params;
     const { sort, search } = req.query;
 
-    const filter = { course: courseId };
+    const filter = { course: req.student.course };
     if (search?.trim()) {
       filter.title = { $regex: search.trim(), $options: 'i' };
     }
@@ -52,7 +52,6 @@ exports.getQuestions = async (req, res) => {
 
 exports.createQuestion = async (req, res) => {
   try {
-    const { courseId } = req.params;
     const { title, body, moduleTag } = req.body;
 
     if (!title?.trim() || !body?.trim()) {
@@ -61,7 +60,7 @@ exports.createQuestion = async (req, res) => {
 
     const question = await Question.create({
       student: req.student._id,
-      course: courseId,
+      course: req.student.course,
       title: title.trim(),
       body: body.trim(),
       moduleTag: moduleTag?.trim() || '',
@@ -75,10 +74,14 @@ exports.createQuestion = async (req, res) => {
 };
 
 // Full question + every answer, accepted answer pinned first, the rest
-// sorted by upvotes.
+// sorted by upvotes. Scoped to the requesting student's own course so a
+// question from another course can't be opened by guessing its ID.
 exports.getQuestionDetail = async (req, res) => {
   try {
-    const question = await Question.findById(req.params.questionId).populate('student', 'name avatarUrl');
+    const question = await Question.findOne({
+      _id: req.params.questionId,
+      course: req.student.course,
+    }).populate('student', 'name avatarUrl');
     if (!question || !question.student) return res.status(404).json({ message: 'Question not found' });
 
     const answers = await Answer.find({ question: question._id }).sort({
@@ -93,7 +96,6 @@ exports.getQuestionDetail = async (req, res) => {
         title: question.title,
         body: question.body,
         moduleTag: question.moduleTag,
-        courseId: question.course,
         upvoteCount: question.upvoteCount,
         createdAt: question.createdAt,
         authorName: question.student.name,
@@ -121,7 +123,7 @@ exports.createAnswer = async (req, res) => {
     const { body } = req.body;
     if (!body?.trim()) return res.status(400).json({ message: 'Answer body is required' });
 
-    const question = await Question.findById(questionId);
+    const question = await Question.findOne({ _id: questionId, course: req.student.course });
     if (!question) return res.status(404).json({ message: 'Question not found' });
 
     const answer = await Answer.create({
@@ -146,8 +148,8 @@ exports.createAnswer = async (req, res) => {
 // scope; a real dedup-per-student mechanism would need its own model.
 exports.upvoteQuestion = async (req, res) => {
   try {
-    const question = await Question.findByIdAndUpdate(
-      req.params.questionId,
+    const question = await Question.findOneAndUpdate(
+      { _id: req.params.questionId, course: req.student.course },
       { $inc: { upvoteCount: 1 } },
       { new: true }
     );
