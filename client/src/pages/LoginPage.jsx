@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getRoleHome, isRouteAllowedForRole } from '../utils/roleHome';
@@ -133,6 +133,13 @@ export default function LoginPage() {
           >
             {submitting ? 'Signing in...' : 'Sign in'}
           </button>
+
+          <Link
+            to="/trainer/register"
+            className="text-center text-caption text-navy-300 hover:text-gold-400 transition-colors"
+          >
+            Are you a trainer? Create an account
+          </Link>
         </form>
       </motion.div>
     </div>

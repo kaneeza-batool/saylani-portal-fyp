@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { NAV_LOOKUP as TRAINER_NAV_LOOKUP } from './TrainerSidebar';
 import { getAdmissions } from '../services/admissionService';
 
 const ICON_PROPS = {
@@ -407,6 +408,12 @@ export const NAV_LOOKUP = (function flatten(items, acc = {}) {
   }
   return acc;
 })(NAV_ITEMS);
+
+// Trainer Portal has its own flat sidebar (TrainerSidebar.jsx), not a role
+// branch of NAV_ITEMS above — merged in here so TopBar's single NAV_LOOKUP
+// import still resolves /trainer/* page titles instead of falling back to
+// "Dashboard" on every trainer page.
+Object.assign(NAV_LOOKUP, TRAINER_NAV_LOOKUP);
 
 // A role sees an item only if it's listed in `roles`; if the item also
 // carries a `permission`, that's an additional per-user gate — except for
