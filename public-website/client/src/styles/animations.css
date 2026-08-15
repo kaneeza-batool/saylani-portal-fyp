@@ -1,0 +1,60 @@
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Hero SVG trace / node / float accents (Home, Programs) */
+@keyframes te-draw {
+  to { stroke-dashoffset: 0; }
+}
+.te-trace {
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  animation: te-draw 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes te-node-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.te-node { animation: te-node-pop .5s ease-out forwards; opacity: 0; }
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+.te-float { animation: float-slow 6s ease-in-out infinite; }
+
+/* Infinite testimonial marquee (Home) */
+@keyframes marquee-infinite-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee-autoplay {
+  display: flex;
+  width: max-content;
+  animation: marquee-infinite-scroll 30s linear infinite !important;
+}
+.animate-marquee-autoplay:hover {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .te-trace, .te-node, .animate-marquee-autoplay, .te-float {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
