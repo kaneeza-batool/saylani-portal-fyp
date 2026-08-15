@@ -191,9 +191,11 @@ student-portal/      standalone Student portal (own client + server, see Portals
 | Branch | Contents |
 |---|---|
 | `main` | Stable |
-| `dev` | Integration branch |
-| `feature/sub-admin-campus-portal` | Campus manager portal |
-| `student-portal` | Student portal |
+| `dev` | Integration branch — includes `client/`+`server/`, `public-website/`, and `student-portal/` as merged subfolders |
+| `feature/sub-admin-campus-portal` | Campus manager portal — fully merged into `dev`, `dev` is now ahead |
+| `origin/feature/trainer-portal` (remote-only, no local branch) | Earlier trainer portal work — not yet merged into `dev`; `dev` already has its own, further-along trainer portal history |
+
+`student-portal` and `publicwebsite`/`publicwebsite-integration` are older branches — their work has already been merged into `dev` as subfolders and they're not the current source of truth for those apps.
 
 Branch from `dev`, merge back into `dev` via pull request.
 
