@@ -70,7 +70,7 @@ function App() {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/feedback" element={<MyFeedbackPage />} />
                 <Route path="/agenda" element={<AgendaPage />} />
-                <Route path="/resources/:courseId" element={<ResourceLibraryPage />} />
+                <Route path="/resources" element={<ResourceLibraryPage />} />
                 <Route path="/skill-passport" element={<SkillPassportPage />} />
                 <Route path="/doubts/:courseId" element={<DoubtsListPage />} />
                 <Route path="/doubts/:courseId/:questionId" element={<DoubtDetailPage />} />
