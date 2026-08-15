@@ -9,6 +9,7 @@ const STATUS_STYLE = {
   pending: { label: 'Pending Review', className: 'bg-warning-bg text-warning-text' },
   reviewed: { label: 'Reviewed', className: 'bg-info-bg text-info-text' },
   shortlisted: { label: 'Shortlisted', className: 'bg-success-bg text-success-text' },
+  hired: { label: 'Hired', className: 'bg-success-bg text-success-text' },
   rejected: { label: 'Not Selected', className: 'bg-danger-50 text-danger-600' },
 };
 

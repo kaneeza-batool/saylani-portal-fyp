@@ -5,7 +5,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recha
 import { getDashboard } from '../../services/dashboardService';
 import { updateEmployer } from '../../services/employerService';
 import { updateDonationStatus } from '../../services/donationService';
-import { GraduationCapIcon, CampusIcon, CalendarIcon, HourglassIcon } from '../../components/icons';
+import { GraduationCapIcon, CampusIcon, BriefcaseIcon, HourglassIcon } from '../../components/icons';
 import ExportButtons from '../../components/ExportButtons';
 import AnimatedNumber from '../../components/AnimatedNumber';
 
@@ -18,7 +18,7 @@ const KPI_EXPORT_COLUMNS = [
 const KPI_ICON = {
   students: { bg: 'bg-success-bg', color: 'text-success-text', Icon: GraduationCapIcon },
   campuses: { bg: 'bg-warning-bg', color: 'text-warning-text', Icon: CampusIcon },
-  attendance: { bg: 'bg-info-bg', color: 'text-info-text', Icon: CalendarIcon },
+  placement: { bg: 'bg-info-bg', color: 'text-info-text', Icon: BriefcaseIcon },
   pending: { bg: 'bg-danger-50', color: 'text-danger-600', Icon: HourglassIcon },
 };
 
@@ -138,18 +138,47 @@ function TrendTooltip({ active, payload, label }) {
   );
 }
 
+// First-vs-last month growth in the trend window, e.g. 6 -> 16 enrollments
+// is +166%. Null when there's nothing to compare (no data, or the oldest
+// month was 0 — a percentage off a zero base is meaningless, not "infinite
+// growth").
+function computeGrowth(trend) {
+  if (trend.length < 2) return null;
+  const first = trend[0].enrollment;
+  const last = trend[trend.length - 1].enrollment;
+  if (!first) return null;
+  return Math.round(((last - first) / first) * 100);
+}
+
 function TrendChart({ trend }) {
+  const growth = computeGrowth(trend);
   return (
     <CardShell className="p-[22px] flex flex-col gap-4 col-span-1">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <div className="font-heading font-bold text-h6 text-neutral-900">Enrollment Trend</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="font-heading font-bold text-h6 text-neutral-900">Enrollment vs Placement Trend</div>
+            {growth !== null && (
+              <span
+                className={`text-badge px-2 py-0.5 rounded-pill ${
+                  growth >= 0 ? 'bg-success-bg text-success-text' : 'bg-danger-50 text-danger-600'
+                }`}
+              >
+                {growth >= 0 ? '+' : ''}
+                {growth}% growth
+              </span>
+            )}
+          </div>
           <div className="text-body-sm text-neutral-400 mt-0.5">Last 6 months, all campuses</div>
         </div>
         <div className="flex gap-3.5">
           <div className="flex items-center gap-1.5 text-caption text-neutral-600">
             <span className="w-[9px] h-[9px] rounded-sm bg-chart-enrollment" />
             Enrollment
+          </div>
+          <div className="flex items-center gap-1.5 text-caption text-neutral-600">
+            <span className="w-[9px] h-[9px] rounded-sm bg-chart-placement" />
+            Placement
           </div>
         </div>
       </div>
@@ -179,6 +208,15 @@ function TrendChart({ trend }) {
                 animationDuration={800}
                 animationEasing="ease-out"
               />
+              <Bar
+                dataKey="placement"
+                name="Placement"
+                fill="var(--chart-placement)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={14}
+                animationDuration={800}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -188,9 +226,18 @@ function TrendChart({ trend }) {
 }
 
 function CampusPerformance({ campuses }) {
+  const topCampus = campuses.length > 0 ? campuses.reduce((best, c) => (c.pct > best.pct ? c : best)) : null;
+
   return (
     <CardShell className="p-[22px] flex flex-col gap-3.5">
-      <div className="font-heading font-bold text-h6 text-neutral-900">Campus Performance</div>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="font-heading font-bold text-h6 text-neutral-900">Campus Performance</div>
+        {topCampus && (
+          <span className="text-badge px-2 py-0.5 rounded-pill bg-warning-bg text-warning-text">
+            Top: {topCampus.name} ({topCampus.pct}%)
+          </span>
+        )}
+      </div>
 
       {campuses.length === 0 ? (
         <div className="text-body-sm text-neutral-400">No campus data yet.</div>

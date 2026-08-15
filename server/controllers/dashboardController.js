@@ -4,6 +4,7 @@ const Employer = require('../models/Employer');
 const Donation = require('../models/Donation');
 const StudentAttendance = require('../models/StudentAttendance');
 const AuditLog = require('../models/AuditLog');
+const JobApplication = require('../models/JobApplication');
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -42,15 +43,15 @@ function formatRelativeTime(date) {
 
 async function buildKpis() {
   const since30d = daysAgo(30);
-  const since60d = daysAgo(60);
 
   const [
     totalStudents,
     newStudents30d,
     activeCampuses,
     newCampuses30d,
-    attendanceCurrentRows,
-    attendancePriorRows,
+    totalApplications,
+    hiredTotal,
+    hired30d,
     pendingEmployers,
     pendingDonations,
   ] = await Promise.all([
@@ -58,20 +59,18 @@ async function buildKpis() {
     Student.countDocuments({ createdAt: { $gte: since30d } }),
     Campus.countDocuments({ status: 'active' }),
     Campus.countDocuments({ status: 'active', createdAt: { $gte: since30d } }),
-    StudentAttendance.aggregate([
-      { $match: { date: { $gte: since30d } } },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-    ]),
-    StudentAttendance.aggregate([
-      { $match: { date: { $gte: since60d, $lt: since30d } } },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-    ]),
+    JobApplication.countDocuments(),
+    JobApplication.countDocuments({ status: 'hired' }),
+    JobApplication.countDocuments({ status: 'hired', hiredAt: { $gte: since30d } }),
     Employer.countDocuments({ status: 'pending' }),
     Donation.countDocuments({ status: 'pending' }),
   ]);
 
-  const currentRate = attendanceRate(attendanceCurrentRows);
-  const priorRate = attendanceRate(attendancePriorRows);
+  // Real hires (Job Applications marked 'hired') as a share of everyone who
+  // ever applied — the schema has no link between a JobApplication and an
+  // existing Student, so "rate" is measured against applicants, not the
+  // student body.
+  const placementRate = totalApplications > 0 ? Math.round((hiredTotal / totalApplications) * 1000) / 10 : null;
   const pendingApprovalsCount = pendingEmployers + pendingDonations;
 
   const kpis = [
@@ -92,15 +91,12 @@ async function buildKpis() {
       icon: 'campuses',
     },
     {
-      id: 'avg-attendance',
-      label: 'Avg Attendance (30d)',
-      value: currentRate === null ? 'No data' : `${currentRate}%`,
-      delta:
-        currentRate === null || priorRate === null
-          ? 'No prior data to compare'
-          : `${currentRate - priorRate >= 0 ? '+' : ''}${Math.round((currentRate - priorRate) * 10) / 10} pts vs prior 30d`,
-      deltaTone: currentRate !== null && priorRate !== null && currentRate - priorRate < 0 ? 'warning' : 'positive',
-      icon: 'attendance',
+      id: 'placement-rate',
+      label: 'Placement Rate',
+      value: placementRate === null ? 'No data' : `${placementRate}%`,
+      delta: hired30d > 0 ? `+${hired30d} hired (30d)` : 'No hires (30d)',
+      deltaTone: hired30d > 0 ? 'positive' : 'neutral',
+      icon: 'placement',
     },
     {
       id: 'pending-approvals',
@@ -117,29 +113,44 @@ async function buildKpis() {
 
 // Real month buckets for the last 6 calendar months (this one, plus the 5
 // before it) — labeled by actual month name, not a placeholder Jan-Jun
-// sequence. Placement isn't included: there's no field anywhere that marks a
-// student as "placed" (see getDashboard's comment), so a placement series
-// would just be fabricated numbers with a real-looking axis under them.
+// sequence. Placement is bucketed by JobApplication.hiredAt (when a
+// candidate was actually marked 'hired'), not createdAt/updatedAt.
 async function buildTrend() {
   const now = new Date();
   const rangeStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-  const rows = await Student.aggregate([
-    { $match: { createdAt: { $gte: rangeStart } } },
-    {
-      $group: {
-        _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
-        count: { $sum: 1 },
+  const [enrollmentRows, placementRows] = await Promise.all([
+    Student.aggregate([
+      { $match: { createdAt: { $gte: rangeStart } } },
+      {
+        $group: {
+          _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
+          count: { $sum: 1 },
+        },
       },
-    },
+    ]),
+    JobApplication.aggregate([
+      { $match: { status: 'hired', hiredAt: { $gte: rangeStart } } },
+      {
+        $group: {
+          _id: { year: { $year: '$hiredAt' }, month: { $month: '$hiredAt' } },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
   ]);
-  const countByKey = new Map(rows.map((r) => [`${r._id.year}-${r._id.month}`, r.count]));
+  const enrollmentByKey = new Map(enrollmentRows.map((r) => [`${r._id.year}-${r._id.month}`, r.count]));
+  const placementByKey = new Map(placementRows.map((r) => [`${r._id.year}-${r._id.month}`, r.count]));
 
   const trend = [];
   for (let i = 5; i >= 0; i -= 1) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-    trend.push({ label: MONTH_LABELS[d.getMonth()], enrollment: countByKey.get(key) || 0 });
+    trend.push({
+      label: MONTH_LABELS[d.getMonth()],
+      enrollment: enrollmentByKey.get(key) || 0,
+      placement: placementByKey.get(key) || 0,
+    });
   }
   return trend;
 }
