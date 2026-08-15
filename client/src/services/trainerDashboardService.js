@@ -19,3 +19,33 @@ export async function createQuiz(payload) {
   const { data } = await api.post('/trainer/quizzes', payload);
   return data.quiz;
 }
+
+export async function getMyAssignments() {
+  const { data } = await api.get('/trainer/assignments');
+  return data.items;
+}
+
+export async function createAssignment(payload) {
+  const { data } = await api.post('/trainer/assignments', payload);
+  return data.assignment;
+}
+
+export async function getPendingSubmissions() {
+  const { data } = await api.get('/trainer/submissions/pending');
+  return data.items;
+}
+
+export async function getReviewedSubmissions() {
+  const { data } = await api.get('/trainer/submissions/reviewed');
+  return data.items;
+}
+
+export async function getPendingReviewCount() {
+  const { data } = await api.get('/trainer/submissions/pending-count');
+  return data.count;
+}
+
+export async function reviewSubmission(id, payload) {
+  const { data } = await api.patch(`/trainer/submissions/${id}/review`, payload);
+  return data.submission;
+}
