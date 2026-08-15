@@ -21,6 +21,12 @@ const STATUS_OPTIONS = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
+const PAYMENT_OPTIONS = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'overdue', label: 'Overdue' },
+];
+
 const EMPTY_FORM = {
   name: '',
   father: '',
@@ -31,6 +37,7 @@ const EMPTY_FORM = {
   campus: '',
   batch: '',
   status: 'enrolled',
+  payment: 'pending',
   address: '',
 };
 
@@ -287,6 +294,22 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} htmlFor="student-payment">
+              Payment
+            </label>
+            <select id="student-payment" value={form.payment} onChange={setField('payment')} className={`${inputClass} bg-surface`}>
+              {PAYMENT_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            {form.payment === 'overdue' && form.status === 'enrolled' && (
+              <p className="text-badge text-warning-text">Marking this Overdue will drop the student automatically.</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

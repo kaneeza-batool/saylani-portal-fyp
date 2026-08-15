@@ -34,6 +34,16 @@ const STATUS_STYLE = {
   rejected: { label: 'Rejected', className: 'bg-danger-50 text-danger-600' },
 };
 
+// dropReason isn't shown as its own column (most students never have one —
+// see Student.js) — surfaced as a title/tooltip on the Dropout badge instead,
+// so an admin deciding whether to re-enroll someone can see why they were
+// dropped without opening the edit form.
+const DROP_REASON_LABEL = {
+  payment: 'Dropped for overdue payment — will auto-restore if payment is marked paid.',
+  attendance: 'Dropped for attendance below 70% — must be re-enrolled manually.',
+  manual: 'Dropped manually by an admin.',
+};
+
 const PAYMENT_STYLE = {
   paid: { label: 'Paid', className: 'bg-success-bg text-success-text' },
   pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
@@ -91,6 +101,7 @@ export default function StudentsPage() {
   const [modal, setModal] = useState({ open: false, mode: 'add', student: null });
   const [formError, setFormError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [dropTarget, setDropTarget] = useState(null);
   const [idCardTarget, setIdCardTarget] = useState(null);
 
   useEffect(() => {
@@ -138,6 +149,16 @@ export default function StudentsPage() {
     },
   });
 
+  // Separate from updateMutation (which is tied to the edit-form modal's
+  // own open/close state) — these are one-click actions from the row itself.
+  const statusMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateStudent(id, payload),
+    onSuccess: () => {
+      invalidate();
+      setDropTarget(null);
+    },
+  });
+
   const openAdd = () => {
     setFormError('');
     setModal({ open: true, mode: 'add', student: null });
@@ -162,6 +183,12 @@ export default function StudentsPage() {
   const confirmDelete = () => {
     if (deleteTarget) deleteMutation.mutate(deleteTarget._id);
   };
+
+  const handleDrop = (student) => setDropTarget(student);
+  const confirmDrop = () => {
+    if (dropTarget) statusMutation.mutate({ id: dropTarget._id, payload: { status: 'dropout' } });
+  };
+  const handleReenroll = (student) => statusMutation.mutate({ id: student._id, payload: { status: 'enrolled' } });
 
   const students = data?.students ?? [];
   const pages = data?.pages ?? 1;
@@ -261,9 +288,40 @@ export default function StudentsPage() {
                   <span className="text-body-sm text-neutral-600">{s.phone}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.campus?.name}</span>
-                  <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}>{statusStyle.label}</span>
+                  <span
+                    className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}
+                    title={s.status === 'dropout' ? DROP_REASON_LABEL[s.dropReason] || undefined : undefined}
+                  >
+                    {statusStyle.label}
+                  </span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${paymentStyle.className}`}>{paymentStyle.label}</span>
                   <div className="flex gap-1.5 justify-end">
+                    {s.status === 'dropout' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleReenroll(s)}
+                        disabled={statusMutation.isPending}
+                        title="Re-enroll"
+                        className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-success-bg hover:border-success-text disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B6B45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleDrop(s)}
+                        disabled={statusMutation.isPending}
+                        title="Drop student"
+                        className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M9 9l6 6M15 9l-6 6" />
+                        </svg>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setIdCardTarget(s)}
@@ -351,6 +409,16 @@ export default function StudentsPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         loading={deleteMutation.isPending}
+      />
+
+      <ConfirmDialog
+        open={!!dropTarget}
+        title="Drop student"
+        message={dropTarget ? `Drop ${dropTarget.name}? They can be re-enrolled from this page at any time.` : ''}
+        confirmLabel="Drop"
+        onCancel={() => setDropTarget(null)}
+        onConfirm={confirmDrop}
+        loading={statusMutation.isPending}
       />
 
       <IDCardModal
