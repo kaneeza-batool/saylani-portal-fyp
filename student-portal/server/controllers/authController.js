@@ -67,7 +67,6 @@ function toSafeStudent(student) {
     // string here, never the ObjectId/document itself. null if somehow
     // unpopulated rather than leaking a Mongoose document.
     campus: student.campus?.name || null,
-    city: student.city,
     role: student.role,
   };
 }
