@@ -2,11 +2,15 @@ require('dotenv').config();
 
 const mongoose = require('mongoose');
 const Student = require('../models/Student');
-const Course = require('../models/Course');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
 
-const STUDENT_CNIC = '4550476281307';
+// One course per student (see Student.js/Quiz.js) — no Course collection to
+// seed against (it's empty in titan-portal; see attendanceController's
+// equivalent fix). `course` is matched against the real Student.course
+// string, and each course's quizzes only get created if at least one real
+// student in titan-portal is actually taking that course.
+const ATTEMPTER_CNIC = '4540110010122'; // Tariq Rehman — AI & Data Science
 
 function mcq(questionText, options, correctOptionIndex, explanation) {
   return { questionText, options, correctOptionIndex, marks: 1, explanation };
@@ -65,6 +69,28 @@ const PYTHON_QUESTIONS = [
   mcq('Which of these best describes Python?', ['A compiled, statically-typed language', 'An interpreted, dynamically-typed language', 'A markup language', 'A database query language'], 1, 'Python code is executed by an interpreter (not compiled ahead of time to machine code), and variable types are determined at runtime rather than declared.'),
 ];
 
+const NUMPY_PANDAS_QUESTIONS = [
+  mcq('What is the primary data structure in NumPy for storing homogeneous numerical data?', ['DataFrame', 'ndarray', 'Series', 'Matrix'], 1, "NumPy's core object is the ndarray (n-dimensional array) — a fixed-size, homogeneously-typed grid of values."),
+  mcq('Which Pandas object represents a single labeled column of data?', ['DataFrame', 'Series', 'Index', 'Panel'], 1, 'A Pandas Series is a one-dimensional labeled array; a DataFrame is a collection of Series sharing an index.'),
+  mcq('What does df.head() return by default?', ['The last 5 rows', 'The first 5 rows', 'All rows', 'A single column'], 1, 'DataFrame.head() returns the first 5 rows by default, useful for quickly inspecting a dataset.'),
+  mcq('Which NumPy function creates an array of evenly spaced values within a given range?', ['np.linspace()', 'np.arange()', 'np.zeros()', 'np.eye()'], 1, 'np.arange(start, stop, step) generates evenly spaced values based on a step size, similar to the built-in range().'),
+  mcq('How do you select rows by label in a Pandas DataFrame?', ['.iloc[]', '.loc[]', '.at[]', '.get[]'], 1, '.loc[] selects rows and columns by label; .iloc[] selects by integer position instead.'),
+  mcq('What does df.isnull().sum() typically report?', ['The total row count', 'The count of missing values per column', 'The data types of each column', 'The sum of all numeric columns'], 1, 'isnull() flags missing values as True/False, and summing that per column counts how many are missing in each.'),
+  mcq('Which NumPy array attribute returns its dimensions?', ['.size', '.shape', '.dtype', '.ndim'], 1, '.shape returns a tuple giving the size of the array along each dimension, e.g. (3, 4) for a 3x4 matrix.'),
+  mcq('What is "broadcasting" in NumPy?', ['Sending data over a network', 'Automatically expanding smaller arrays to match shape for element-wise operations', 'Converting arrays to lists', 'Printing an array to the console'], 1, 'Broadcasting lets NumPy perform element-wise operations on arrays of different but compatible shapes without explicit loops or copies.'),
+];
+
+const ML_FUNDAMENTALS_QUESTIONS = [
+  mcq('What is overfitting in machine learning?', ['A model that trains too slowly', 'A model that fits training data too closely and generalizes poorly to new data', 'A model with too few parameters', 'A model that never converges'], 1, 'Overfitting happens when a model memorizes noise/details in the training set rather than learning generalizable patterns, hurting performance on unseen data.'),
+  mcq('Which metric is most appropriate for a highly imbalanced classification problem, alongside or instead of accuracy?', ['Mean squared error', 'F1 score', 'R-squared', 'Silhouette score'], 1, 'F1 score balances precision and recall, which matters far more than raw accuracy when one class vastly outnumbers the other.'),
+  mcq('What does supervised learning require?', ['Only unlabeled data', 'Labeled training data with known outputs', 'No training data at all', 'A reward signal from an environment'], 1, 'Supervised learning trains a model on input-output pairs where the correct answer (label) is already known.'),
+  mcq('Why do we split data into training and test sets?', ['To make training faster', 'To evaluate how the model performs on data it has not seen', 'To reduce the file size of the dataset', 'It is only needed for deep learning'], 1, 'A held-out test set estimates how well a model generalizes to new data, rather than just how well it memorized the training set.'),
+  mcq('Which algorithm builds a series of if/else splits to reach a classification decision?', ['K-means', 'Decision Tree', 'Linear Regression', 'Principal Component Analysis'], 1, 'A Decision Tree recursively splits data on feature thresholds, forming a tree of if/else decisions ending in a predicted class.'),
+  mcq('What does feature scaling (e.g. standardization) primarily help with?', ['Deleting missing values', 'Gradient descent convergence and distance-based algorithms', 'Increasing dataset size', 'Removing duplicate rows'], 1, 'Scaling features to a similar range helps gradient-based optimizers converge faster and prevents distance-based algorithms (like KNN) from being dominated by large-magnitude features.'),
+  mcq('What is cross-validation used for?', ['Encrypting a dataset', 'Getting a more reliable estimate of model performance across multiple splits', 'Speeding up data cleaning', 'Visualizing high-dimensional data'], 1, 'Cross-validation repeatedly trains and evaluates on different train/test splits, averaging results for a more robust performance estimate than a single split.'),
+  mcq('Which of these is an unsupervised learning technique?', ['K-means clustering', 'Logistic Regression', 'Random Forest classification', 'Support Vector Machine classification'], 0, 'K-means groups data into clusters based purely on feature similarity, with no labeled outputs — unsupervised learning.'),
+];
+
 const HTML_CSS_QUESTIONS = [
   mcq('What does HTML stand for?', ['Hyper Trainer Marking Language', 'Hyper Text Markup Language', 'Hyper Text Making Language', 'Hyperlink Text Markup Language'], 1, 'HTML stands for Hyper Text Markup Language, the standard markup language for building web pages.'),
   mcq('Which HTML tag is used to define an internal style sheet?', ['<css>', '<script>', '<style>', '<link>'], 2, "The <style> tag defines internal CSS rules directly inside an HTML document's <head>."),
@@ -78,93 +104,112 @@ const HTML_CSS_QUESTIONS = [
   mcq('Which HTML5 element is used to draw graphics via JavaScript?', ['<svg>', '<canvas>', '<draw>', '<graphic>'], 1, 'The <canvas> element provides a drawable surface that JavaScript can use to render graphics, shapes, and animations.'),
 ];
 
-const JS_QUESTIONS = [
-  mcq('Which keyword declares a block-scoped variable in JavaScript?', ['var', 'let', 'global', 'static'], 1, 'let declares a variable scoped to the nearest enclosing block ({}), unlike var which is function-scoped.'),
-  mcq('What does === check in JavaScript?', ['Value equality only', 'Value and type equality', 'Type equality only', 'Reference equality for objects only'], 1, "=== is JavaScript's strict equality operator — it compares both value and type, without the type coercion that == performs."),
-  mcq('Which method converts a JSON string into a JavaScript object?', ['JSON.stringify()', 'JSON.parse()', 'JSON.object()', 'JSON.toObject()'], 1, 'JSON.parse() converts a JSON-formatted string into a native JavaScript value (object, array, etc.).'),
-  mcq('What is the output of typeof undefined?', ["'undefined'", "'object'", "'null'", "'undefined type'"], 0, "typeof undefined evaluates to the string 'undefined', one of JavaScript's primitive type tags."),
-  mcq('Which array method creates a new array with the results of calling a function on every element?', ['forEach()', 'map()', 'filter()', 'reduce()'], 1, 'Array.prototype.map() runs a function on every element and returns a new array of the results, leaving the original array unchanged.'),
-  mcq('What does the this keyword refer to inside a regular function called as a method?', ['The global object always', 'The object the method was called on', 'The function itself', 'undefined always'], 1, 'In a regular function called as obj.method(), this refers to obj — the object the method was invoked on.'),
-  mcq('Which of these is used to handle asynchronous operations in modern JavaScript?', ['callbacks only', 'Promises and async/await', 'setInterval only', 'try/catch only'], 1, 'Modern JavaScript handles asynchronous code with Promises and the async/await syntax built on top of them.'),
-  mcq('What does Array.isArray([]) return?', ['true', 'false', 'undefined', 'Error'], 0, 'Array.isArray() correctly identifies array instances; [] is an array, so it returns true.'),
-  mcq('Which operator is used for strict inequality?', ['!=', '<>', '!==', 'not='], 2, '!== is the strict inequality operator — it returns true if the operands differ in value or type.'),
-  mcq('What is a closure in JavaScript?', ['A function bundled with its lexical scope', 'A way to close the browser tab', 'A CSS property', 'A loop that never ends'], 0, 'A closure is a function that retains access to the variables from its enclosing scope even after that outer function has returned.'),
-];
+// course -> [{ module, title, questions, durationMinutes, attempt }]. attempt
+// is only ever set for the ATTEMPTER_CNIC student — everything else stays
+// unattempted so the list endpoint reports it as such on its own.
+const COURSE_QUIZZES = {
+  'AI & Data Science': [
+    {
+      module: 'Python Foundations',
+      title: 'Python Quiz',
+      questions: PYTHON_QUESTIONS,
+      durationMinutes: 45,
+      // Recreates the original seed's real-screenshot scenario: 34/50
+      // correct (68%) — deliberately wrong on the back 16 questions.
+      attempt: { correctThrough: 34 },
+    },
+    {
+      module: 'Data Handling',
+      title: 'NumPy & Pandas Basics',
+      questions: NUMPY_PANDAS_QUESTIONS,
+      durationMinutes: 15,
+      attempt: null, // unattempted
+    },
+    {
+      module: 'Machine Learning',
+      title: 'Machine Learning Fundamentals',
+      questions: ML_FUNDAMENTALS_QUESTIONS,
+      durationMinutes: 15,
+      attempt: null, // unattempted
+    },
+  ],
+  'Web Development': [
+    {
+      module: 'HTML & CSS Foundations',
+      title: 'HTML & CSS Quiz',
+      questions: HTML_CSS_QUESTIONS,
+      durationMinutes: 15,
+      attempt: null, // exists purely to prove the per-course filter doesn't leak
+    },
+  ],
+};
+
+async function seedCourseQuizzes(course, quizzes, attempter) {
+  const hasRealStudents = await Student.exists({ course });
+  if (!hasRealStudents) {
+    console.log(`  ${course}: no real students in titan-portal — skipping.`);
+    return;
+  }
+
+  const existingCount = await Quiz.countDocuments({ course });
+  if (existingCount > 0) {
+    console.log(`  ${course}: ${existingCount} quizzes already exist. Skipping.`);
+    return;
+  }
+
+  let attemptCount = 0;
+  for (const item of quizzes) {
+    const quiz = await Quiz.create({
+      course,
+      module: item.module,
+      title: item.title,
+      questions: item.questions,
+      durationMinutes: item.durationMinutes,
+    });
+
+    if (item.attempt && attempter) {
+      const { correctThrough } = item.attempt;
+      const answers = item.questions.map((q, i) => (i < correctThrough ? q.correctOptionIndex : (q.correctOptionIndex + 1) % 4));
+      const score = answers.filter((a, i) => a === item.questions[i].correctOptionIndex).length;
+      const totalMarks = item.questions.reduce((sum, q) => sum + q.marks, 0);
+      const percentage = Math.round((score / totalMarks) * 100);
+      const startedAt = new Date();
+      startedAt.setDate(startedAt.getDate() - 6);
+      const submittedAt = new Date(startedAt.getTime() + 38 * 60 * 1000);
+
+      await QuizAttempt.create({
+        student: attempter._id,
+        quiz: quiz._id,
+        answers,
+        score,
+        percentage,
+        status: percentage >= QuizAttempt.PASS_THRESHOLD_PERCENT ? 'passed' : 'failed',
+        tabSwitchCount: 0,
+        fullscreenExitCount: 0,
+        startedAt,
+        submittedAt,
+        attemptNumber: 1,
+      });
+      attemptCount += 1;
+    }
+  }
+
+  console.log(`  ${course}: seeded ${quizzes.length} quizzes (${attemptCount} with an attempt).`);
+}
 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
 
-  const student = await Student.findOne({ cnic: STUDENT_CNIC });
-  if (!student) {
-    console.error(`No student found with CNIC ${STUDENT_CNIC}. Run "npm run seed" first.`);
-    process.exit(1);
+  const attempter = await Student.findOne({ cnic: ATTEMPTER_CNIC });
+  if (!attempter) {
+    console.error(`No student found with CNIC ${ATTEMPTER_CNIC} — attempts will be skipped for their course.`);
   }
 
-  const webDev = await Course.findOne({ name: 'Web Development' });
-  const aiDs = await Course.findOne({ name: 'AI & Data Science' });
-  if (!webDev || !aiDs) {
-    console.error('Courses not found. Run "npm run seed:courses" first.');
-    process.exit(1);
+  console.log('Seeding quizzes (scoped by real Student.course values in titan-portal)...');
+  for (const [course, quizzes] of Object.entries(COURSE_QUIZZES)) {
+    const attempter_ = course === attempter?.course ? attempter : null;
+    await seedCourseQuizzes(course, quizzes, attempter_);
   }
-
-  const existingCount = await Quiz.countDocuments();
-  if (existingCount > 0) {
-    console.log(`${existingCount} quizzes already exist. Skipping.`);
-    await mongoose.disconnect();
-    return;
-  }
-
-  // Python Quiz belongs to AI & Data Science — Python is the language track
-  // there, distinct from Web Development's HTML/CSS/JS quizzes below.
-  const pythonQuiz = await Quiz.create({
-    courseId: aiDs._id,
-    module: 'Python Foundations',
-    title: 'Python Quiz',
-    questions: PYTHON_QUESTIONS,
-    durationMinutes: 45,
-  });
-
-  await Quiz.create({
-    courseId: webDev._id,
-    module: 'HTML & CSS Foundations',
-    title: 'HTML & CSS Quiz',
-    questions: HTML_CSS_QUESTIONS,
-    durationMinutes: 15,
-  });
-
-  await Quiz.create({
-    courseId: webDev._id,
-    module: 'JavaScript Foundations',
-    title: 'JavaScript Basics Quiz',
-    questions: JS_QUESTIONS,
-    durationMinutes: 20,
-  });
-
-  // Recreate the real-screenshot scenario: a prior failed attempt on the
-  // Python Quiz at 68% (34/50) — 34 correct answers, 16 deliberately wrong.
-  const answers = PYTHON_QUESTIONS.map((q, i) =>
-    i < 34 ? q.correctOptionIndex : (q.correctOptionIndex + 1) % 4
-  );
-  const startedAt = new Date();
-  startedAt.setDate(startedAt.getDate() - 6);
-  const submittedAt = new Date(startedAt.getTime() + 38 * 60 * 1000);
-
-  await QuizAttempt.create({
-    student: student._id,
-    quiz: pythonQuiz._id,
-    answers,
-    score: 34,
-    percentage: 68,
-    status: 'failed',
-    tabSwitchCount: 0,
-    fullscreenExitCount: 0,
-    startedAt,
-    submittedAt,
-    attemptNumber: 1,
-  });
-
-  console.log('Seeded 3 quizzes (Python Quiz w/ 50 questions, HTML & CSS Quiz, JavaScript Basics Quiz).');
-  console.log(`Prior attempt seeded on Python Quiz: 34/50 (68%) — FAILED, for ${student.fullName}.`);
 
   await mongoose.disconnect();
 }

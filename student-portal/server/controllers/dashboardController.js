@@ -5,18 +5,20 @@ require('../models/Course'); // registers the 'Course' model so .populate('cours
 const FeeVoucher = require('../models/FeeVoucher');
 const Assignment = require('../models/Assignment');
 const AssignmentSubmission = require('../models/AssignmentSubmission');
+const Quiz = require('../models/Quiz');
+const QuizAttempt = require('../models/QuizAttempt');
 const { computeProgressStat, computeBatchProgressAverage, computeCourseLeaderboard } = require('../utils/courseStats');
 
 // One course per student now (see Student.js) — course, batch, payment,
 // campus, and rollNumber all live directly on the shared Student document.
-// Enrollment/Course/Quiz/CourseModule are still dead: no data has ever been
+// Enrollment/Course/CourseModule are still dead: no data has ever been
 // migrated into those collections for the shared database (see
 // attendanceController's equivalent fix), so every section that used to
 // read from them has no data source and returns an empty array/null
-// instead of querying tables that can only ever be empty. FeeVoucher and
-// Assignment are the exceptions — real, seeded data (see
-// utils/seedFeeVouchers.js and utils/seedAssignments.js), scoped by
-// student/student.course only, same as Attendance below.
+// instead of querying tables that can only ever be empty. FeeVoucher,
+// Assignment, and Quiz are the exceptions — real, seeded data (see
+// utils/seedFeeVouchers.js, utils/seedAssignments.js, utils/seedQuizzes.js),
+// scoped by student/student.course only, same as Attendance below.
 exports.getDashboard = async (req, res) => {
   try {
     const student = req.student;
@@ -72,13 +74,32 @@ exports.getDashboard = async (req, res) => {
         daysUntilDue: Math.ceil((new Date(a.dueDate).getTime() - now) / (1000 * 60 * 60 * 24)),
       }));
 
+    const courseQuizzes = await Quiz.find({ course: student.course }).sort({ createdAt: 1 });
+    const quizAttempts = await QuizAttempt.find(
+      { student: student._id, quiz: { $in: courseQuizzes.map((q) => q._id) } },
+      'quiz'
+    );
+    const attemptedQuizIds = new Set(quizAttempts.map((a) => a.quiz.toString()));
+
+    // Top 3 not-yet-attempted quizzes — same shape TabsPanel (DashboardPage.jsx)
+    // already expects from the old per-course endpoint (_id/title/module/durationMinutes).
+    const pendingQuizzes = courseQuizzes
+      .filter((q) => !attemptedQuizIds.has(q._id.toString()))
+      .slice(0, 3)
+      .map((q) => ({
+        _id: q._id,
+        title: q.title,
+        module: q.module,
+        durationMinutes: q.durationMinutes,
+      }));
+
     return res.status(200).json({
       attendance,
       assignment,
       activeCourse,
       classDays: [],
       recentFees,
-      tabs: { assignments: pendingAssignments, quizzes: [], events: [] },
+      tabs: { assignments: pendingAssignments, quizzes: pendingQuizzes, events: [] },
     });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load dashboard', error: err.message });

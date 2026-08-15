@@ -1,22 +1,22 @@
 import api from './authService';
 
-export async function getQuizzes(courseId) {
-  const { data } = await api.get(`/quiz/${courseId}`);
+export async function getQuizzes() {
+  const { data } = await api.get('/quiz');
   return data.quizzes;
 }
 
-export async function getQuizForTaking(courseId, quizId) {
-  const { data } = await api.get(`/quiz/${courseId}/${quizId}/take`);
+export async function getQuizForTaking(quizId) {
+  const { data } = await api.get(`/quiz/${quizId}/take`);
   return data.quiz;
 }
 
-export async function startAttempt(courseId, quizId) {
-  const { data } = await api.post(`/quiz/${courseId}/${quizId}/start`);
+export async function startAttempt(quizId) {
+  const { data } = await api.post(`/quiz/${quizId}/start`);
   return data;
 }
 
-export async function submitAttempt(courseId, quizId, payload) {
-  const { data } = await api.post(`/quiz/${courseId}/${quizId}/submit`, payload);
+export async function submitAttempt(quizId, payload) {
+  const { data } = await api.post(`/quiz/${quizId}/submit`, payload);
   return data;
 }
 

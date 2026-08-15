@@ -41,19 +41,20 @@ const MotionNavLink = motion.create(NavLink);
 // courseId, so it's rendered separately above these as the student's
 // always-available way back to the course picker (see Sidebar below).
 //
-// Dashboard, Attendance, Payment, and Assignment are `courseless` — one
-// course per student now (see Student.js/attendanceController/feeController/
-// assignmentController), so those four link straight to `base` with no id
-// segment and are never gated on hasActiveCourse. The rest still route
-// through Enrollment/CourseModule, which stays empty for every real student
-// in this merge, so they're left gated until that's fixed the same way.
+// Dashboard, Attendance, Payment, Assignment, and Quiz are `courseless` —
+// one course per student now (see Student.js/attendanceController/
+// feeController/assignmentController/quizController), so those five link
+// straight to `base` with no id segment and are never gated on
+// hasActiveCourse. The rest still route through Enrollment/CourseModule,
+// which stays empty for every real student in this merge, so they're left
+// gated until that's fixed the same way.
 export const NAV_ITEMS = [
   { label: 'Dashboard', base: '/dashboard', icon: DashboardIcon, courseless: true },
   { label: 'Progress', base: '/progress', icon: ProgressIcon },
   { label: 'Attendance', base: '/attendance', icon: AttendanceIcon, courseless: true },
   { label: 'Payment', base: '/fee', icon: PaymentIcon, courseless: true },
   { label: 'Assignment', base: '/assignment', icon: AssignmentIcon, courseless: true },
-  { label: 'Quiz', base: '/quiz', icon: QuizIcon },
+  { label: 'Quiz', base: '/quiz', icon: QuizIcon, courseless: true },
   { label: 'Resources', base: '/resources', icon: BookOpenIcon },
   { label: 'Ask a Doubt', base: '/doubts', icon: MessageCircleIcon },
 ];

@@ -16,7 +16,7 @@ function formatTime(totalSeconds) {
 }
 
 export default function QuizTakingPage() {
-  const { courseId, quizId } = useParams();
+  const { quizId } = useParams();
   const navigate = useNavigate();
 
   const [quiz, setQuiz] = useState(null);
@@ -56,7 +56,7 @@ export default function QuizTakingPage() {
 
     async function init() {
       try {
-        const [quizData, meta] = await Promise.all([getQuizForTaking(courseId, quizId), startAttempt(courseId, quizId)]);
+        const [quizData, meta] = await Promise.all([getQuizForTaking(quizId), startAttempt(quizId)]);
         if (cancelled) return;
         setQuiz(quizData);
         setAttemptMeta(meta);
@@ -80,7 +80,7 @@ export default function QuizTakingPage() {
     return () => {
       cancelled = true;
     };
-  }, [courseId, quizId]);
+  }, [quizId]);
 
   // ---- Submit ----
   const handleSubmit = useCallback(
@@ -99,19 +99,19 @@ export default function QuizTakingPage() {
       }
 
       try {
-        const { attemptId } = await submitAttempt(courseId, quizId, {
+        const { attemptId } = await submitAttempt(quizId, {
           answers: answersRef.current,
           startedAt: startedAtRef.current,
           tabSwitchCount: countsRef.current.tabSwitchCount,
           fullscreenExitCount: countsRef.current.fullscreenExitCount,
         });
-        navigate(`/quiz/${courseId}/result/${attemptId}`, { replace: true });
+        navigate(`/quiz/result/${attemptId}`, { replace: true });
       } catch {
         submittingRef.current = false;
         setSubmitting(false);
       }
     },
-    [courseId, quizId, navigate]
+    [quizId, navigate]
   );
 
   // ---- Countdown timer ----
@@ -205,7 +205,7 @@ export default function QuizTakingPage() {
           <p className="text-sm font-medium text-neutral-500">Couldn't load this quiz.</p>
           <button
             type="button"
-            onClick={() => navigate(`/quiz/${courseId}`)}
+            onClick={() => navigate('/quiz')}
             className="rounded-md px-4 py-2 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900"
           >
             Back to Quizzes

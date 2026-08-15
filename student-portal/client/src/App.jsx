@@ -63,7 +63,7 @@ function App() {
                 <Route path="/attendance" element={<AttendancePage />} />
                 <Route path="/fee" element={<PaymentPage />} />
                 <Route path="/assignment" element={<AssignmentPage />} />
-                <Route path="/quiz/:courseId" element={<QuizListPage />} />
+                <Route path="/quiz" element={<QuizListPage />} />
                 <Route path="/leaderboard/:courseId" element={<LeaderboardPage />} />
                 <Route path="/certificate/:courseId" element={<CertificatePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
@@ -78,8 +78,8 @@ function App() {
 
               {/* Quiz-taking runs outside the sidebar shell — distraction-free
                   fullscreen proctored experience, per Integrity Mode. */}
-              <Route path="/quiz/:courseId/take/:quizId" element={<QuizTakingPage />} />
-              <Route path="/quiz/:courseId/result/:attemptId" element={<QuizResultPage />} />
+              <Route path="/quiz/take/:quizId" element={<QuizTakingPage />} />
+              <Route path="/quiz/result/:attemptId" element={<QuizResultPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/courses" replace />} />
