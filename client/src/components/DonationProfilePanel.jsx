@@ -40,7 +40,7 @@ export default function DonationProfilePanel({ open, donation, onClose, onStatus
       />
 
       <div
-        className="fixed top-0 right-0 h-screen w-[460px] bg-surface shadow-panel z-30 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
+        className="fixed top-0 right-0 h-screen w-full max-w-[460px] bg-surface shadow-panel z-30 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]"
         style={{ transform: open ? 'translateX(0%)' : 'translateX(100%)', pointerEvents: open ? 'auto' : 'none' }}
       >
         <div className="px-6 py-[22px] border-b border-neutral-200 flex items-center justify-between">

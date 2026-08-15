@@ -4,12 +4,20 @@ import { motion } from 'framer-motion';
 import { createSubAdmin, deleteSubAdmin, fetchSubAdmins, updateSubAdmin } from '../../services/subAdminService';
 import SubAdminFormModal from '../../components/SubAdminFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import ExportButtons from '../../components/ExportButtons';
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
   inactive: { label: 'Inactive', className: 'bg-neutral-100 text-neutral-500' },
   suspended: { label: 'Suspended', className: 'bg-danger-50 text-danger-600' },
 };
+
+const EXPORT_COLUMNS = [
+  { header: 'Name', accessor: (u) => u.name },
+  { header: 'Email', accessor: (u) => u.email },
+  { header: 'Campus', accessor: (u) => u.campus_id?.name || 'Unassigned' },
+  { header: 'Status', accessor: (u) => u.status },
+];
 
 function initials(name) {
   return (
@@ -29,7 +37,7 @@ const GRID_COLS = 'grid-cols-[1.5fr_1.6fr_1.3fr_0.8fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
@@ -144,20 +152,24 @@ export default function SubAdminsPage() {
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={openAdd}
-          className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-          Add Sub-Admin
-        </button>
+        <div className="flex items-center gap-2.5">
+          <ExportButtons title="Sub-Admins" filenameBase="titan-subadmins" columns={EXPORT_COLUMNS} rows={items} />
+
+          <button
+            type="button"
+            onClick={openAdd}
+            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Sub-Admin
+          </button>
+        </div>
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Name', 'Email', 'Campus', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -180,7 +192,7 @@ export default function SubAdminsPage() {
                 <motion.div
                   key={u._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">

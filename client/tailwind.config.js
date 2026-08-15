@@ -134,7 +134,12 @@ export default {
       },
 
       fontFamily: {
-        heading: ['Sora', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Manrope for headings/KPI figures — a sharper, more institutional
+        // geometric sans than Sora's rounder startup feel, better suited to
+        // an academic institute's admin tooling. Inter stays for body text —
+        // still the industry-standard professional UI font (GitHub, Linear,
+        // Stripe) and already excellent at the small sizes used throughout.
+        heading: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },

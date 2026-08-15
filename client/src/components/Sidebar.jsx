@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getAdmissions } from '../services/admissionService';
 
@@ -480,7 +481,7 @@ function Chevron({ open }) {
 
 const DEPTH_PADDING = ['pl-3', 'pl-[41px]', 'pl-[57px]'];
 
-function NavGroup({ item, depth, openGroups, onToggle }) {
+function NavGroup({ item, depth, openGroups, onToggle, onNavigate }) {
   const open = openGroups.has(item.id);
   return (
     <div>
@@ -505,7 +506,7 @@ function NavGroup({ item, depth, openGroups, onToggle }) {
       {open && (
         <div className="flex flex-col gap-1 mt-1">
           {item.children.map((child) => (
-            <NavNode key={child.id} item={child} depth={depth + 1} openGroups={openGroups} onToggle={onToggle} />
+            <NavNode key={child.id} item={child} depth={depth + 1} openGroups={openGroups} onToggle={onToggle} onNavigate={onNavigate} />
           ))}
         </div>
       )}
@@ -513,11 +514,12 @@ function NavGroup({ item, depth, openGroups, onToggle }) {
   );
 }
 
-function NavLeaf({ item, depth }) {
+function NavLeaf({ item, depth, onNavigate }) {
   return (
     <NavLink
       to={item.to}
       end
+      onClick={onNavigate}
       className={({ isActive }) =>
         [
           'flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
@@ -539,14 +541,14 @@ function NavLeaf({ item, depth }) {
   );
 }
 
-function NavNode({ item, depth, openGroups, onToggle }) {
+function NavNode({ item, depth, openGroups, onToggle, onNavigate }) {
   if (item.children) {
-    return <NavGroup item={item} depth={depth} openGroups={openGroups} onToggle={onToggle} />;
+    return <NavGroup item={item} depth={depth} openGroups={openGroups} onToggle={onToggle} onNavigate={onNavigate} />;
   }
-  return <NavLeaf item={item} depth={depth} />;
+  return <NavLeaf item={item} depth={depth} onNavigate={onNavigate} />;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ open = false, onClose = () => {} }) {
   const { user } = useAuth();
   const location = useLocation();
   const visibleItems = useMemo(() => resolveNavItems(NAV_ITEMS, user ?? { role: null, permissions: {} }), [user]);
@@ -602,20 +604,52 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-[252px] shrink-0 bg-titan-sidebar flex flex-col gap-1 sticky top-0 h-screen py-[22px] px-3.5 overflow-y-auto">
-      <div className="flex items-center gap-2.5 pt-1.5 px-2.5 pb-[22px]">
-        <div className="w-[40px] h-[40px] shrink-0 flex items-center justify-center">
-          <img src="/logo.png" alt="TITAN crest" className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(201,162,39,0.4)]" />
-        </div>
-        <div>
-          <div className="font-heading font-bold text-brand text-gold-400 tracking-wide">TITAN</div>
-          <div className="text-[11px] font-medium text-titan-sidebar-text/80">{roleLabel(user?.role)}</div>
-        </div>
-      </div>
+    <>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/40 z-30 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-      {itemsWithBadges.map((item) => (
-        <NavNode key={item.id} item={item} depth={0} openGroups={openGroups} onToggle={toggleGroup} />
-      ))}
-    </div>
+      <div
+        className={`w-[252px] shrink-0 bg-titan-sidebar flex flex-col gap-1 py-[22px] px-3.5 overflow-y-auto fixed inset-y-0 left-0 z-40 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex items-center gap-2.5 pt-1.5 px-2.5 pb-[22px]">
+          <div className="relative w-[40px] h-[40px] shrink-0 flex items-center justify-center">
+            <motion.div
+              className="absolute inset-0 rounded-full bg-gold-500/25 blur-[10px]"
+              animate={{ opacity: [0.3, 0.75, 0.3], scale: [0.9, 1.08, 0.9] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <img src="/logo.png" alt="TITAN crest" className="relative w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(201,162,39,0.4)]" />
+          </div>
+          <div className="flex-1">
+            <div className="font-heading font-bold text-brand text-gold-400 tracking-wide">TITAN</div>
+            <div className="text-[11px] font-medium text-titan-sidebar-text/80">{roleLabel(user?.role)}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg:hidden w-7 h-7 shrink-0 border-none bg-transparent text-titan-sidebar-text hover:text-titan-sidebar-text-hover cursor-pointer flex items-center justify-center"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {itemsWithBadges.map((item) => (
+          <NavNode key={item.id} item={item} depth={0} openGroups={openGroups} onToggle={toggleGroup} onNavigate={onClose} />
+        ))}
+      </div>
+    </>
   );
 }

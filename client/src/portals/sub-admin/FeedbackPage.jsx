@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchFeedback } from '../../services/feedbackService';
+import ExportButtons from '../../components/ExportButtons';
 
 // Same table shell as sub-admin/BatchesPage.jsx and AttendanceReportsPage.jsx
 // (GRID_COLS approach, same classes). Filters are trainer + rating instead
@@ -44,13 +45,22 @@ const GRID_COLS = 'grid-cols-[1.3fr_1.1fr_1.3fr_0.9fr_2fr_0.9fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
   );
 }
+
+const EXPORT_COLUMNS = [
+  { header: 'Student', accessor: (f) => f.student?.name },
+  { header: 'Trainer', accessor: (f) => f.trainer },
+  { header: 'Batch', accessor: (f) => f.batch?.schedule },
+  { header: 'Rating', accessor: (f) => f.rating },
+  { header: 'Comment', accessor: (f) => f.comment },
+  { header: 'Date', accessor: (f) => (f.createdAt ? new Date(f.createdAt).toLocaleDateString() : '') },
+];
 
 export default function FeedbackPage() {
   const [trainer, setTrainer] = useState('all');
@@ -75,7 +85,7 @@ export default function FeedbackPage() {
         {trainerAverages.length === 0 ? (
           <div className="text-body-sm text-neutral-400">No feedback recorded for this campus yet.</div>
         ) : (
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {trainerAverages.map((t) => (
               <div key={t.trainer} className="border border-neutral-100 rounded-lg p-3.5 flex flex-col gap-1.5">
                 <span className="text-caption font-semibold text-neutral-900 truncate">{t.trainer}</span>
@@ -121,10 +131,12 @@ export default function FeedbackPage() {
             ))}
           </select>
         </div>
+
+        <ExportButtons title="Feedback" filenameBase="titan-feedback" columns={EXPORT_COLUMNS} rows={items} />
       </div>
 
-      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        <div className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+      <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Student', 'Trainer', 'Batch', 'Rating', 'Comment', 'Date'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
@@ -158,7 +170,7 @@ export default function FeedbackPage() {
               <motion.div
                 key={f._id}
                 variants={fadeInUp}
-                className={`grid ${GRID_COLS} gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
               >
                 <span className="text-body-sm font-semibold text-neutral-900 truncate">{f.student?.name || '—'}</span>
                 <span className="text-body-sm text-neutral-600 truncate">{f.trainer}</span>

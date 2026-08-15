@@ -1,4 +1,5 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import AnimatedOutlet from '../components/AnimatedOutlet';
 
 export default function PublicLayout() {
   return (
@@ -24,7 +25,7 @@ export default function PublicLayout() {
       </header>
 
       <main className="flex-1 max-w-[1000px] w-full mx-auto px-6 py-10">
-        <Outlet />
+        <AnimatedOutlet />
       </main>
 
       <footer className="border-t border-neutral-200 py-6">

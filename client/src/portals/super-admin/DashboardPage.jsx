@@ -7,6 +7,7 @@ import { updateEmployer } from '../../services/employerService';
 import { updateDonationStatus } from '../../services/donationService';
 import { GraduationCapIcon, CampusIcon, CalendarIcon, HourglassIcon } from '../../components/icons';
 import ExportButtons from '../../components/ExportButtons';
+import AnimatedNumber from '../../components/AnimatedNumber';
 
 const KPI_EXPORT_COLUMNS = [
   { header: 'Metric', accessor: (k) => k.label },
@@ -57,7 +58,7 @@ function SkeletonBlock({ className = '' }) {
 function DashboardSkeleton() {
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -69,7 +70,7 @@ function DashboardSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-[1.5fr_1fr] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4">
         <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
           <SkeletonBlock className="h-4 w-52" />
           <SkeletonBlock className="h-[170px] w-full" />
@@ -81,7 +82,7 @@ function DashboardSkeleton() {
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
           <SkeletonBlock className="h-4 w-40" />
           {[0, 1, 2].map((i) => (
@@ -110,7 +111,9 @@ function KpiCard({ kpi }) {
           <Icon width="17" height="17" />
         </div>
       </div>
-      <div className="font-heading text-h3 text-neutral-900">{kpi.value}</div>
+      <div className="font-heading text-h3 text-neutral-900">
+        <AnimatedNumber value={kpi.value} />
+      </div>
       <div className="flex items-center gap-1.5">
         <span className={`text-badge px-2 py-0.5 rounded-pill ${DELTA_TONE[kpi.deltaTone] ?? DELTA_TONE.positive}`}>
           {kpi.delta}
@@ -373,18 +376,18 @@ export default function DashboardPage() {
         <ExportButtons title="Dashboard Summary" filenameBase="titan-dashboard" columns={KPI_EXPORT_COLUMNS} rows={kpis} />
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
           <KpiCard key={kpi.id} kpi={kpi} />
         ))}
       </div>
 
-      <div className="grid grid-cols-[1.5fr_1fr] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4">
         <TrendChart trend={trend} />
         <CampusPerformance campuses={campusPerformance} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <PendingApprovals approvals={pendingApprovals} />
         <RecentActivity activity={recentActivity} />
       </div>

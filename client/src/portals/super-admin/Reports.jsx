@@ -64,7 +64,7 @@ export default function Reports() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
           <div key={i} className="bg-surface border border-neutral-200 rounded-xl p-5 h-24 animate-pulse" />
         ))}
@@ -108,7 +108,7 @@ export default function Reports() {
         <ExportButtons title="Reports Overview" filenameBase="titan-reports" columns={exportColumns} rows={exportRows} />
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {TOTAL_CARDS.map((c) => (
           <motion.div key={c.key} variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -122,7 +122,7 @@ export default function Reports() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <BreakdownCard title="Students by Status" data={studentsByStatus} labels={STUDENT_STATUS_LABEL} />
         <BreakdownCard title="Employers by Verification Status" data={employersByStatus} labels={EMPLOYER_STATUS_LABEL} />
       </div>

@@ -85,8 +85,8 @@ export default function CardPaymentForm({ amount, campaignTitle, contact, onBack
   };
 
   return (
-    <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-white border border-neutral-200 rounded-xl overflow-hidden grid grid-cols-2">
-      <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 border-r border-neutral-100">
+    <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-white border border-neutral-200 rounded-xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+      <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-neutral-100">
         <div className="flex items-center justify-between">
           <div className="font-heading font-bold text-body text-neutral-900">Payment</div>
           <CardBrandIcons />
