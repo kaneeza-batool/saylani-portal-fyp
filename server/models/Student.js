@@ -58,11 +58,14 @@ const studentSchema = new mongoose.Schema(
     dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
     address: { type: String, default: '', trim: true },
     // Submitted at admission-application time (public-website's EnrollNow
-    // form, both optional) — distinct from `avatarUrl` below, which is a
+    // form, all optional) — distinct from `avatarUrl` below, which is a
     // student-portal profile picture uploaded post-enrollment during
-    // onboarding. These two are never the same upload.
+    // onboarding. These are never the same upload. CNIC front/back are
+    // separate fields, not one "scan" — a CNIC has two sides and an
+    // applicant needs to be able to attach both.
     applicationPhotoUrl: { type: String, default: '' },
-    applicationCnicScanUrl: { type: String, default: '' },
+    applicationCnicFrontUrl: { type: String, default: '' },
+    applicationCnicBackUrl: { type: String, default: '' },
     // Overall course grade, set by a trainer on the Trainer Portal roster
     // page. No collection anywhere derives or aggregates this automatically
     // (assignment submissions have their own separate per-submission grade,
