@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { createTrainer, fetchTrainers, updateTrainerStatus } from '../../services/trainerService';
+import { createTrainer, fetchTrainers, updateTrainerStatus, resetTrainerPassword } from '../../services/trainerService';
 import TrainerFormModal from '../../components/TrainerFormModal';
 import ExportButtons from '../../components/ExportButtons';
+import ResetPasswordResultModal from '../../components/ResetPasswordResultModal';
 
 // Mostly a read-only mirror of super-admin/TrainersPage.jsx's list (same
 // GRID_COLS approach, same classes) — sub_admin still has no update/delete
-// permission on a trainer's fields (see trainerRoutes.js), only a narrow
-// status-only PATCH /:id/status and, now, create (campus-locked server-side
-// in trainerRoutes.js's lockTrainerCampusForSubAdmin — this page doesn't
-// need to enforce that itself, TrainerFormModal already locks the Campus
-// field client-side for a sub_admin same as StudentFormModal does). No
-// separate Actions column and no edit modal — Add is the only write action.
-// GET / is already campus-scoped server-side via campusScope, so this page
-// needs no campus filter of its own.
+// permission on a trainer's full fields (see trainerRoutes.js), just three
+// narrow write paths: status toggle (PATCH /:id/status), password reset
+// (PATCH /:id/reset-password), and create (campus-locked server-side in
+// trainerRoutes.js's lockTrainerCampusForSubAdmin — this page doesn't need
+// to enforce that itself, TrainerFormModal already locks the Campus field
+// client-side for a sub_admin same as StudentFormModal does). No edit
+// modal. GET / is already campus-scoped server-side via campusScope, so
+// this page needs no campus filter of its own.
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
@@ -35,12 +36,12 @@ function initials(name) {
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.5fr_1.2fr_1fr_1fr_1fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.5fr_1.2fr_1fr_1fr_1fr_0.8fr_0.8fr]';
 
 function RowSkeleton() {
   return (
     <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
-      {[0, 1, 2, 3, 4, 5].map((i) => (
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
@@ -63,6 +64,8 @@ export default function TrainersPage() {
   const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
   const [formError, setFormError] = useState('');
+  const [resetResult, setResetResult] = useState(null);
+  const [resetError, setResetError] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -98,12 +101,34 @@ export default function TrainersPage() {
     setAddOpen(true);
   };
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: resetTrainerPassword,
+    onSuccess: (result) => {
+      setResetError(null);
+      setResetResult(result);
+    },
+    onError: (err) => setResetError(err.response?.data?.message || 'Failed to reset password.'),
+  });
+
   const items = data?.items ?? [];
   const pages = data?.pages ?? 1;
   const total = data?.total ?? 0;
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
+      {resetError && (
+        <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-body-sm text-red-700">
+          <span>{resetError}</span>
+          <button
+            type="button"
+            onClick={() => setResetError(null)}
+            className="border-none bg-transparent text-red-700 cursor-pointer font-semibold shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-gold-500 transition-colors">
@@ -147,7 +172,7 @@ export default function TrainersPage() {
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
         <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Trainer', 'Email', 'Employee ID', 'Course', 'City', 'Status'].map((h) => (
+          {['Trainer', 'Email', 'Employee ID', 'Course', 'City', 'Status', 'Actions'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -205,6 +230,18 @@ export default function TrainersPage() {
                   >
                     {isSaving ? 'Saving…' : s.label}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => resetPasswordMutation.mutate(t._id)}
+                    disabled={resetPasswordMutation.isPending}
+                    title="Reset Password"
+                    className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="10" rx="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </button>
                 </motion.div>
               );
             })}
@@ -247,6 +284,7 @@ export default function TrainersPage() {
         submitting={createMutation.isPending}
         error={formError}
       />
+      <ResetPasswordResultModal open={!!resetResult} result={resetResult} onClose={() => setResetResult(null)} />
     </motion.div>
   );
 }

@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect } = require('../middleware/authMiddleware');
+const { protectAny } = require('../middleware/authMiddleware');
 const {
   login,
   logout,
@@ -15,7 +15,10 @@ const router = express.Router();
 
 router.post('/login', login);
 router.post('/logout', logout);
-router.get('/me', protect, getMe);
+// protectAny, not protect — a pending student still needs getMe to work
+// (it's what AuthContext calls on every page load) so they don't look
+// logged out while waiting on their onboarding/pending-approval screen.
+router.get('/me', protectAny, getMe);
 // No `protect` here — this is exactly the endpoint used when the access
 // token has expired, so it authenticates off the refresh token cookie
 // directly instead.

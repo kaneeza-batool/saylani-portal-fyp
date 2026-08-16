@@ -5,6 +5,7 @@ const { campusScope } = require('../middleware/campusScope');
 const { checkPermission } = require('../middleware/checkPermission');
 const { restrictTo } = require('../middleware/roleMiddleware');
 const { updateTrainerStatus } = require('../controllers/trainerStatusController');
+const { resetTrainerPassword } = require('../controllers/trainerPasswordController');
 
 const controller = buildCrudController(Trainer, {
   searchFields: ['name', 'email', 'employeeId', 'course', 'city'],
@@ -43,6 +44,17 @@ router.patch(
   campusScope,
   checkPermission('TRAINER', 'write'),
   updateTrainerStatus
+);
+
+// Same reachability as /status above — sub_admin can reset a password for
+// a trainer in their own campus without the generic PATCH /:id's full
+// edit access.
+router.patch(
+  '/:id/reset-password',
+  restrictTo('super_admin', 'sub_admin'),
+  campusScope,
+  checkPermission('TRAINER', 'write'),
+  resetTrainerPassword
 );
 
 module.exports = router;
