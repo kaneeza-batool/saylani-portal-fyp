@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
 
+// Login credentials live on User{role:'employer'}, not here — same split as
+// Trainer.js/Trainer records: this is the company profile, User owns auth.
+// A self-registered employer (authController.registerEmployer) creates both,
+// joined by email, exactly like registerTrainer already does for User+Trainer.
 const employerSchema = new mongoose.Schema(
   {
     companyName: { type: String, required: true, unique: true, trim: true },

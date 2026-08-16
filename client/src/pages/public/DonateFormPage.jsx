@@ -48,11 +48,7 @@ export default function DonateFormPage() {
         </div>
         <div className="font-heading font-bold text-h5 text-neutral-900">Thank you for your generosity!</div>
         <p className="text-body-sm text-neutral-500 max-w-[420px]">
-          {isCard ? (
-            <>Your donation of Rs. {Number(form.amount).toLocaleString()} to <strong>{campaign?.title}</strong> has been confirmed. A receipt is on its way.</>
-          ) : (
-            <>We've recorded your pledge to <strong>{campaign?.title}</strong>. Our team will verify the transaction and confirm it shortly — a confirmation email is on its way.</>
-          )}
+          We've recorded your {isCard ? 'payment' : 'pledge'} to <strong>{campaign?.title}</strong>. Our team will verify it and confirm your donation shortly — a confirmation email is on its way.
         </p>
         <Link to="/donate" className="mt-2 text-body-sm font-semibold text-gold-600 hover:underline">
           Back to all campaigns

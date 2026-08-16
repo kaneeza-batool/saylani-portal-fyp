@@ -71,13 +71,14 @@ exports.submitDonation = async (req, res) => {
       return res.status(400).json({ message: 'Amount must be greater than zero.' });
     }
 
-    // Card donations are simulated (no real payment gateway wired up), so
-    // there's nothing external to wait on — the "charge" is approved
-    // immediately, same as a real card flow would confirm within seconds.
-    // Bank Transfer/Easypaisa/JazzCash still need a human to actually check
-    // the account, so those stay pending until an admin confirms them.
-    const isCard = paymentMethod === 'Credit/Debit Card';
-
+    // No real payment gateway is wired up for any method, card included —
+    // a card "charge" here is only a client-side Luhn/expiry check (see
+    // CardPaymentForm.jsx), not an actual transaction. So every method
+    // starts pending and only a super-admin's manual confirm (donationController.js)
+    // moves it to confirmed, same reconciliation model Bank Transfer/
+    // Easypaisa/JazzCash already use — previously card was auto-confirmed
+    // instantly, which meant any Luhn-valid card number became a real
+    // public "confirmed" donation with no money ever moving.
     const donation = await Donation.create({
       campaign: campaign._id,
       campaignTitle: campaign.title,
@@ -88,7 +89,7 @@ exports.submitDonation = async (req, res) => {
       paymentMethod: paymentMethod || 'Bank Transfer',
       message: message || '',
       anonymous: !!anonymous,
-      status: isCard ? 'confirmed' : 'pending',
+      status: 'pending',
     });
 
     sendDonationThanksEmail(donation, campaign);
