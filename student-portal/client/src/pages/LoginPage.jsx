@@ -166,8 +166,17 @@ function CreatePasswordForm() {
     }
     setSubmitting(true);
     try {
-      await completeSetPassword(cnic, password);
-      navigate('/courses');
+      const result = await completeSetPassword(cnic, password);
+      if (result.portalAccess) {
+        navigate('/courses');
+      } else {
+        // Password really was saved — just no active session yet, since
+        // this account isn't approved for portal access. Tell them that
+        // plainly instead of dropping them into the app on a session that
+        // doesn't exist (see authController.setPassword).
+        setVerified(false);
+        setInfo(result.message || 'Password set. You will be able to log in once your account has portal access.');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set password.');
     } finally {

@@ -21,10 +21,16 @@ export function AuthProvider({ children }) {
     return loggedInStudent;
   }, []);
 
+  // portalAccess is false for a student whose admission is still pending/
+  // rejected/dropped — the password really was set, but no session cookie
+  // was issued (see authController.setPassword), so `student` state stays
+  // null here rather than looking logged in on a session that doesn't
+  // actually exist. The caller (LoginPage's CreatePasswordForm) checks the
+  // returned portalAccess/message instead of assuming success means login.
   const completeSetPassword = useCallback(async (cnic, password) => {
-    const newStudent = await authService.setPassword(cnic, password);
-    setStudent(newStudent);
-    return newStudent;
+    const result = await authService.setPassword(cnic, password);
+    if (result.portalAccess) setStudent(result.student);
+    return result;
   }, []);
 
   const logout = useCallback(async () => {

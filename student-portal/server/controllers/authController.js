@@ -207,8 +207,24 @@ exports.setPassword = async (req, res) => {
     student.password = password;
     await student.save();
 
-    setAuthCookies(res, student);
-    return res.status(201).json({ student: toSafeStudent(student) });
+    // The password itself is allowed to be set before admission approval
+    // (an applicant can get their credentials ready early) — but issuing a
+    // real session cookie here regardless of status was the actual bug:
+    // the student would land on /onboarding looking logged in, then the
+    // very next request (Skip/Continue) hit protect()'s same allowlist
+    // check and failed with a bare "Not authenticated", with no
+    // explanation of why. Same allowlist as login/refresh/protect — no
+    // cookie for a not-yet-approved applicant, full stop.
+    const portalAccess = Student.PORTAL_ACCESS_STATUSES.includes(student.status);
+    if (portalAccess) {
+      setAuthCookies(res, student);
+    }
+
+    return res.status(201).json({
+      student: toSafeStudent(student),
+      portalAccess,
+      message: portalAccess ? null : PORTAL_ACCESS_DENIED_MESSAGES[student.status] || DEFAULT_DENIED_MESSAGE,
+    });
   } catch (err) {
     if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
     return res.status(500).json({ message: 'Failed to set password', error: err.message });

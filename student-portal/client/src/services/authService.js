@@ -73,7 +73,7 @@ export async function verifyCnic(cnic) {
 
 export async function setPassword(cnic, password) {
   const { data } = await api.post('/auth/set-password', { cnic, password });
-  return data.student;
+  return data;
 }
 
 export async function forgotPassword(cnic) {
