@@ -59,6 +59,9 @@ function LoginForm() {
     setError('');
     setSubmitting(true);
     try {
+      // Always /courses — ProtectedRoute redirects from there to whichever
+      // of onboarding/pending-approval/courses actually applies, so this
+      // page doesn't need to duplicate that branching.
       await login(cnic, password);
       navigate('/courses');
     } catch (err) {
@@ -166,6 +169,9 @@ function CreatePasswordForm() {
     }
     setSubmitting(true);
     try {
+      // Real session either way now (see authController.setPassword) —
+      // ProtectedRoute sends them to onboarding first, then to
+      // pending-approval or courses depending on portalAccess.
       await completeSetPassword(cnic, password);
       navigate('/courses');
     } catch (err) {

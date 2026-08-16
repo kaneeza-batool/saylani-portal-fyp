@@ -73,6 +73,13 @@ function toSafeStudent(student) {
     // never exposed to the frontend before now.
     rollNumber: student.rollNumber,
     course: student.course,
+    // Raw status — PendingApprovalPage picks specific copy for pending vs
+    // rejected vs dropout from this. portalAccess below is the derived
+    // yes/no the rest of the app actually gates on; this is only for
+    // choosing which message to show, not a security boundary itself —
+    // that's still enforced server-side by protect()/protectAny().
+    status: student.status,
+    portalAccess: Student.PORTAL_ACCESS_STATUSES.includes(student.status),
   };
 }
 
@@ -104,25 +111,20 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid CNIC or password' });
     }
 
-    // Credentials are valid, but portal access is gated on Student.status —
-    // the same field the Admissions Queue (admissionController.js on the
-    // main server) transitions between pending/enrolled/rejected. Allowlist,
-    // not a blocklist (see Student.PORTAL_ACCESS_STATUSES): anything not
-    // explicitly enrolled/completed is denied, including statuses added to
-    // the main app later that nobody's opted in here yet. A student can set
-    // a password (see verifyCnic/setPassword below) before being approved,
-    // so this is the actual enforcement point: no JWT cookie is ever issued
-    // for a not-yet-approved applicant, regardless of which portal they
-    // try to log into.
-    if (!Student.PORTAL_ACCESS_STATUSES.includes(student.status)) {
-      return res.status(403).json({
-        message: PORTAL_ACCESS_DENIED_MESSAGES[student.status] || DEFAULT_DENIED_MESSAGE,
-        status: student.status,
-      });
-    }
-
+    // Credentials alone are enough for a real session now — a student whose
+    // admission is still pending (or rejected/dropped) still gets logged
+    // in, just scoped to protectAny()'s narrow route slice (profile/
+    // onboarding) rather than the full portal, which stays gated behind
+    // the strict protect() allowlist on every other route (Student.
+    // PORTAL_ACCESS_STATUSES). toSafeStudent's portalAccess flag tells the
+    // frontend which experience to show; it's a UI hint, not the security
+    // boundary — that's still enforced server-side per-route.
     setAuthCookies(res, student);
-    return res.status(200).json({ student: toSafeStudent(student) });
+    const safeStudent = toSafeStudent(student);
+    return res.status(200).json({
+      student: safeStudent,
+      message: safeStudent.portalAccess ? null : PORTAL_ACCESS_DENIED_MESSAGES[student.status] || DEFAULT_DENIED_MESSAGE,
+    });
   } catch (err) {
     return res.status(500).json({ message: 'Login failed', error: err.message });
   }
@@ -152,9 +154,10 @@ exports.refresh = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     const student = await Student.findById(decoded.id).populate('campus', 'name');
     if (!student) return res.status(401).json({ message: 'Not authenticated' });
-    if (!Student.PORTAL_ACCESS_STATUSES.includes(student.status)) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
+    // No portal-access check here — a pending student's session still
+    // needs to stay alive past 15 minutes to finish onboarding, same
+    // reasoning as login/setPassword. protect() re-checks status on every
+    // portal route regardless of how fresh the access token is.
 
     // Only the access token is reissued — the refresh token keeps its
     // original 7-day expiry rather than being rotated on every silent
@@ -207,8 +210,20 @@ exports.setPassword = async (req, res) => {
     student.password = password;
     await student.save();
 
+    // Real session either way — a pending applicant gets to finish
+    // onboarding (profile/avatar routes use protectAny, see
+    // authMiddleware.js) but nothing past that (every other route stays on
+    // the strict protect() allowlist). Bug this used to have: a cookie was
+    // issued but EVERY route including onboarding required full portal
+    // access, so a pending student looked logged in and then failed on the
+    // very next click with a bare "Not authenticated" and no explanation.
     setAuthCookies(res, student);
-    return res.status(201).json({ student: toSafeStudent(student) });
+    const safeStudent = toSafeStudent(student);
+
+    return res.status(201).json({
+      student: safeStudent,
+      message: safeStudent.portalAccess ? null : PORTAL_ACCESS_DENIED_MESSAGES[student.status] || DEFAULT_DENIED_MESSAGE,
+    });
   } catch (err) {
     if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
     return res.status(500).json({ message: 'Failed to set password', error: err.message });

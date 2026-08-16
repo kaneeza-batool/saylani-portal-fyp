@@ -21,6 +21,7 @@ import CertificatePage from './pages/CertificatePage';
 import PublicVerifyPage from './pages/PublicVerifyPage';
 import MyFeedbackPage from './pages/MyFeedbackPage';
 import OnboardingPage from './pages/OnboardingPage';
+import PendingApprovalPage from './pages/PendingApprovalPage';
 import AgendaPage from './pages/AgendaPage';
 import ResourceLibraryPage from './pages/ResourceLibraryPage';
 import SkillPassportPage from './pages/SkillPassportPage';
@@ -55,6 +56,11 @@ function App() {
                   same pattern as quiz-taking below. ProtectedRoute redirects
                   here until it's done, and away from here once it is. */}
               <Route path="/onboarding" element={<OnboardingPage />} />
+
+              {/* Standalone, same reasoning as /onboarding above — where a
+                  student with student.portalAccess === false ends up after
+                  onboarding, until an admin approves their admission. */}
+              <Route path="/pending-approval" element={<PendingApprovalPage />} />
 
               <Route element={<StudentLayout />}>
                 <Route path="/courses" element={<CoursesPage />} />
