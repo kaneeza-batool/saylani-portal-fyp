@@ -1,4 +1,5 @@
 const Student = require('../models/Student');
+const Slot = require('../models/Slot');
 const { logAudit } = require('../utils/auditLogger');
 
 // Admissions has no collection of its own — an "admission" is just a
@@ -34,6 +35,48 @@ exports.getAdmissions = async (req, res) => {
   }
 };
 
+// Only reachable from approveAdmission (never on reject). student.campus is
+// already the applicant's own campus — since `student` came from a
+// req.campusFilter-scoped query, restricting Slot.find to it is enough to
+// keep this campus-scoped without any extra check. seatsFilled on Slot
+// itself is stale (see slotRoutes.js:withStudentCounts) so availability is
+// computed the same way the rest of the app does: a live count of
+// non-pending/rejected students currently on each candidate batch.
+// Deterministic even when several slots match (most open seats first, then
+// oldest batch) — today's data never has more than one match per
+// course+campus, but nothing enforces that staying true.
+async function assignBatchOnApproval(student) {
+  const candidates = await Slot.find({ course: student.course, campus: student.campus, status: 'active' });
+  if (candidates.length === 0) {
+    return { response: { batchAssignment: { assigned: false, reason: 'no_matching_batch' } } };
+  }
+
+  const slotIds = candidates.map((s) => s._id);
+  const counts = await Student.aggregate([
+    { $match: { batch: { $in: slotIds }, status: { $nin: ['pending', 'rejected'] } } },
+    { $group: { _id: '$batch', count: { $sum: 1 } } },
+  ]);
+  const filledBySlot = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  const withRoom = candidates
+    .map((slot) => ({ slot, available: slot.seatsTotal - (filledBySlot.get(String(slot._id)) ?? 0) }))
+    .filter((c) => c.available > 0)
+    .sort((a, b) => b.available - a.available || a.slot.createdAt - b.slot.createdAt);
+
+  if (withRoom.length === 0) {
+    return { response: { batchAssignment: { assigned: false, reason: 'no_seats_available' } } };
+  }
+
+  const winner = withRoom[0].slot;
+  await Student.updateOne({ _id: student._id }, { batch: winner._id });
+  student.batch = winner._id;
+
+  return {
+    auditSuffix: ` — assigned to batch "${winner.schedule}"`,
+    response: { batchAssignment: { assigned: true, slotId: winner._id, schedule: winner.schedule } },
+  };
+}
+
 // Shared by approve/reject — only pending -> enrolled and pending ->
 // rejected are ever reachable (toStatus is hardcoded per endpoint below,
 // never client-supplied). Scoped to req.campusFilter the same way
@@ -48,7 +91,12 @@ exports.getAdmissions = async (req, res) => {
 // blocks something. The actual write stays gated by the same atomic
 // findOneAndUpdate filter as before (belt-and-suspenders against a
 // status change racing between these two reads).
-async function transitionAdmission(req, res, { toStatus, actionVerb, actionLabel }) {
+//
+// afterUpdate is approve-only (assignBatchOnApproval) — reject has no
+// equivalent post-step. Its failure (or the whole batch-assignment step)
+// never fails the approve itself: a student who can't be seated still gets
+// enrolled, just flagged via response.batchAssignment for the UI to show.
+async function transitionAdmission(req, res, { toStatus, actionVerb, actionLabel, afterUpdate }) {
   try {
     const existing = await Student.findOne({ _id: req.params.id, ...req.campusFilter });
     if (!existing) return res.status(404).json({ message: 'Pending admission not found' });
@@ -74,23 +122,30 @@ async function transitionAdmission(req, res, { toStatus, actionVerb, actionLabel
     );
     if (!student) return res.status(404).json({ message: 'Pending admission not found' });
 
+    const extra = afterUpdate ? (await afterUpdate(student)) || {} : {};
+
     logAudit({
       actor: req.user,
       action: 'update',
       resourceType: 'Student',
       resourceId: student._id,
-      summary: `${actionLabel} admission for "${student.name}"`,
+      summary: `${actionLabel} admission for "${student.name}"${extra.auditSuffix || ''}`,
       resourceCampus: student.campus,
     });
 
-    return res.status(200).json({ student });
+    return res.status(200).json({ student, ...extra.response });
   } catch (err) {
     return res.status(500).json({ message: `Failed to ${actionVerb} admission`, error: err.message });
   }
 }
 
 exports.approveAdmission = (req, res) =>
-  transitionAdmission(req, res, { toStatus: 'enrolled', actionVerb: 'approve', actionLabel: 'Approved' });
+  transitionAdmission(req, res, {
+    toStatus: 'enrolled',
+    actionVerb: 'approve',
+    actionLabel: 'Approved',
+    afterUpdate: assignBatchOnApproval,
+  });
 
 exports.rejectAdmission = (req, res) =>
   transitionAdmission(req, res, { toStatus: 'rejected', actionVerb: 'reject', actionLabel: 'Rejected' });
