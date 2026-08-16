@@ -11,3 +11,13 @@ export async function updateFeeVoucher(id, payload) {
   const { data } = await api.patch(`/admin/fees/${id}`, payload);
   return data.voucher;
 }
+
+export async function generateFeeVoucher(studentId, amount) {
+  const { data } = await api.post(`/admin/fees/generate/${studentId}`, amount ? { amount } : {});
+  return data;
+}
+
+export async function bulkGenerateFeeVouchers() {
+  const { data } = await api.post('/admin/fees/generate-bulk');
+  return data;
+}

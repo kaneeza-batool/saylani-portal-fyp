@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { fetchFees, updateFeeVoucher } from '../../services/feeService';
+import { fetchFees, updateFeeVoucher, bulkGenerateFeeVouchers } from '../../services/feeService';
 import ExportButtons from '../../components/ExportButtons';
 
 // Same table shell as AttendanceReportsPage.jsx/FeedbackPage.jsx (GRID_COLS
@@ -112,6 +112,7 @@ function FeeRow({ voucher, onUpdate, isSaving }) {
 export default function FeesPage() {
   const [status, setStatus] = useState('all');
   const [month, setMonth] = useState('all');
+  const [bulkResult, setBulkResult] = useState(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
@@ -126,6 +127,14 @@ export default function FeesPage() {
   const editMutation = useMutation({
     mutationFn: ({ id, payload }) => updateFeeVoucher(id, payload),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fees'] });
+    },
+  });
+
+  const bulkGenerateMutation = useMutation({
+    mutationFn: bulkGenerateFeeVouchers,
+    onSuccess: (result) => {
+      setBulkResult(result);
       queryClient.invalidateQueries({ queryKey: ['fees'] });
     },
   });
@@ -165,8 +174,32 @@ export default function FeesPage() {
           </select>
         </div>
 
-        <ExportButtons title="Fees" filenameBase="titan-fees" columns={EXPORT_COLUMNS} rows={vouchers} />
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setBulkResult(null);
+              bulkGenerateMutation.mutate();
+            }}
+            disabled={bulkGenerateMutation.isPending}
+            className="border-none bg-gold-500 text-white text-body-sm font-semibold px-3.5 py-[9px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {bulkGenerateMutation.isPending ? 'Generating…' : 'Generate Current-Month Vouchers'}
+          </button>
+          <ExportButtons title="Fees" filenameBase="titan-fees" columns={EXPORT_COLUMNS} rows={vouchers} />
+        </div>
       </div>
+
+      {bulkResult && (
+        <div className="text-body-sm text-neutral-600 bg-success-bg border border-success-text/20 rounded-lg px-3.5 py-2.5">
+          Generated {bulkResult.created} voucher{bulkResult.created === 1 ? '' : 's'}, skipped {bulkResult.skipped} (already had a voucher this month).
+        </div>
+      )}
+      {bulkGenerateMutation.isError && (
+        <div className="text-body-sm text-danger-600 bg-danger-50 border border-danger-200 rounded-lg px-3.5 py-2.5">
+          Couldn't generate vouchers. Please try again.
+        </div>
+      )}
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
         <div className={`grid ${GRID_COLS} min-w-[820px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
