@@ -89,3 +89,22 @@ export async function markAttendanceByRollNumber(payload) {
   const { data } = await api.post('/trainer/attendance/scan', payload);
   return data;
 }
+
+export async function getMyResources() {
+  const { data } = await api.get('/trainer/resources');
+  return data.items;
+}
+
+export async function uploadResource({ title, description, course, file }) {
+  const formData = new FormData();
+  formData.append('title', title);
+  formData.append('description', description || '');
+  formData.append('course', course);
+  formData.append('file', file);
+  const { data } = await api.post('/trainer/resources', formData);
+  return data.item;
+}
+
+export async function deleteResource(id) {
+  await api.delete(`/trainer/resources/${id}`);
+}

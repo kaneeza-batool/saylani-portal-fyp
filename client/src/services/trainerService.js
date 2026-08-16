@@ -23,3 +23,8 @@ export async function updateTrainerStatus(id, status) {
   const { data } = await api.patch(`/admin/trainers/${id}/status`, { status });
   return data.trainer;
 }
+
+export async function resetTrainerPassword(id) {
+  const { data } = await api.patch(`/admin/trainers/${id}/reset-password`, {});
+  return data;
+}

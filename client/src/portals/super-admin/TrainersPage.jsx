@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { createTrainer, deleteTrainer, fetchTrainers, updateTrainer } from '../../services/trainerService';
+import { createTrainer, deleteTrainer, fetchTrainers, updateTrainer, resetTrainerPassword } from '../../services/trainerService';
 import TrainerFormModal from '../../components/TrainerFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import IDCardModal from '../../components/IDCardModal';
 import ExportButtons from '../../components/ExportButtons';
+import ResetPasswordResultModal from '../../components/ResetPasswordResultModal';
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
@@ -57,6 +58,8 @@ export default function TrainersPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [idCardTarget, setIdCardTarget] = useState(null);
   const [formError, setFormError] = useState('');
+  const [resetResult, setResetResult] = useState(null);
+  const [resetError, setResetError] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -101,6 +104,15 @@ export default function TrainersPage() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: resetTrainerPassword,
+    onSuccess: (result) => {
+      setResetError(null);
+      setResetResult(result);
+    },
+    onError: (err) => setResetError(err.response?.data?.message || 'Failed to reset password.'),
+  });
+
   const openAdd = () => {
     setFormError('');
     setModal({ open: true, mode: 'add', item: null });
@@ -128,6 +140,19 @@ export default function TrainersPage() {
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
+      {resetError && (
+        <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-body-sm text-red-700">
+          <span>{resetError}</span>
+          <button
+            type="button"
+            onClick={() => setResetError(null)}
+            className="border-none bg-transparent text-red-700 cursor-pointer font-semibold shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded px-3 py-2 w-[250px] focus-within:border-gold-500 transition-colors">
@@ -234,6 +259,18 @@ export default function TrainersPage() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => resetPasswordMutation.mutate(t._id)}
+                      disabled={resetPasswordMutation.isPending}
+                      title="Reset Password"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="10" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDelete(t)}
                       title="Delete"
                       className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
@@ -306,6 +343,12 @@ export default function TrainersPage() {
             ? { name: idCardTarget.name, idNumber: idCardTarget.employeeId, line1: idCardTarget.course, line2: idCardTarget.city }
             : null
         }
+      />
+
+      <ResetPasswordResultModal
+        open={!!resetResult}
+        result={resetResult}
+        onClose={() => setResetResult(null)}
       />
     </motion.div>
   );

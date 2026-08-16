@@ -68,6 +68,7 @@ import TrainerBatchesPage from './portals/trainer/BatchesPage';
 import TrainerAttendancePage from './portals/trainer/AttendancePage';
 import TrainerQuizzesPage from './portals/trainer/QuizzesPage';
 import TrainerStudentsPage from './portals/trainer/StudentsPage';
+import TrainerResourcesPage from './portals/trainer/ResourcesPage';
 import TrainerProfilePage from './portals/trainer/ProfilePage';
 
 const queryClient = new QueryClient({
@@ -190,6 +191,7 @@ function App() {
                     <Route path="attendance" element={<TrainerAttendancePage />} />
                     <Route path="quizzes" element={<TrainerQuizzesPage />} />
                     <Route path="students" element={<TrainerStudentsPage />} />
+                    <Route path="resources" element={<TrainerResourcesPage />} />
                     <Route path="profile" element={<TrainerProfilePage />} />
                   </Route>
                 </Route>
