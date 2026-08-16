@@ -5,6 +5,13 @@
 // query (admissionController.getAdmissions returns full Student docs), so
 // this panel needs no fetch of its own.
 
+// The application-photo/CNIC-front/CNIC-back files themselves live on
+// public-website's server (a different origin from this app's own API,
+// since that's the app the application form is on), not this app's own
+// /uploads — same cross-origin-asset reasoning as
+// ApplicantProfilePanel.jsx's SERVER_ORIGIN, just pointed at a different app.
+const PUBLIC_WEBSITE_ORIGIN = import.meta.env.VITE_PUBLIC_WEBSITE_ORIGIN || 'http://localhost:5200';
+
 function initials(name) {
   return (
     (name || '')
@@ -34,6 +41,27 @@ function Field({ label, value }) {
       <span className="text-overline uppercase text-neutral-500">{label}</span>
       <p className="text-body-sm text-neutral-900 whitespace-pre-line">{value}</p>
     </div>
+  );
+}
+
+// url is a relative path (e.g. "/uploads/applications/photo-...png") as
+// stored on the Student doc — resolved against PUBLIC_WEBSITE_ORIGIN since
+// that's the server the file actually lives on, not this app's own API.
+function DocumentLink({ label, url }) {
+  if (!url) return null;
+  return (
+    <a
+      href={`${PUBLIC_WEBSITE_ORIGIN}${url}`}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-gold-600 hover:underline w-fit"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3v12M7 10l5 5 5-5" />
+        <path d="M4 21h16" />
+      </svg>
+      View {label}
+    </a>
   );
 }
 
@@ -108,6 +136,17 @@ export default function CandidateProfilePanel({ open, applicant, onClose, onAppr
               value={applicant.computerProficiency ? applicant.computerProficiency[0].toUpperCase() + applicant.computerProficiency.slice(1) : null}
             />
             <Field label="Has Laptop" value={applicant.hasLaptop === true ? 'Yes' : applicant.hasLaptop === false ? 'No' : null} />
+
+            {(applicant.applicationPhotoUrl || applicant.applicationCnicFrontUrl || applicant.applicationCnicBackUrl) && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-overline uppercase text-neutral-500">Submitted Documents</span>
+                <div className="flex flex-col gap-2">
+                  <DocumentLink label="Photo" url={applicant.applicationPhotoUrl} />
+                  <DocumentLink label="CNIC — Front" url={applicant.applicationCnicFrontUrl} />
+                  <DocumentLink label="CNIC — Back" url={applicant.applicationCnicBackUrl} />
+                </div>
+              </div>
+            )}
 
             {(onApprove || onReject) && (
               <div className="flex gap-2 pt-2 mt-auto border-t border-neutral-200">
