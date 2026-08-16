@@ -28,20 +28,29 @@ const AdminLayout = () => {
       <aside className="w-64 shrink-0 bg-primary-900 text-white flex flex-col">
         <div className="px-6 py-6 border-b border-white/10">
           <p className="text-lg font-black tracking-tight leading-none">TITAN Admin</p>
-          <p className="text-[10px] text-accent-400 mt-1.5 uppercase tracking-widest font-bold">Course Management</p>
+          <p className="text-[10px] text-accent-400 mt-1.5 uppercase tracking-widest font-bold">Admin Dashboard</p>
         </div>
 
         <nav className="flex-1 px-3 py-6 space-y-1">
-          <NavLink
-            to="/admin/dashboard"
-            className={({ isActive }) =>
-              `block px-3 py-2.5 rounded-lg text-sm font-semibold no-underline transition-colors ${
-                isActive ? 'bg-accent-500 text-primary-900' : 'text-white/75 hover:bg-white/10'
-              }`
-            }
-          >
-            Courses
-          </NavLink>
+          {[
+            { to: '/admin/dashboard', label: 'Courses' },
+            { to: '/admin/entry-test', label: 'Entry Test Applicants' },
+            { to: '/admin/results', label: 'Academic Results' },
+            { to: '/admin/id-cards', label: 'Student ID Cards' },
+            { to: '/admin/contact-submissions', label: 'Contact Submissions' },
+          ].map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `block px-3 py-2.5 rounded-lg text-sm font-semibold no-underline transition-colors ${
+                  isActive ? 'bg-accent-500 text-primary-900' : 'text-white/75 hover:bg-white/10'
+                }`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="px-4 py-4 border-t border-white/10">

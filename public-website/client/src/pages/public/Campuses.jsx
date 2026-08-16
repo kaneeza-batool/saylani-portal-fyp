@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import useAOS from '../../hooks/useAOS';
 import ScrollToTopButton from '../../components/common/ScrollToTopButton';
 import Card from '../../components/common/Card';
@@ -10,38 +12,45 @@ import SectionHeading from '../../components/common/SectionHeading';
    Theme: TITAN Navy / Gold Brand Palette
    ============================================================ */
 
-const CAMPUSES = [
-  {
-    id: 'sukkur',
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
+
+// Marketing copy only — curated per city, kept separate from the DB record
+// (name/address/status) so this page can never show a campus that doesn't
+// really exist or hide one that does. Any campus without an entry here
+// (e.g. a newly-added city) still renders, just with generic copy instead
+// of a hand-written blurb.
+const CAMPUS_COPY = {
+  Sukkur: {
     eyebrow: 'Original Campus',
-    name: 'Saylani TITAN Sukkur Campus',
-    addressLine: 'Military Road, Sukkur, Sindh',
     description:
       "Our founding campus, where TITAN opened its doors in 2025. Live classrooms, hands-on computer labs, and the mentors who'll help you land your first tech job all come together here.",
-    facilities: [
-      'Dedicated computer labs with high-speed internet',
-      'Live classroom spaces for every batch',
-      'On-site mentors available during class hours',
-      'Free lab access for students without a personal laptop',
-    ],
-    mapSrc: 'https://www.google.com/maps?q=27.698767,68.846491(Saylani+TITAN+Sukkur+Campus)&output=embed',
   },
-  {
-    id: 'zamzama',
+  Karachi: {
     eyebrow: 'Karachi Campus',
-    name: 'Saylani TITAN Zamzama Campus',
-    addressLine: '3rd Floor, Plot No. 15-C, 9th Zamzama Lane, Zamzama Commercial Area, DHA Phase V, Karachi',
     description:
       'Our Karachi campus, serving Clifton and DHA residents. The same live curriculum, mentor support, and hands-on lab time as Sukkur, right in the heart of Zamzama Commercial.',
-    facilities: [
-      'Dedicated computer labs with high-speed internet',
-      'Live classroom spaces for every batch',
-      'On-site mentors available during class hours',
-      'Free lab access for students without a personal laptop',
-    ],
-    mapSrc: 'https://www.google.com/maps?q=Plot+15-C,+9th+Zamzama+Lane,+Zamzama+Commercial+Area,+DHA+Phase+5,+Karachi&output=embed',
   },
+};
+
+const DEFAULT_FACILITIES = [
+  'Dedicated computer labs with high-speed internet',
+  'Live classroom spaces for every batch',
+  'On-site mentors available during class hours',
+  'Free lab access for students without a personal laptop',
 ];
+
+function toCampusView(campus) {
+  const copy = CAMPUS_COPY[campus.city] || {};
+  return {
+    id: campus._id,
+    eyebrow: copy.eyebrow || campus.city,
+    name: campus.name,
+    addressLine: campus.address || `${campus.city}, Pakistan — contact us for the exact address`,
+    description: copy.description || `Our ${campus.city} campus — live classes, hands-on labs, and mentor support on-site.`,
+    facilities: DEFAULT_FACILITIES,
+    mapSrc: `https://www.google.com/maps?q=${encodeURIComponent(campus.address || `${campus.name}, ${campus.city}`)}&output=embed`,
+  };
+}
 
 // --- HERO ---
 const Hero = () => (
@@ -129,13 +138,31 @@ const CampusBlock = ({ campus, reversed }) => {
 };
 
 // --- ALL CAMPUSES ---
-const CampusesList = () => (
-  <div className="bg-white border-b border-neutral-100 divide-y divide-neutral-100">
-    {CAMPUSES.map((campus, idx) => (
-      <CampusBlock key={campus.id} campus={campus} reversed={idx % 2 === 1} />
-    ))}
-  </div>
-);
+const CampusesList = () => {
+  const [campuses, setCampuses] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`${API_URL}/api/campuses`)
+      .then((res) => setCampuses((res.data.campuses || []).filter((c) => c.status !== 'inactive')))
+      .catch(() => setCampuses([]));
+  }, []);
+
+  if (campuses === null) {
+    return <div className="py-16 text-center text-sm text-neutral-400">Loading campuses…</div>;
+  }
+  if (campuses.length === 0) {
+    return <div className="py-16 text-center text-sm text-neutral-400">Campus details are being updated — check back soon.</div>;
+  }
+
+  return (
+    <div className="bg-white border-b border-neutral-100 divide-y divide-neutral-100">
+      {campuses.map((campus, idx) => (
+        <CampusBlock key={campus._id} campus={toCampusView(campus)} reversed={idx % 2 === 1} />
+      ))}
+    </div>
+  );
+};
 
 // --- GROWING STEADILY ---
 const GrowingSteadily = () => {

@@ -166,7 +166,7 @@ export default function Sidebar({ open, onClose, onMilestone }) {
         </button>
       </div>
 
-      <nav className="flex-1 px-3 flex flex-col gap-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 flex flex-col gap-1">
         {/* "Home base" — always visible, always goes to /courses, regardless
             of which course (if any) is currently active. */}
         <MotionNavLink

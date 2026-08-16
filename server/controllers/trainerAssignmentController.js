@@ -1,5 +1,6 @@
 const StudentPortalAssignment = require('../models/StudentPortalAssignment');
 const StudentPortalAssignmentSubmission = require('../models/StudentPortalAssignmentSubmission');
+const StudentPortalNotification = require('../models/StudentPortalNotification');
 const Student = require('../models/Student');
 const { sendMail } = require('../utils/mailer');
 const { logAudit } = require('../utils/auditLogger');
@@ -216,10 +217,23 @@ exports.reviewSubmission = async (req, res) => {
       summary: `Reviewed submission for "${submission.assignment.title}" as ${decision}`,
     });
 
-    // Best-effort — a failed email must never block the review itself
-    // from being recorded (same tolerance as jobApplicationController's
-    // status-change emails).
+    // Best-effort — a failed email/notification must never block the
+    // review itself from being recorded (same tolerance as
+    // jobApplicationController's status-change emails).
     const student = await Student.findById(submission.student).select('name email');
+
+    try {
+      await StudentPortalNotification.create({
+        student: submission.student,
+        icon: '📝',
+        title: 'Assignment Graded',
+        message: `Your submission for "${submission.assignment.title}" was ${decision === 'approved' ? 'approved' : 'marked for revision'}${grade ? ` — grade: ${grade}` : ''}.`,
+        link: '/assignments',
+      });
+    } catch (notifyErr) {
+      console.error('Failed to create assignment-graded notification:', notifyErr.message);
+    }
+
     if (student?.email) {
       const decisionLabel = decision === 'approved' ? 'Approved' : 'Needs Revision';
       const decisionColor = decision === 'approved' ? '#1B6B45' : '#C0392B';
