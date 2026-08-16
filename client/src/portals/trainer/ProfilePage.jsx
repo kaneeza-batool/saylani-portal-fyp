@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { inputClass, labelClass } from './formFieldStyles';
+import { getMyAttendance } from '../../services/trainerDashboardService';
+import { fetchAttendanceRequests, createAttendanceRequest } from '../../services/attendanceRequestService';
+import AttendanceCorrectionModal from '../../components/AttendanceCorrectionModal';
 
 // No dedicated design exists for this page — built from the same card
 // shell/typography/form patterns as the super-admin's Profile.jsx (info
@@ -35,6 +39,118 @@ function initials(name) {
 
 const fadeIn = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+
+const REQUEST_STATUS_STYLE = {
+  pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
+  approved: { label: 'Approved', className: 'bg-success-bg text-success-text' },
+  rejected: { label: 'Rejected', className: 'bg-danger-50 text-danger-600' },
+};
+
+function fmtDateTime(d) {
+  return d ? new Date(d).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+}
+
+// Self-service: a trainer's own check-in/out history (from the Super
+// Admin-operated kiosk, see trainerDashboardController.getMyAttendance),
+// with a Request Correction action per row so a wrong check-in/out doesn't
+// require asking an admin to raise it on their behalf — Super Admin or
+// Sub-Admin then resolves it from the Attendance Request page, whichever
+// gets there first (see attendanceRequestController.resolveRequest).
+function MyAttendanceSection() {
+  const queryClient = useQueryClient();
+  const [correctionRecord, setCorrectionRecord] = useState(null);
+
+  const { data: attendance, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['trainer-my-attendance'],
+    queryFn: getMyAttendance,
+  });
+
+  const { data: requestsData } = useQuery({
+    queryKey: ['attendance-requests', { status: 'all', page: 1 }],
+    queryFn: () => fetchAttendanceRequests({ status: 'all', page: 1, limit: 20 }),
+  });
+  const requests = requestsData?.items ?? [];
+  const requestByAttendanceId = new Map(requests.map((r) => [String(r.trainerAttendance), r]));
+
+  const createMutation = useMutation({
+    mutationFn: createAttendanceRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance-requests'] });
+      setCorrectionRecord(null);
+    },
+  });
+
+  return (
+    <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
+      <div>
+        <div className="font-heading font-bold text-h6 text-neutral-900">My Attendance</div>
+        <div className="text-body-sm text-neutral-400 mt-0.5">Your own check-in/check-out history. Spot a mistake? Request a correction.</div>
+      </div>
+
+      {attendanceLoading ? (
+        <div className="flex flex-col gap-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-10 bg-neutral-100 rounded animate-pulse" />
+          ))}
+        </div>
+      ) : !attendance?.length ? (
+        <div className="py-10 text-center text-neutral-400 text-body-sm">No check-in/check-out records yet.</div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {attendance.map((row) => {
+            const existingRequest = requestByAttendanceId.get(String(row._id));
+            return (
+              <div
+                key={row._id}
+                className="flex items-center justify-between gap-3 flex-wrap border border-neutral-100 rounded px-3.5 py-2.5"
+              >
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-body-sm font-semibold text-neutral-900">
+                    {new Date(row.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                  <span className="text-caption text-neutral-500 font-normal">
+                    In: {fmtDateTime(row.checkIn)} · Out: {fmtDateTime(row.checkOut)}
+                  </span>
+                </div>
+
+                {existingRequest ? (
+                  <span
+                    className={`text-badge px-2.5 py-1 rounded-pill shrink-0 ${
+                      (REQUEST_STATUS_STYLE[existingRequest.status] ?? REQUEST_STATUS_STYLE.pending).className
+                    }`}
+                  >
+                    Correction {(REQUEST_STATUS_STYLE[existingRequest.status] ?? REQUEST_STATUS_STYLE.pending).label}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setCorrectionRecord(row)}
+                    className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 shrink-0"
+                  >
+                    Request Correction
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <AnimatePresence>
+        {correctionRecord && (
+          <AttendanceCorrectionModal
+            open={!!correctionRecord}
+            record={{ _id: correctionRecord._id, trainerName: correctionRecord.trainerName, campus: correctionRecord.campus }}
+            onClose={() => setCorrectionRecord(null)}
+            onSubmit={(payload) => createMutation.mutate(payload)}
+            submitting={createMutation.isPending}
+            error={createMutation.error?.response?.data?.message}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
@@ -200,6 +316,10 @@ export default function ProfilePage() {
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
+      </motion.div>
+
+      <motion.div variants={fadeIn} className="lg:col-span-2">
+        <MyAttendanceSection />
       </motion.div>
     </motion.div>
   );

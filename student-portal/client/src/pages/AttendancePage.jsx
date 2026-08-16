@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAttendanceSummary, getAttendanceByMonth } from '../services/attendanceService';
+import { getProgress } from '../services/progressService';
+import { fetchMyAttendanceRequests, selfMarkAttendance } from '../services/attendanceRequestService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { staggerContainer } from '../lib/motionVariants';
 import { CertificateIcon } from '../components/icons';
+import RequestCorrectionModal from '../components/RequestCorrectionModal';
+import RequestAttendanceModal from '../components/RequestAttendanceModal';
+import QrCheckInModal from '../components/QrCheckInModal';
+import { useAuth } from '../context/AuthContext';
 
 const STATUS_STYLE = {
   present: 'bg-success-bg text-success-text',
@@ -38,6 +44,32 @@ function attendanceMessage(percentage, isCourseComplete) {
   return { text: 'Your attendance is critically low. Please contact your campus.', tone: 'danger' };
 }
 
+const REQUEST_STATUS_STYLE = {
+  pending: 'bg-warning-bg text-warning-text',
+  approved: 'bg-success-bg text-success-text',
+  rejected: 'bg-danger-bg text-danger-text',
+};
+const REQUEST_STATUS_LABEL = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+
+function CorrectionControl({ record, existingRequest, onRequest }) {
+  if (existingRequest) {
+    return (
+      <span className={`text-xs font-semibold rounded-pill px-2.5 py-1 ${REQUEST_STATUS_STYLE[existingRequest.status]}`}>
+        Correction {REQUEST_STATUS_LABEL[existingRequest.status]}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onRequest(record)}
+      className="text-xs font-semibold text-primary-800 hover:text-primary-900 hover:underline"
+    >
+      Request correction
+    </button>
+  );
+}
+
 function StatusPill({ status }) {
   return (
     <span
@@ -57,8 +89,115 @@ function RowSkeleton() {
   );
 }
 
+// Self-service check-in for today. Primary path is a real camera QR scan
+// of the student's own ID card (see QrCheckInModal — same payload shape as
+// StudentIdCardModal's QR); a plain one-tap check-in is offered alongside
+// for a device with no working camera, and Request Instead is the fallback
+// for either path failing. If a record already exists (trainer marked the
+// class, or you already checked in), none of these silently overwrite it —
+// that's what Request Attendance is for.
+function SelfMarkCard({ student, onOpenRequest }) {
+  const queryClient = useQueryClient();
+  const [result, setResult] = useState(null); // { type: 'success' | 'already' | 'error', message }
+  const [qrOpen, setQrOpen] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: selfMarkAttendance,
+    onSuccess: () => {
+      setResult({ type: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+    },
+    onError: (err) => {
+      if (err.response?.status === 409) {
+        setResult({ type: 'already', status: err.response.data?.record?.status, message: err.response.data?.message });
+      } else {
+        setResult({ type: 'error', message: err.response?.data?.message || 'Something went wrong. Please try again.' });
+      }
+    },
+  });
+
+  function handleQrMarked() {
+    setQrOpen(false);
+    setResult({ type: 'success' });
+  }
+
+  const canAct = !result || result.type === 'error';
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4 sm:p-5 flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-lg bg-primary-50 text-primary-800 flex items-center justify-center shrink-0">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-neutral-900">Mark My Attendance</p>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            {result?.type === 'success'
+              ? "You're marked present for today ✓"
+              : result?.type === 'already'
+                ? result.message
+                : 'Scan your own ID QR code to check in for today.'}
+          </p>
+        </div>
+      </div>
+
+      {canAct && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setQrOpen(true)}
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
+            </svg>
+            Scan QR Code
+          </button>
+          <button
+            type="button"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate()}
+            className="rounded-md px-4 py-2.5 text-sm font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {mutation.isPending ? 'Checking in...' : 'No camera — check in without scanning'}
+          </button>
+        </div>
+      )}
+
+      {result?.type !== 'success' && (
+        <button
+          type="button"
+          onClick={onOpenRequest}
+          className="self-start text-xs font-semibold text-primary-800 hover:text-primary-900 hover:underline"
+        >
+          QR didn't work? Request attendance instead
+        </button>
+      )}
+
+      <QrCheckInModal open={qrOpen} onClose={() => setQrOpen(false)} student={student} onMarked={handleQrMarked} />
+    </div>
+  );
+}
+
 export default function AttendancePage() {
+  const { student } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState(null);
+  const [correctionRecord, setCorrectionRecord] = useState(null);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+
+  const { data: myRequests } = useQuery({
+    queryKey: ['attendance-requests'],
+    queryFn: fetchMyAttendanceRequests,
+  });
+  const requestByRecordId = new Map((myRequests ?? []).map((r) => [String(r.attendanceRecord), r]));
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['attendance', 'summary'],
@@ -70,15 +209,16 @@ export default function AttendancePage() {
     queryFn: () => getAttendanceByMonth(selectedMonth),
   });
 
+  const { data: progress } = useQuery({
+    queryKey: ['progress'],
+    queryFn: () => getProgress(),
+  });
+
   useEffect(() => {
     if (!selectedMonth && monthly?.month) setSelectedMonth(monthly.month);
   }, [monthly, selectedMonth]);
 
-  // isCourseComplete is always false here — Student.course is a plain name
-  // string (no Course id to fetch progress for), so this page has no way to
-  // know completion status. Was previously sourced from a getProgress() call
-  // with no id, which 500'd on every load and always resolved to false anyway.
-  const message = summary ? attendanceMessage(summary.percentage, false) : null;
+  const message = summary ? attendanceMessage(summary.percentage, progress?.overallPercentage === 100) : null;
   const bannerClass = {
     success: 'bg-success-bg text-success-text',
     warning: 'bg-warning-bg text-warning-text',
@@ -87,6 +227,8 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
+      <SelfMarkCard student={student} onOpenRequest={() => setRequestModalOpen(true)} />
+
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -152,9 +294,10 @@ export default function AttendancePage() {
         </div>
 
         {/* Desktop/tablet table header — hidden on mobile in favor of stacked rows */}
-        <div className="hidden sm:grid grid-cols-2 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-400 bg-neutral-50 border-b border-neutral-100">
+        <div className="hidden sm:grid grid-cols-3 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-neutral-400 bg-neutral-50 border-b border-neutral-100">
           <span>Date</span>
-          <span className="text-right">Status</span>
+          <span className="text-center">Status</span>
+          <span className="text-right">Correction</span>
         </div>
 
         {monthlyLoading ? (
@@ -167,16 +310,20 @@ export default function AttendancePage() {
           monthly.records.map((record) => (
             <div key={record._id} className="border-b border-neutral-100 last:border-b-0">
               {/* Mobile: stacked card */}
-              <div className="sm:hidden flex items-center justify-between px-4 py-3.5">
+              <div className="sm:hidden flex items-center justify-between px-4 py-3.5 gap-2">
                 <p className="text-sm font-medium text-neutral-700">{dateLabel(record.date)}</p>
                 <StatusPill status={record.status} />
+                <CorrectionControl record={record} existingRequest={requestByRecordId.get(String(record._id))} onRequest={setCorrectionRecord} />
               </div>
 
               {/* Tablet/desktop: table row */}
-              <div className="hidden sm:grid grid-cols-2 items-center px-5 py-4 text-sm">
+              <div className="hidden sm:grid grid-cols-3 items-center px-5 py-4 text-sm">
                 <span className="font-medium text-neutral-700">{dateLabel(record.date)}</span>
-                <span className="flex justify-end">
+                <span className="flex justify-center">
                   <StatusPill status={record.status} />
+                </span>
+                <span className="flex justify-end">
+                  <CorrectionControl record={record} existingRequest={requestByRecordId.get(String(record._id))} onRequest={setCorrectionRecord} />
                 </span>
               </div>
             </div>
@@ -187,6 +334,9 @@ export default function AttendancePage() {
           </div>
         )}
       </div>
+
+      <RequestCorrectionModal open={!!correctionRecord} record={correctionRecord} onClose={() => setCorrectionRecord(null)} />
+      <RequestAttendanceModal open={requestModalOpen} onClose={() => setRequestModalOpen(false)} />
     </div>
   );
 }

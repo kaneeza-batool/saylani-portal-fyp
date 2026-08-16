@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getProgress } from '../services/progressService';
@@ -98,12 +98,11 @@ function CertificateBanner({ courseId }) {
 }
 
 export default function ProgressPage() {
-  const { courseId } = useParams();
   const [expandedId, setExpandedId] = useState(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['progress', courseId],
-    queryFn: () => getProgress(courseId),
+    queryKey: ['progress'],
+    queryFn: () => getProgress(),
   });
 
   function toggle(id) {
@@ -112,7 +111,7 @@ export default function ProgressPage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      {!isLoading && !isError && data.overallPercentage === 100 && <CertificateBanner courseId={courseId} />}
+      {!isLoading && !isError && data.overallPercentage === 100 && data.courseId && <CertificateBanner courseId={data.courseId} />}
 
       <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex items-center gap-5">
         {isLoading ? (
@@ -131,12 +130,35 @@ export default function ProgressPage() {
             <div>
               <p className="font-heading text-lg font-bold text-neutral-900">Overall Course Progress</p>
               <p className="text-sm text-neutral-500 mt-0.5">
-                {data.completedTopics} of {data.totalTopics} topics completed across {data.modules.length} modules
+                Blended from quizzes, assignments, and module topics you've actually completed.
               </p>
             </div>
           </>
         )}
       </div>
+
+      {!isLoading && !isError && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Topics</p>
+            <p className="text-lg font-bold text-neutral-900 mt-1">
+              {data.completedTopics} / {data.totalTopics}
+            </p>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Quizzes Attempted</p>
+            <p className="text-lg font-bold text-neutral-900 mt-1">
+              {data.quizzes.completed} / {data.quizzes.total}
+            </p>
+          </div>
+          <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Assignments Submitted</p>
+            <p className="text-lg font-bold text-neutral-900 mt-1">
+              {data.assignments.completed} / {data.assignments.total}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
         <div className="px-4 sm:px-5 py-4 border-b border-neutral-200">

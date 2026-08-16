@@ -43,6 +43,7 @@ exports.submitFeedback = async (req, res) => {
       type,
       text: text.trim(),
       imageUrl,
+      campus: req.student.campus?.name || '',
     });
 
     return res.status(201).json({ feedback });
@@ -52,10 +53,6 @@ exports.submitFeedback = async (req, res) => {
   }
 };
 
-// Every record's status reads "Submitted" for now — there's no Super Admin
-// portal connected yet to review/triage these, so nothing ever transitions
-// a record past that. Once that review flow exists, this should read a
-// real status field (e.g. reviewed/actioned) instead of a hardcoded label.
 exports.getMyFeedback = async (req, res) => {
   try {
     const feedback = await SupportFeedback.find({ student: req.student._id }).sort({ createdAt: -1 });
@@ -65,7 +62,10 @@ exports.getMyFeedback = async (req, res) => {
         type: f.type,
         text: f.text,
         imageUrl: f.imageUrl,
-        status: 'Submitted',
+        status: f.status,
+        adminResponse: f.adminResponse,
+        respondedByName: f.respondedByName,
+        respondedByRole: f.respondedByRole,
         createdAt: f.createdAt,
       })),
     });

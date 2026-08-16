@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId', getProgress);
+router.get('/', getProgress);
 
 module.exports = router;

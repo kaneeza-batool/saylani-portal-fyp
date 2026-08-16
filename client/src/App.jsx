@@ -58,6 +58,10 @@ import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
 import FeesPage from './portals/sub-admin/FeesPage';
 import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
 import SubAdminAuditLogPage from './portals/sub-admin/AuditLogPage';
+import SubAdminAttendanceRequestsPage from './portals/sub-admin/AttendanceRequestsPage';
+import StudentFeedbackPage from './portals/super-admin/StudentFeedbackPage';
+import RolesPermissionsPage from './portals/super-admin/RolesPermissionsPage';
+import SubAdminStudentFeedbackPage from './portals/sub-admin/StudentFeedbackPage';
 import TrainerLayout from './layouts/TrainerLayout';
 import TrainerDashboardPage from './portals/trainer/DashboardPage';
 import TrainerBatchesPage from './portals/trainer/BatchesPage';
@@ -141,6 +145,8 @@ function App() {
                     <Route path="campus-map" element={<CampusMapPage />} />
                     <Route path="alerts" element={<AlertsPage />} />
                     <Route path="admissions" element={<AdmissionsQueuePage />} />
+                    <Route path="student-feedback" element={<StudentFeedbackPage />} />
+                    <Route path="roles-permissions" element={<RolesPermissionsPage />} />
                     <Route path="fees" element={<FeesPage />} />
                   </Route>
                 </Route>
@@ -162,6 +168,8 @@ function App() {
                     <Route path="trainers" element={<SubAdminTrainersPage />} />
                     <Route path="batches" element={<SubAdminBatchesPage />} />
                     <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
+                    <Route path="attendance-requests" element={<SubAdminAttendanceRequestsPage />} />
+                    <Route path="student-feedback" element={<SubAdminStudentFeedbackPage />} />
                     {/* Same components super-admin uses at /admin/attendance/mark|multi —
                         no sub-admin-specific fork needed, they were already portable
                         (no role checks); the backend enforces campus scope. */}

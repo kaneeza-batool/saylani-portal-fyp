@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
 
 function initials(name) {
   return (
@@ -18,13 +20,36 @@ function initials(name) {
  *   open: boolean,
  *   onClose: () => void,
  *   type: 'Student' | 'Trainer',
- *   person: { name: string, idNumber: string, line1?: string, line2?: string } | null,
+ *   person: { name: string, idNumber: string, line1?: string, line2?: string, photo?: string } | null,
  * }} props
  */
 export default function IDCardModal({ open, onClose, type, person }) {
+  const cardRef = useRef(null);
+  const [showPhoto, setShowPhoto] = useState(true);
+  const [downloading, setDownloading] = useState(false);
+
   if (!person) return null;
 
   const qrValue = JSON.stringify({ org: 'TITAN', type, id: person.idNumber, name: person.name });
+  const hasPhoto = Boolean(person.photo);
+
+  async function downloadAsImage() {
+    if (!cardRef.current) return;
+    setDownloading(true);
+    try {
+      // Wait for web fonts to actually be painted first — html2canvas
+      // rasterizes whatever's on screen at call time, and a font swap
+      // mid-capture is a common source of a blank/serif-substituted name.
+      await document.fonts?.ready;
+      const canvas = await html2canvas(cardRef.current, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+      const link = document.createElement('a');
+      link.download = `TITAN-ID-Card-${(person.idNumber || person.name || 'card').toString().replace(/\s+/g, '-')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -46,6 +71,7 @@ export default function IDCardModal({ open, onClose, type, person }) {
           >
             <div
               id="printable-id-card"
+              ref={cardRef}
               className="w-[320px] max-w-[85vw] rounded-2xl overflow-hidden shadow-2xl"
               style={{ background: '#ffffff', border: '1px solid #e7eae6' }}
             >
@@ -60,12 +86,21 @@ export default function IDCardModal({ open, onClose, type, person }) {
               </div>
 
               <div className="flex flex-col items-center gap-3 px-5 py-6">
-                <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center font-heading font-bold text-h5"
-                  style={{ background: '#12234A', color: '#C9A227', border: '2px solid #C9A227' }}
-                >
-                  {initials(person.name)}
-                </div>
+                {showPhoto && person.photo ? (
+                  <img
+                    src={person.photo}
+                    alt={person.name}
+                    className="w-20 h-20 rounded-full object-cover"
+                    style={{ border: '2px solid #C9A227' }}
+                  />
+                ) : (
+                  <div
+                    className="w-20 h-20 rounded-full flex items-center justify-center font-heading font-bold text-h5"
+                    style={{ background: '#12234A', color: '#C9A227', border: '2px solid #C9A227' }}
+                  >
+                    {initials(person.name)}
+                  </div>
+                )}
                 <div className="text-center">
                   <div className="font-heading font-bold text-body text-neutral-900">{person.name}</div>
                   <div className="text-caption font-semibold uppercase tracking-wide" style={{ color: '#C9A227' }}>
@@ -87,21 +122,37 @@ export default function IDCardModal({ open, onClose, type, person }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 no-print">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600"
-              >
-                Print ID Card
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="border border-neutral-200 bg-surface text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
-              >
-                Close
-              </button>
+            <div className="flex flex-col items-center gap-2.5 no-print">
+              {hasPhoto && (
+                <label className="flex items-center gap-2 text-caption text-neutral-500 font-medium cursor-pointer select-none">
+                  <input type="checkbox" checked={showPhoto} onChange={(e) => setShowPhoto(e.target.checked)} className="cursor-pointer" />
+                  Include photo
+                </label>
+              )}
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  disabled={downloading}
+                  onClick={downloadAsImage}
+                  className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {downloading ? 'Preparing...' : 'Download as Image'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="border border-neutral-200 bg-surface text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
+                >
+                  Print
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="border border-neutral-200 bg-surface text-neutral-600 text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </motion.div>
         </motion.div>

@@ -125,7 +125,7 @@ export default function CertificatePage() {
           completion.
         </p>
         <Link
-          to={`/progress/${courseId}`}
+          to="/progress"
           className="mt-2 rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
         >
           View Progress
