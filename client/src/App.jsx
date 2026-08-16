@@ -55,6 +55,7 @@ import SubAdminBatchesPage from './portals/sub-admin/BatchesPage';
 import SubAdminStudentsPage from './portals/sub-admin/StudentsPage';
 import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReportsPage';
 import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
+import FeesPage from './portals/sub-admin/FeesPage';
 import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
 import SubAdminAuditLogPage from './portals/sub-admin/AuditLogPage';
 import TrainerLayout from './layouts/TrainerLayout';
@@ -140,6 +141,7 @@ function App() {
                     <Route path="campus-map" element={<CampusMapPage />} />
                     <Route path="alerts" element={<AlertsPage />} />
                     <Route path="admissions" element={<AdmissionsQueuePage />} />
+                    <Route path="fees" element={<FeesPage />} />
                   </Route>
                 </Route>
 
@@ -166,6 +168,7 @@ function App() {
                     <Route path="attendance/mark" element={<MarkAttendance />} />
                     <Route path="attendance/multi" element={<MultiAttendance />} />
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
+                    <Route path="fees" element={<FeesPage />} />
                     <Route path="alerts" element={<SubAdminAlertsPage />} />
                     <Route path="audit-log" element={<SubAdminAuditLogPage />} />
                   </Route>
