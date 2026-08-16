@@ -6,8 +6,8 @@ export async function getEligibleCertificates() {
   return data.certificates;
 }
 
-export async function getCertificateForCourse(courseId) {
-  const { data } = await api.get(`/certificates/course/${courseId}`);
+export async function getCertificate() {
+  const { data } = await api.get('/certificates/mine');
   return data;
 }
 

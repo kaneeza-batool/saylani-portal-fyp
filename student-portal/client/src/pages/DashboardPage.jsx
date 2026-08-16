@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getDashboard } from '../services/dashboardService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
-import { CalendarIcon, ClockIcon, CertificateIcon } from '../components/icons';
+import { CalendarIcon, ClockIcon, CertificateIcon, TrophyIcon } from '../components/icons';
 
 const WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const TABS = [
@@ -44,14 +44,14 @@ function CardSkeleton({ className = '' }) {
   );
 }
 
-// Shown once this course's Progress has reached 100% — Enrollment's
-// progressPercent cache is already fetched as part of the dashboard call,
-// so this reads that directly rather than firing a separate eligibility
-// request just to decide whether to show a link.
-function CertificateBanner({ courseId, courseName }) {
+// Shown once this course's Progress has reached 100% — activeCourse.progressPercent
+// is already fetched as part of the dashboard call (computeOverallProgress,
+// same blend the Progress page shows), so this reads that directly rather
+// than firing a separate eligibility request just to decide whether to show a link.
+function CertificateBanner({ courseName }) {
   return (
     <Link
-      to={`/certificate/${courseId}`}
+      to="/certificate"
       data-testid="certificate-banner"
       className="flex items-center justify-between gap-3 rounded-lg shadow-card px-5 py-4 bg-primary-900 border border-accent-500/40 text-white hover:bg-primary-800 transition-colors"
     >
@@ -321,8 +321,6 @@ function TabsPanel({ tabs, isLoading }) {
 }
 
 export default function DashboardPage() {
-  const { courseId } = useParams();
-
   const {
     data: dashboard,
     isLoading: dashboardLoading,
@@ -350,7 +348,15 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Link
+          to="/leaderboard"
+          data-testid="leaderboard-link"
+          className="inline-flex items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-xs sm:text-sm font-semibold bg-white text-primary-800 border border-neutral-200 hover:bg-neutral-50 transition-colors"
+        >
+          <TrophyIcon className="w-4 h-4" />
+          Leaderboard →
+        </Link>
         <Link
           to="/agenda"
           data-testid="my-week-link"
@@ -385,7 +391,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {dashboard?.activeCourse?.progressPercent === 100 && (
-        <CertificateBanner courseId={courseId} courseName={dashboard.activeCourse.name} />
+        <CertificateBanner courseName={dashboard.activeCourse.name} />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">

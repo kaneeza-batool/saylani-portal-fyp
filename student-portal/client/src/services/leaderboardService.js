@@ -1,6 +1,6 @@
 import api from './authService';
 
-export async function getFullLeaderboard(courseId) {
-  const { data } = await api.get(`/leaderboard/${courseId}`);
+export async function getFullLeaderboard() {
+  const { data } = await api.get('/leaderboard');
   return data;
 }

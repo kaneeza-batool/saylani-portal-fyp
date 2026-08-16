@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeCanvas } from 'qrcode.react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { getCertificateForCourse } from '../services/certificateService';
+import { getCertificate } from '../services/certificateService';
 import logo from '/images/logo/titan-logo-clean.png';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { DownloadIcon, ShareIcon, CertificateIcon, CheckCircleIcon } from '../components/icons';
@@ -41,14 +41,13 @@ function LoadingState() {
 }
 
 export default function CertificatePage() {
-  const { courseId } = useParams();
   const cardRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
   const [shareState, setShareState] = useState('idle'); // idle | copied
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['certificate', 'course', courseId],
-    queryFn: () => getCertificateForCourse(courseId),
+    queryKey: ['certificate', 'mine'],
+    queryFn: () => getCertificate(),
   });
 
   async function handleDownload() {
@@ -139,7 +138,7 @@ export default function CertificatePage() {
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <Link
-        to={`/dashboard/${courseId}`}
+        to="/dashboard"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 hover:text-primary-900 transition-colors self-start"
       >
         ← Back to Dashboard

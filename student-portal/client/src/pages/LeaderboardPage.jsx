@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getFullLeaderboard } from '../services/leaderboardService';
@@ -48,22 +48,20 @@ function RowSkeleton() {
 }
 
 export default function LeaderboardPage() {
-  const { courseId } = useParams();
-
   const {
     data,
     isLoading,
     isError,
     refetch,
   } = useQuery({
-    queryKey: ['leaderboard', 'full', courseId],
-    queryFn: () => getFullLeaderboard(courseId),
+    queryKey: ['leaderboard', 'full'],
+    queryFn: () => getFullLeaderboard(),
   });
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
       <Link
-        to={`/dashboard/${courseId}`}
+        to="/dashboard"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 hover:text-primary-900 transition-colors self-start"
       >
         ← Back to Dashboard
