@@ -1,6 +1,9 @@
 const StudentPortalSupportFeedback = require('../models/StudentPortalSupportFeedback');
+const StudentPortalNotification = require('../models/StudentPortalNotification');
 const Campus = require('../models/Campus');
 const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
+
+const RESPONDER_LABEL = { super_admin: 'a Super Admin', sub_admin: 'your Campus Admin' };
 
 // SupportFeedback.campus is cached from req.student.campus.name at
 // submission time (see student-portal's submitFeedback) — the same full
@@ -71,6 +74,24 @@ exports.respondToFeedback = async (req, res) => {
       summary: `Responded to ${feedback.type} feedback from "${feedback.student?.name || 'a student'}"`,
       resourceCampus: await resolveCampusIdByName(feedback.campus),
     });
+
+    // Only notify when there's an actual reply to read — a pure status
+    // touch (e.g. marking something 'reviewed' with no new text) has
+    // nothing new for the student to see, so it stays silent. Own try/catch
+    // so a notification failure never reports the (already-saved) response
+    // as failed back to the admin.
+    if (typeof adminResponse === 'string' && adminResponse.trim() && feedback.student) {
+      try {
+        await StudentPortalNotification.create({
+          student: feedback.student._id,
+          icon: '💬',
+          title: 'Feedback Response',
+          message: `${RESPONDER_LABEL[req.user.role] || 'An admin'} responded to your ${feedback.type} feedback.`,
+        });
+      } catch (notifyErr) {
+        console.error('Failed to create feedback-response notification:', notifyErr.message);
+      }
+    }
 
     return res.status(200).json({ item: feedback });
   } catch (err) {
