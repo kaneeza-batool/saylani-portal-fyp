@@ -87,6 +87,7 @@ exports.respondToFeedback = async (req, res) => {
           icon: '💬',
           title: 'Feedback Response',
           message: `${RESPONDER_LABEL[req.user.role] || 'An admin'} responded to your ${feedback.type} feedback.`,
+          link: '/feedback',
         });
       } catch (notifyErr) {
         console.error('Failed to create feedback-response notification:', notifyErr.message);

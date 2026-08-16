@@ -13,6 +13,8 @@ const notificationSchema = new mongoose.Schema(
     icon: { type: String, default: '' },
     title: { type: String, required: true, trim: true },
     message: { type: String, trim: true, default: '' },
+    // In-app (student-portal) route to navigate to on click, e.g. "/feedback".
+    link: { type: String, default: '' },
     isRead: { type: Boolean, default: false },
     isDismissed: { type: Boolean, default: false },
   },
