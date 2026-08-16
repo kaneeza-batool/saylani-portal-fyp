@@ -41,17 +41,19 @@ const MotionNavLink = motion.create(NavLink);
 // courseId, so it's rendered separately above these as the student's
 // always-available way back to the course picker (see Sidebar below).
 //
-// Dashboard, Attendance, Payment, Assignment, Quiz, Resources, and Ask a
-// Doubt are `courseless` — one course per student now (see Student.js/
-// attendanceController/feeController/assignmentController/quizController/
-// resourceController/questionController), so those seven link straight to
-// `base` with no id segment and are never gated on hasActiveCourse. The
-// rest still route through Enrollment/CourseModule, which stays empty for
-// every real student in this merge, so they're left gated until that's
-// fixed the same way.
+// Dashboard, Progress, Attendance, Payment, Assignment, Quiz, Resources, and
+// Ask a Doubt are all `courseless` — one course per student now (see
+// Student.js/attendanceController/feeController/assignmentController/
+// quizController/resourceController/questionController/progressController),
+// so those eight link straight to `base` with no id segment and are never
+// gated on hasActiveCourse. Certificate is the one holdout still keyed by a
+// real Course ObjectId (via CourseModule.courseId), which nothing populates
+// for a real student anymore — it stays reachable only from the Progress/
+// Dashboard certificate banners once a module actually has one, not from
+// this list.
 export const NAV_ITEMS = [
   { label: 'Dashboard', base: '/dashboard', icon: DashboardIcon, courseless: true },
-  { label: 'Progress', base: '/progress', icon: ProgressIcon },
+  { label: 'Progress', base: '/progress', icon: ProgressIcon, courseless: true },
   { label: 'Attendance', base: '/attendance', icon: AttendanceIcon, courseless: true },
   { label: 'Payment', base: '/fee', icon: PaymentIcon, courseless: true },
   { label: 'Assignment', base: '/assignment', icon: AssignmentIcon, courseless: true },

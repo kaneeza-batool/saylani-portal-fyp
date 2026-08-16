@@ -140,6 +140,22 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'attendance-requests-sub',
+    label: 'Attendance Requests',
+    to: '/sub-admin/attendance-requests',
+    roles: ['sub_admin'],
+    // Reuses the same permission trainer-attendance actions already check
+    // (see attendanceRequestController) — there's no dedicated permission
+    // key for this feature, and every seeded sub-admin already has this one.
+    permission: { module: 'TRAINER_ATTENDANCE_VIEW', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M4 4h16v12H8l-4 4z" />
+        <path d="M8 9h8M8 12h5" />
+      </svg>
+    ),
+  },
+  {
     id: 'feedback-sub',
     label: 'Feedback',
     to: '/sub-admin/feedback',
@@ -148,6 +164,19 @@ export const NAV_ITEMS = [
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M4 4h16v12H8l-4 4z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'student-feedback-sub',
+    label: 'Student Feedback',
+    to: '/sub-admin/student-feedback',
+    roles: ['sub_admin'],
+    permission: { module: 'FEEDBACK', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M8 10h8M8 14h5" />
+        <path d="M21 12c0 4.4-4 8-9 8-1.4 0-2.7-.3-3.9-.8L3 20l1.1-4.4C3.4 14.4 3 13.2 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" />
       </svg>
     ),
   },
@@ -432,6 +461,30 @@ export const NAV_ITEMS = [
         <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         <path d="M12 9v4" />
         <path d="M12 17h.01" />
+      </svg>
+    ),
+  },
+  {
+    id: 'student-feedback',
+    label: 'Student Feedback',
+    to: '/admin/student-feedback',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M8 10h8M8 14h5" />
+        <path d="M21 12c0 4.4-4 8-9 8-1.4 0-2.7-.3-3.9-.8L3 20l1.1-4.4C3.4 14.4 3 13.2 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'roles-permissions',
+    label: 'Roles & Permissions',
+    to: '/admin/roles-permissions',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="11" width="18" height="10" rx="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
     ),
   },

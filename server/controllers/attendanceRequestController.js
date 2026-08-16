@@ -1,7 +1,21 @@
 const AttendanceRequest = require('../models/AttendanceRequest');
 const TrainerAttendance = require('../models/TrainerAttendance');
+const Trainer = require('../models/Trainer');
+const Campus = require('../models/Campus');
 const { sendMail } = require('../utils/mailer');
 const { logAudit, resolveCampusIdByName } = require('../utils/auditLogger');
+
+// Sub-admins are scoped to their own campus. Unlike StudentAttendance
+// (whose .campus is the full Campus.name), TrainerAttendance.campus is
+// filled in from Trainer.city / trainer.city at check-in time (see
+// trainerAttendanceController.checkIn and TrainersAttendanceMark.jsx) — a
+// short city string, not the branded campus name — so this resolves the
+// sub-admin's own campus to its city to match that same convention rather
+// than reusing the name-based resolver studentAttendanceController uses.
+async function resolveSubAdminCampusName(req) {
+  const campus = await Campus.findById(req.user.campus_id).select('city');
+  return campus?.city || '__no_campus__';
+}
 
 exports.getRequests = async (req, res) => {
   try {
@@ -11,6 +25,15 @@ exports.getRequests = async (req, res) => {
 
     const filter = {};
     if (status && status !== 'all') filter.status = status;
+
+    if (req.user.role === 'trainer') {
+      // A trainer only ever sees their own requests, never anyone else's.
+      const trainerProfile = await Trainer.findOne({ email: req.user.email }).select('_id');
+      filter.trainer = trainerProfile?._id || null;
+    } else if (req.user.role === 'sub_admin') {
+      filter.campus = await resolveSubAdminCampusName(req);
+    }
+    // super_admin: no extra filter, sees every campus.
 
     const [items, total] = await Promise.all([
       AttendanceRequest.find(filter)
@@ -36,8 +59,25 @@ exports.createRequest = async (req, res) => {
     const attendance = await TrainerAttendance.findById(trainerAttendanceId);
     if (!attendance) return res.status(404).json({ message: 'Attendance record not found' });
 
+    // Two ways in: a trainer raising a correction on their own record
+    // (self-service), or Super Admin raising one on a trainer's behalf from
+    // the View Attendance page — same as before this feature existed.
+    // Sub-admins don't get a create path here; they only resolve.
+    if (req.user.role === 'trainer') {
+      const trainerProfile = await Trainer.findOne({ email: req.user.email }).select('_id');
+      if (!trainerProfile || String(attendance.trainer) !== String(trainerProfile._id)) {
+        return res.status(403).json({ message: 'You can only request a correction on your own attendance record.' });
+      }
+    } else if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ message: 'You do not have permission to raise this request.' });
+    }
+
+    const existing = await AttendanceRequest.findOne({ trainerAttendance: attendance._id, status: 'pending' });
+    if (existing) return res.status(409).json({ message: 'A correction request for this record is already pending.' });
+
     const request = await AttendanceRequest.create({
       trainerAttendance: attendance._id,
+      trainer: attendance.trainer,
       trainerName: attendance.trainerName,
       campus: attendance.campus,
       schedule: attendance.schedule,
@@ -63,13 +103,32 @@ exports.createRequest = async (req, res) => {
 
 exports.resolveRequest = async (req, res) => {
   try {
+    if (req.user.role === 'trainer') {
+      return res.status(403).json({ message: 'Only Super Admin or Sub-Admin can resolve a correction request.' });
+    }
+
     const { status } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'status must be "approved" or "rejected"' });
     }
 
-    const request = await AttendanceRequest.findByIdAndUpdate(req.params.id, { status }, { new: true });
-    if (!request) return res.status(404).json({ message: 'Request not found' });
+    // Filtering on status: 'pending' as part of the update makes this
+    // atomic — if Super Admin and a Sub-Admin both click Approve on the
+    // same request, only the first write actually matches and returns a
+    // document; the second gets null back instead of double-processing it.
+    const filter = { _id: req.params.id, status: 'pending' };
+    if (req.user.role === 'sub_admin') {
+      filter.campus = await resolveSubAdminCampusName(req);
+    }
+
+    const request = await AttendanceRequest.findOneAndUpdate(
+      filter,
+      { status, resolvedByName: req.user.name, resolvedByRole: req.user.role },
+      { new: true }
+    );
+    if (!request) {
+      return res.status(409).json({ message: 'This request was already resolved, or is not in your campus.' });
+    }
 
     if (status === 'approved') {
       const update = {};

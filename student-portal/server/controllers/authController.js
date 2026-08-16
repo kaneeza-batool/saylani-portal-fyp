@@ -68,6 +68,11 @@ function toSafeStudent(student) {
     // unpopulated rather than leaking a Mongoose document.
     campus: student.campus?.name || null,
     role: student.role,
+    // Added for the ID Card view (Profile page) — same hydration reasoning
+    // as avatarUrl above, these were already on the shared document but
+    // never exposed to the frontend before now.
+    rollNumber: student.rollNumber,
+    course: student.course,
   };
 }
 

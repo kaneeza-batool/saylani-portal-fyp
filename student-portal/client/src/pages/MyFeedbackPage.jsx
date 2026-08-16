@@ -90,6 +90,14 @@ export default function MyFeedbackPage() {
                       className="w-16 h-16 object-cover rounded-md border border-neutral-200 mt-2"
                     />
                   )}
+                  {f.adminResponse && (
+                    <div className="mt-2 rounded-md bg-primary-50 border border-primary-100 px-3 py-2">
+                      <p className="text-xs font-semibold text-primary-800">
+                        Response from {f.respondedByRole === 'super_admin' ? 'Super Admin' : 'Campus Admin'}
+                      </p>
+                      <p className="text-sm text-neutral-700 mt-0.5 whitespace-pre-wrap">{f.adminResponse}</p>
+                    </div>
+                  )}
                   <p className="text-xs text-neutral-400 mt-1.5">{formatTimestamp(f.createdAt)}</p>
                 </div>
               </motion.div>

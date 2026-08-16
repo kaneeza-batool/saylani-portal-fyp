@@ -7,6 +7,7 @@ import { getEnrolledCourses } from '../services/courseService';
 import { useAuth } from '../context/AuthContext';
 import { initialsOf } from '../components/Sidebar';
 import Toast from '../components/Toast';
+import StudentIdCardModal from '../components/StudentIdCardModal';
 import { fadeInUp, staggerContainer, cardInteraction } from '../lib/motionVariants';
 import { CameraIcon, EditIcon, LogOutIcon, MailIcon, ProfileIcon, CoursesIcon, RefreshIcon, CheckCircleIcon } from '../components/icons';
 
@@ -81,6 +82,7 @@ export default function ProfilePage() {
   const [pendingAvatarBase64, setPendingAvatarBase64] = useState(null);
   const [toast, setToast] = useState(null);
   const [error, setError] = useState('');
+  const [idCardOpen, setIdCardOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const { data: student, isLoading, isError, refetch } = useQuery({
@@ -341,11 +343,26 @@ export default function ProfilePage() {
             </AnimatePresence>
           </div>
 
-          <div className="mt-4">
-            <h1 className="font-heading text-xl sm:text-2xl font-bold text-neutral-900">{student.fullName}</h1>
-            <span className="inline-flex items-center mt-1.5 rounded-pill px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-800">
-              Student
-            </span>
+          <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h1 className="font-heading text-xl sm:text-2xl font-bold text-neutral-900">{student.fullName}</h1>
+              <span className="inline-flex items-center mt-1.5 rounded-pill px-3 py-1 text-xs font-semibold bg-primary-100 text-primary-800">
+                Student
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIdCardOpen(true)}
+              className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold border border-primary-800 text-primary-800 hover:bg-primary-50 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2.5" y="5" width="19" height="14" rx="2" />
+                <circle cx="8" cy="11" r="2" />
+                <path d="M5 16c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5" />
+                <path d="M14 9h5M14 13h3" />
+              </svg>
+              ID Card
+            </button>
           </div>
 
           <AnimatePresence>
@@ -515,6 +532,8 @@ export default function ProfilePage() {
         <LogOutIcon className="w-4 h-4" />
         Log out
       </motion.button>
+
+      <StudentIdCardModal open={idCardOpen} onClose={() => setIdCardOpen(false)} student={student} />
     </motion.div>
   );
 }
