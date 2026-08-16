@@ -44,7 +44,6 @@ const campaignRoutes = require('./routes/campaignRoutes');
 const donationRoutes = require('./routes/donationRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const feeRoutes = require('./routes/feeRoutes');
-const employerPortalRoutes = require('./routes/employerPortalRoutes');
 
 const app = express();
 
@@ -92,7 +91,6 @@ app.use('/api/admin/alerts', alertRoutes);
 app.use('/api/admin/map', mapRoutes);
 app.use('/api/admin/feedback', feedbackRoutes);
 app.use('/api/admin/fees', feeRoutes);
-app.use('/api/employer', employerPortalRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
