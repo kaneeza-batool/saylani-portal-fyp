@@ -115,7 +115,7 @@ export default function AuditLogPage() {
                 setEndDate('');
                 resetPage();
               }}
-              className="border-none bg-transparent text-caption font-semibold text-neutral-500 cursor-pointer hover:text-neutral-900 transition-colors"
+              className="border-none bg-transparent text-caption font-semibold text-neutral-500 cursor-pointer hover:text-neutral-900 transition-colors px-2 py-1"
             >
               Clear dates
             </button>

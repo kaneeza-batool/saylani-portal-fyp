@@ -63,7 +63,7 @@ export default function AdmissionsQueuePage() {
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="border-none bg-transparent text-warning-text cursor-pointer text-caption font-semibold shrink-0"
+            className="border-none bg-transparent text-warning-text cursor-pointer text-caption font-semibold shrink-0 px-2 py-1"
           >
             Dismiss
           </button>

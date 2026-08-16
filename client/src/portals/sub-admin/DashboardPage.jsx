@@ -137,7 +137,7 @@ function PendingAdmissions({ admissions, isLoading, isError, actionMutation, isB
         <button
           type="button"
           onClick={onViewAll}
-          className="border-none bg-transparent text-caption font-semibold text-gold-600 cursor-pointer hover:text-gold-700 transition-colors"
+          className="border-none bg-transparent text-caption font-semibold text-gold-600 cursor-pointer hover:text-gold-700 transition-colors px-2 py-1"
         >
           View all →
         </button>
