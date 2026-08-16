@@ -7,8 +7,11 @@ const { checkPermission } = require('../middleware/checkPermission');
 
 // Student.batch is only ever set for roster members (see
 // backfillStudentBatch.js / studentController.js — 'pending'/'rejected'
-// applicants never get one), so a plain count against it is already
-// "students actually in this batch" with no extra status filter needed.
+// applicants never get one), but the status filter below is still explicit
+// rather than relying on that invariant alone — same written definition
+// ($nin: ['pending','rejected']) as every other student-count site in the
+// app (dashboardController, reportsController, mapController, etc.), so
+// this count can't silently drift from theirs if the invariant ever changes.
 //
 // Also overwrites `seatsFilled` in the response with this same live count.
 // The stored field is set once at slot-creation time and nothing ever
@@ -21,7 +24,7 @@ const { checkPermission } = require('../middleware/checkPermission');
 async function withStudentCounts(slots) {
   if (slots.length === 0) return slots;
   const counts = await Student.aggregate([
-    { $match: { batch: { $in: slots.map((s) => s._id) } } },
+    { $match: { batch: { $in: slots.map((s) => s._id) }, status: { $nin: ['pending', 'rejected'] } } },
     { $group: { _id: '$batch', count: { $sum: 1 } } },
   ]);
   const countBySlotId = new Map(counts.map((c) => [String(c._id), c.count]));

@@ -1,19 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
-import { getTrainerDashboard } from '../../services/trainerDashboardService';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getMyAttendanceCourses, getAttendanceRoster, markAttendance } from '../../services/trainerDashboardService';
 
-const INITIAL_STUDENTS = [
-  { id: 1, name: 'Ayesha Siddiqui', roll: '241', initials: 'AS', status: 'present' },
-  { id: 2, name: 'Bilal Hussain', roll: '242', initials: 'BH', status: 'present' },
-  { id: 3, name: 'Sana Malik', roll: '243', initials: 'SM', status: 'absent' },
-  { id: 4, name: 'Usman Tariq', roll: '244', initials: 'UT', status: 'present' },
-  { id: 5, name: 'Hira Khan', roll: '245', initials: 'HK', status: 'leave' },
-  { id: 6, name: 'Fahad Nawaz', roll: '246', initials: 'FN', status: 'present' },
-  { id: 7, name: 'Mariam Aslam', roll: '247', initials: 'MA', status: 'present' },
-  { id: 8, name: 'Zain Abbas', roll: '248', initials: 'ZA', status: 'absent' },
-];
-
+// Real now — writes into the same StudentAttendance collection Super Admin
+// and Sub-Admin already read from (see trainerStudentAttendanceController
+// .js on the server), so marking attendance here shows up there
+// immediately, same cross-portal proof point as the quiz/assignment work.
+// Course-scoped rather than batch-scoped for the same reason as the
+// Assignments tab: Student has no batch/Slot field to query a roster by.
 const STATUS_STYLE = {
   present: { label: 'Present', className: 'bg-success-bg text-success-text' },
   absent: { label: 'Absent', className: 'bg-danger-50 text-danger-600' },
@@ -21,34 +16,34 @@ const STATUS_STYLE = {
 };
 const STATUS_ORDER = ['present', 'absent', 'leave'];
 
-const SUMMARY_TEXT_COLOR = {
-  present: 'text-success-text',
-  absent: 'text-danger-600',
-  leave: 'text-warning-text',
-};
-
-const SUMMARY_BG = {
-  present: 'bg-success-bg',
-  absent: 'bg-danger-50',
-  leave: 'bg-warning-bg',
-};
+const SUMMARY_TEXT_COLOR = { present: 'text-success-text', absent: 'text-danger-600', leave: 'text-warning-text' };
+const SUMMARY_BG = { present: 'bg-success-bg', absent: 'bg-danger-50', leave: 'bg-warning-bg' };
 
 const fadeInUp = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.04 } } };
 
-function StudentRow({ student, onSetStatus }) {
+function initials(name) {
   return (
-    <motion.div
-      variants={fadeInUp}
-      className="flex items-center justify-between px-[18px] py-[13px] border-b border-neutral-100 last:border-b-0"
-    >
+    (name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
+
+function StudentRow({ row, onSetStatus }) {
+  return (
+    <motion.div variants={fadeInUp} className="flex items-center justify-between px-[18px] py-[13px] border-b border-neutral-100 last:border-b-0">
       <div className="flex items-center gap-3">
         <div className="w-[34px] h-[34px] rounded shrink-0 bg-success-bg text-success-text flex items-center justify-center font-heading font-bold text-[12px]">
-          {student.initials}
+          {initials(row.student.name)}
         </div>
         <div>
-          <div className="text-body-sm font-semibold text-neutral-900">{student.name}</div>
-          <div className="text-[11.5px] text-neutral-400">Roll #{student.roll}</div>
+          <div className="text-body-sm font-semibold text-neutral-900">{row.student.name}</div>
+          <div className="text-[11.5px] text-neutral-400">Roll #{row.student.rollNumber}</div>
         </div>
       </div>
 
@@ -57,11 +52,11 @@ function StudentRow({ student, onSetStatus }) {
           <button
             key={key}
             type="button"
-            onClick={() => onSetStatus(student.id, key)}
+            onClick={() => onSetStatus(row.student._id, key)}
             className={[
               'px-3.5 py-[7px] text-[12px] font-bold cursor-pointer transition-colors',
               i > 0 ? 'border-l border-neutral-200' : '',
-              student.status === key ? STATUS_STYLE[key].className : 'bg-surface text-neutral-400 hover:bg-neutral-100',
+              row.status === key ? STATUS_STYLE[key].className : 'bg-surface text-neutral-400 hover:bg-neutral-100',
             ].join(' ')}
           >
             {STATUS_STYLE[key].label}
@@ -73,45 +68,65 @@ function StudentRow({ student, onSetStatus }) {
 }
 
 export default function AttendancePage() {
-  const { data } = useQuery({ queryKey: ['trainer-dashboard'], queryFn: getTrainerDashboard });
-  const batchOptions = (data?.batches ?? []).map((b) => `${b.course} · ${b.campus}`);
-  const [batch, setBatch] = useState('');
-  const [saved, setSaved] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: courses } = useQuery({ queryKey: ['trainer-attendance-courses'], queryFn: getMyAttendanceCourses });
+  const [course, setCourse] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [students, setStudents] = useState(INITIAL_STUDENTS);
+  const [overrides, setOverrides] = useState({});
 
-  if (batchOptions.length && !batch) {
-    setBatch(batchOptions[0]);
-  }
+  useEffect(() => {
+    if (!course && courses?.length) setCourse(courses[0].name);
+  }, [courses, course]);
 
-  const counts = useMemo(
-    () => students.reduce((acc, s) => ({ ...acc, [s.status]: (acc[s.status] ?? 0) + 1 }), {}),
-    [students]
+  const { data: roster, isLoading } = useQuery({
+    queryKey: ['trainer-attendance-roster', course, date],
+    queryFn: () => getAttendanceRoster(course, date),
+    enabled: !!course && !!date,
+  });
+
+  // Overrides reset whenever the roster for a new course/date loads, so
+  // toggling a status doesn't leak across a batch/date switch.
+  useEffect(() => setOverrides({}), [course, date]);
+
+  const effectiveRoster = useMemo(
+    () => (roster ?? []).map((row) => ({ ...row, status: overrides[row.student._id] ?? row.status })),
+    [roster, overrides]
   );
 
-  const setStatus = (id, status) => {
-    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
-  };
+  const counts = useMemo(
+    () => effectiveRoster.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }), {}),
+    [effectiveRoster]
+  );
 
-  const markAllPresent = () => setStudents((prev) => prev.map((s) => ({ ...s, status: 'present' })));
+  const setStatus = (studentId, status) => setOverrides((prev) => ({ ...prev, [studentId]: status }));
+  const markAllPresent = () => setOverrides(Object.fromEntries(effectiveRoster.map((r) => [r.student._id, 'present'])));
 
-  const saveAttendance = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+  const saveMutation = useMutation({
+    mutationFn: () =>
+      markAttendance({
+        course,
+        date,
+        records: effectiveRoster.map((r) => ({ studentId: r.student._id, status: r.status })),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trainer-attendance-roster', course, date] });
+      setOverrides({});
+    },
+  });
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <select
-            value={batch}
-            onChange={(e) => setBatch(e.target.value)}
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
             className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm font-semibold text-neutral-900 font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors"
           >
-            {batchOptions.map((label) => (
-              <option key={label} value={label}>
-                {label}
+            {!courses?.length && <option value="">Loading…</option>}
+            {courses?.map((c) => (
+              <option key={c.name} value={c.name}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -141,18 +156,27 @@ export default function AttendancePage() {
       </div>
 
       <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
-        {students.map((student) => (
-          <StudentRow key={student.id} student={student} onSetStatus={setStatus} />
-        ))}
+        {isLoading ? (
+          <div className="p-6 flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-10 bg-neutral-100 rounded animate-pulse" />
+            ))}
+          </div>
+        ) : !effectiveRoster.length ? (
+          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No students enrolled in this course yet.</div>
+        ) : (
+          effectiveRoster.map((row) => <StudentRow key={row.student._id} row={row} onSetStatus={setStatus} />)
+        )}
       </div>
 
       <div className="bg-surface border border-neutral-200 rounded-xl px-[18px] py-3.5 flex justify-end">
         <button
           type="button"
-          onClick={saveAttendance}
-          className="border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-6 py-[11px] rounded cursor-pointer transition-colors hover:brightness-90"
+          disabled={saveMutation.isPending || !effectiveRoster.length}
+          onClick={() => saveMutation.mutate()}
+          className="border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-6 py-[11px] rounded cursor-pointer transition-colors hover:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saved ? 'Saved ✓' : 'Save Attendance'}
+          {saveMutation.isPending ? 'Saving...' : saveMutation.isSuccess ? 'Saved ✓' : 'Save Attendance'}
         </button>
       </div>
     </motion.div>

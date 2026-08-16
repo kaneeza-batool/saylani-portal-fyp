@@ -20,6 +20,11 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// Exported so trainerStudentsController can scope the roster to the exact
+// same set of batches this dashboard shows — one definition of "my batches",
+// not two that could drift.
+exports.myBatchesFilter = myBatchesFilter;
+
 // "Batch progress" (% of course completed) isn't tracked anywhere in the
 // data model — Slot only has seat counts. The progress figure here is
 // seat-fill % (studentCount/seatsTotal), which is honest data rather than a
@@ -34,8 +39,12 @@ exports.getMyBatches = async (req, res) => {
   try {
     const slots = await Slot.find(myBatchesFilter(req.user)).populate('campus', 'name city').sort({ createdAt: -1 });
 
+    // Explicit roster filter, not just the batch-assignment invariant
+    // (pending/rejected applicants never get a batch — see Student.js) —
+    // written the same way as every other student-count site so this stays
+    // correct even if that invariant is ever relaxed elsewhere.
     const counts = await Student.aggregate([
-      { $match: { batch: { $in: slots.map((s) => s._id) } } },
+      { $match: { batch: { $in: slots.map((s) => s._id) }, status: { $nin: ['pending', 'rejected'] } } },
       { $group: { _id: '$batch', count: { $sum: 1 } } },
     ]);
     const countBySlotId = new Map(counts.map((c) => [String(c._id), c.count]));

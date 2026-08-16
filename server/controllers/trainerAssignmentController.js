@@ -44,12 +44,89 @@ exports.createAssignment = async (req, res) => {
   }
 };
 
+// Each assignment gets 3 counts for the list view's stat badges: how many
+// students have submitted at all (submitted/late/approved/not_approved —
+// everything except never-submitted), how many of those are still waiting
+// on a decision, and how many are approved. Computed against the real
+// enrolled roster for the assignment's course, not just however many
+// submission documents happen to exist, so "Submitted" genuinely means
+// "out of everyone assigned this."
 exports.listMyAssignments = async (req, res) => {
   try {
     const assignments = await StudentPortalAssignment.find({ createdByTrainer: req.user._id }).sort({ createdAt: -1 }).lean();
-    return res.status(200).json({ items: assignments });
+
+    const withCounts = await Promise.all(
+      assignments.map(async (a) => {
+        const submissions = await StudentPortalAssignmentSubmission.find({ assignment: a._id }, 'status').lean();
+        const submitted = submissions.length;
+        const approved = submissions.filter((s) => s.status === 'approved').length;
+        const pending = submissions.filter((s) => ['submitted', 'late_submitted'].includes(s.status)).length;
+        return { ...a, stats: { submitted, pending, approved } };
+      })
+    );
+
+    return res.status(200).json({ items: withCounts });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load your assignments', error: err.message });
+  }
+};
+
+// Full roster for one assignment: every enrolled/completed student in that
+// assignment's course (the real relationship this schema supports — see
+// StudentPortalAssignment.js on why this is course-scoped, not batch-
+// scoped), left-joined with their submission for THIS assignment if one
+// exists. A student who never submitted still gets a row, status
+// 'not_submitted' — this is what makes the detail view a real roster
+// instead of just a list of whoever happened to submit.
+exports.getAssignmentRoster = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const assignment = await StudentPortalAssignment.findById(id).lean();
+    if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+    if (String(assignment.createdByTrainer) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'You can only view rosters for your own assignments.' });
+    }
+
+    const submissions = await StudentPortalAssignmentSubmission.find({ assignment: id }).lean();
+    const submissionByStudent = new Map(submissions.map((s) => [String(s.student), s]));
+
+    // Roster = currently-enrolled students in this course, UNION anyone who
+    // already submitted here regardless of their current status. Without
+    // the union half, a student who submitted and was later marked
+    // 'dropout' (e.g. by the auto-dropout-on-overdue-payment feature)
+    // would silently vanish from the roster — their real, possibly
+    // already-approved submission would become unreachable through this
+    // view even though the submission document itself is untouched.
+    const currentlyEnrolled = await Student.find(
+      { course: assignment.course, status: { $in: ['enrolled', 'completed'] } },
+      'name email'
+    ).lean();
+
+    const submittedStudentIds = [...submissionByStudent.keys()].filter(
+      (id) => !currentlyEnrolled.some((s) => String(s._id) === id)
+    );
+    const pastSubmitters = submittedStudentIds.length
+      ? await Student.find({ _id: { $in: submittedStudentIds } }, 'name email').lean()
+      : [];
+
+    const students = [...currentlyEnrolled, ...pastSubmitters].sort((a, b) => a.name.localeCompare(b.name));
+
+    const roster = students.map((student) => {
+      const submission = submissionByStudent.get(String(student._id));
+      return {
+        student: { _id: student._id, name: student.name },
+        submissionId: submission?._id || null,
+        status: submission?.status || 'not_submitted',
+        submittedAt: submission?.submittedAt || null,
+        submissionLink: submission?.submissionLink || '',
+        grade: submission?.grade || '',
+        trainerRemarks: submission?.trainerRemarks || '',
+      };
+    });
+
+    return res.status(200).json({ assignment, roster });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load assignment roster', error: err.message });
   }
 };
 

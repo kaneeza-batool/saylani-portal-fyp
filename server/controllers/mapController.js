@@ -11,7 +11,10 @@ const { CITY_COORDS, cityForCampusName } = require('../utils/cityCoords');
 exports.getCampusMap = async (req, res) => {
   try {
     const [students, campuses, trainers] = await Promise.all([
-      Student.find({}, 'campus').populate('campus', 'city'),
+      // Roster convention (excludes pending/rejected) — same as the
+      // Dashboard's "Total Students" KPI and Campus Performance, so a city's
+      // bubble count agrees with every other student count on screen.
+      Student.find({ status: { $nin: ['pending', 'rejected'] } }, 'campus').populate('campus', 'city'),
       Campus.find({}, 'name city status'),
       Trainer.find({}, 'city'),
     ]);

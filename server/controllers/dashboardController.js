@@ -41,6 +41,10 @@ function formatRelativeTime(date) {
   return `${months}mo ago`;
 }
 
+// "Total Students" = the enrolled roster (excludes pending/rejected
+// applicants), same convention as buildCampusPerformance below — the two
+// numbers appear on the same dashboard screen and must agree. See
+// studentAttendanceController.getAttendanceReports for the same $nin.
 async function buildKpis() {
   const since30d = daysAgo(30);
 
@@ -55,8 +59,11 @@ async function buildKpis() {
     pendingEmployers,
     pendingDonations,
   ] = await Promise.all([
-    Student.countDocuments(),
-    Student.countDocuments({ createdAt: { $gte: since30d } }),
+    Student.countDocuments({ status: { $nin: ['pending', 'rejected'] } }),
+    // Scoped to the same roster definition as totalStudents above — this is
+    // its delta, so a newly-created pending applicant (not part of the
+    // total) can't inflate "+X new" without the total itself moving.
+    Student.countDocuments({ status: { $nin: ['pending', 'rejected'] }, createdAt: { $gte: since30d } }),
     Campus.countDocuments({ status: 'active' }),
     Campus.countDocuments({ status: 'active', createdAt: { $gte: since30d } }),
     JobApplication.countDocuments(),
