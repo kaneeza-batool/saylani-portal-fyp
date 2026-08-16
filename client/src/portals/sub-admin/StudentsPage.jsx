@@ -66,7 +66,7 @@ function initials(name) {
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.6fr_1.1fr_1.2fr_1.3fr_1fr_1fr_0.9fr]';
+const GRID_COLS = 'grid-cols-[1.6fr_1.1fr_1.2fr_1.3fr_0.8fr_1fr_1fr_0.9fr]';
 
 const EXPORT_COLUMNS = [
   { header: 'Name', accessor: (s) => s.name },
@@ -74,6 +74,7 @@ const EXPORT_COLUMNS = [
   { header: 'Phone', accessor: (s) => s.phone },
   { header: 'Course', accessor: (s) => s.course },
   { header: 'Batch', accessor: (s) => s.batch?.schedule },
+  { header: 'Progress', accessor: (s) => (s.progress != null ? `${s.progress}%` : '') },
   { header: 'Status', accessor: (s) => s.status },
   { header: 'Payment Status', accessor: (s) => (s.feeStatus ? PAYMENT_STYLE[s.feeStatus.status]?.label ?? s.feeStatus.status : '—') },
 ];
@@ -88,7 +89,7 @@ function RowSkeleton() {
           <div className="h-2.5 w-1/2 bg-neutral-100 rounded animate-pulse" />
         </div>
       </div>
-      {[0, 1, 2, 3, 4].map((i) => (
+      {[0, 1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
@@ -203,7 +204,7 @@ export default function StudentsPage() {
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
         <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Student', 'Phone', 'Course', 'Batch', 'Status', 'Payment Status'].map((h) => (
+          {['Student', 'Phone', 'Course', 'Batch', 'Progress', 'Status', 'Payment Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -248,7 +249,19 @@ export default function StudentsPage() {
                   </div>
                   <span className="text-body-sm text-neutral-600">{s.phone}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{s.batch?.schedule || '—'}</span>
+                  {s.batch?.schedule ? (
+                    <span className="text-body-sm text-neutral-600 truncate">{s.batch.schedule}</span>
+                  ) : s.status === 'enrolled' ? (
+                    <span
+                      className="text-badge px-2 py-0.5 rounded-pill w-fit bg-warning-bg text-warning-text"
+                      title="Enrolled with no batch assigned — won't appear on any Trainer Portal roster until fixed"
+                    >
+                      No batch
+                    </span>
+                  ) : (
+                    <span className="text-body-sm text-neutral-400">—</span>
+                  )}
+                  <span className="text-body-sm text-neutral-600">{s.progress != null ? `${s.progress}%` : '—'}</span>
                   <span
                     className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}
                     title={s.status === 'dropout' ? DROP_REASON_LABEL[s.dropReason] || undefined : undefined}

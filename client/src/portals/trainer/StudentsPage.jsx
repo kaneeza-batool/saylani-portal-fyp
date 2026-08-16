@@ -14,7 +14,7 @@ const SUBMISSION_STYLE = {
   not_approved: { label: 'Needs Revision', className: 'bg-danger-50 text-danger-600' },
 };
 
-const GRID_COLS = 'grid-cols-[1.6fr_0.9fr_0.9fr_1.1fr_1fr_0.7fr]';
+const GRID_COLS = 'grid-cols-[1.6fr_0.9fr_0.9fr_0.9fr_1.1fr_1fr_0.7fr]';
 
 function initials(name) {
   return (
@@ -88,7 +88,7 @@ export default function StudentsPage() {
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
         <div className={`grid ${GRID_COLS} gap-4 px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Student', 'Attendance', 'Quiz Avg', 'Assignment', 'Grade'].map((h) => (
+          {['Student', 'Attendance', 'Quiz Avg', 'Progress', 'Assignment', 'Grade'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -130,6 +130,9 @@ export default function StudentsPage() {
                     {s.attendance != null ? `${s.attendance}%` : '—'}
                   </span>
                   <span className="text-body-sm text-neutral-600">{s.quizAvg != null ? `${s.quizAvg}%` : '—'}</span>
+                  <span className="text-body-sm text-neutral-600" title="Same completion % this student sees on their own Student Portal">
+                    {s.progress != null ? `${s.progress}%` : '—'}
+                  </span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${style.className}`}>{style.label}</span>
                   <select
                     value={s.grade || ''}

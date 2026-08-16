@@ -9,8 +9,12 @@ import { BookIcon, GraduationCapIcon, ClipboardIcon } from '../../components/ico
 // Portal.html — a 2-col grid of batch cards, each with a progress ring and
 // two quick actions. Backed by GET /api/trainer/dashboard, which reads the
 // logged-in trainer's assigned Slot documents (Slot.assignedTrainer).
-// There's no "course completion %" anywhere in the data model, so the ring
-// shows seat-fill % (seatsFilled/seatsTotal) instead — see the controller.
+// `pct` is the batch's average real course progress (quiz-attempted % +
+// assignment-submitted %, same formula students see on their own Student
+// Portal — see server/utils/courseProgress.js), not seat-fill — seat-fill
+// is already shown separately as the "X / Y students" line on the same
+// card, so this ring used to just duplicate that instead of showing
+// anything about actual learning progress.
 //
 // The welcome line + stat cards above the grid are derived entirely from
 // that same batches array (no extra API call) — see buildSummary() below.
