@@ -1,6 +1,7 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
-import { getAllNotifications } from '../services/notificationService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getAllNotifications, markNotificationRead } from '../services/notificationService';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { BellIcon } from '../components/icons';
 
@@ -27,9 +28,18 @@ function RowSkeleton() {
 }
 
 export default function NotificationsPage() {
+  const queryClient = useQueryClient();
   const { data: notifications, isLoading, isError, refetch } = useQuery({
     queryKey: ['notifications', 'all'],
     queryFn: getAllNotifications,
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'all'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
   });
 
   return (
@@ -68,35 +78,59 @@ export default function NotificationsPage() {
             animate="visible"
             className="flex flex-col divide-y divide-neutral-100"
           >
-            {notifications.map((n) => (
-              <motion.div
-                key={n._id}
-                variants={fadeInUp}
-                data-testid="notification-history-item"
-                data-read={n.isRead}
-                data-dismissed={n.isDismissed}
-                className={`flex items-start gap-3 px-4 sm:px-5 py-4 ${n.isRead ? 'bg-white' : 'bg-info-bg/40'}`}
-              >
-                <span className="text-lg leading-none shrink-0 mt-0.5">{n.icon}</span>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm flex items-center flex-wrap gap-1.5 ${n.isRead ? 'font-medium text-neutral-700' : 'font-bold text-neutral-900'}`}>
-                    {n.title}
-                    {!n.isRead && (
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-accent-700 bg-accent-500/20 rounded-pill px-1.5 py-0.5">
-                        Unread
-                      </span>
-                    )}
-                    {n.isDismissed && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400 bg-neutral-100 rounded-pill px-1.5 py-0.5">
-                        Dismissed
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-sm text-neutral-500 mt-1">{n.message}</p>
-                  <p className="text-xs text-neutral-400 mt-1.5">{formatTimestamp(n.createdAt)}</p>
-                </div>
-              </motion.div>
-            ))}
+            {notifications.map((n) => {
+              const rowClass = `flex items-start gap-3 px-4 sm:px-5 py-4 ${n.isRead ? 'bg-white' : 'bg-info-bg/40'} ${
+                n.link ? 'hover:bg-neutral-50 transition-colors cursor-pointer' : ''
+              }`;
+              const content = (
+                <>
+                  <span className="text-lg leading-none shrink-0 mt-0.5">{n.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm flex items-center flex-wrap gap-1.5 ${n.isRead ? 'font-medium text-neutral-700' : 'font-bold text-neutral-900'}`}>
+                      {n.title}
+                      {!n.isRead && (
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-accent-700 bg-accent-500/20 rounded-pill px-1.5 py-0.5">
+                          Unread
+                        </span>
+                      )}
+                      {n.isDismissed && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400 bg-neutral-100 rounded-pill px-1.5 py-0.5">
+                          Dismissed
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-sm text-neutral-500 mt-1">{n.message}</p>
+                    <p className="text-xs text-neutral-400 mt-1.5">{formatTimestamp(n.createdAt)}</p>
+                  </div>
+                </>
+              );
+
+              // Only notifications with somewhere to go (see link on the
+              // model) navigate on click — purely informational ones (no
+              // link) stay a static row, same as before.
+              return n.link ? (
+                <motion.div key={n._id} variants={fadeInUp} data-testid="notification-history-item" data-read={n.isRead} data-dismissed={n.isDismissed}>
+                  <Link
+                    to={n.link}
+                    onClick={() => !n.isRead && markReadMutation.mutate(n._id)}
+                    className={`${rowClass} no-underline text-inherit`}
+                  >
+                    {content}
+                  </Link>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={n._id}
+                  variants={fadeInUp}
+                  data-testid="notification-history-item"
+                  data-read={n.isRead}
+                  data-dismissed={n.isDismissed}
+                  className={rowClass}
+                >
+                  {content}
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </div>
