@@ -7,7 +7,7 @@ import { BotIcon } from '../components/icons';
 
 function greeting(student) {
   const name = student?.fullName?.split(' ')[0] || 'there';
-  return `Hi ${name}! I'm the TITAN Assistant. Ask me about your course, campuses, eligibility, admissions, or anything else about TITAN — for your own attendance/grades/fee status, check the relevant portal page instead, since I can't see your live account data.`;
+  return `Hi ${name}! I'm the TITAN Assistant. Ask me about your own progress, attendance, quizzes, and assignments, or about TITAN's courses, campuses, eligibility, and admissions.`;
 }
 
 export default function AskTitanPage() {
