@@ -7,7 +7,6 @@ import { getRoleHome } from './utils/roleHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import TrainerRegisterPage from './pages/TrainerRegisterPage';
-import EmployerRegisterPage from './pages/EmployerRegisterPage';
 import PublicLayout from './layouts/PublicLayout';
 import DonorPublicLayout from './layouts/DonorPublicLayout';
 import CareersPage from './pages/public/CareersPage';
@@ -71,10 +70,6 @@ import TrainerQuizzesPage from './portals/trainer/QuizzesPage';
 import TrainerStudentsPage from './portals/trainer/StudentsPage';
 import TrainerResourcesPage from './portals/trainer/ResourcesPage';
 import TrainerProfilePage from './portals/trainer/ProfilePage';
-import EmployerLayout from './layouts/EmployerLayout';
-import EmployerDashboardPage from './portals/employer/DashboardPage';
-import EmployerApplicationsPage from './portals/employer/ApplicationsPage';
-import EmployerProfilePage from './portals/employer/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,7 +100,6 @@ function App() {
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/trainer/register" element={<TrainerRegisterPage />} />
-                <Route path="/employer/register" element={<EmployerRegisterPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route element={<PublicLayout />}>
@@ -204,15 +198,6 @@ function App() {
                     <Route path="students" element={<TrainerStudentsPage />} />
                     <Route path="resources" element={<TrainerResourcesPage />} />
                     <Route path="profile" element={<TrainerProfilePage />} />
-                  </Route>
-                </Route>
-
-                <Route element={<ProtectedRoute allowedRoles={['employer']} />}>
-                  <Route path="/employer" element={<EmployerLayout />}>
-                    <Route index element={<Navigate to="/employer/dashboard" replace />} />
-                    <Route path="dashboard" element={<EmployerDashboardPage />} />
-                    <Route path="applications" element={<EmployerApplicationsPage />} />
-                    <Route path="profile" element={<EmployerProfilePage />} />
                   </Route>
                 </Route>
 

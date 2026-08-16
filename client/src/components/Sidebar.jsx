@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { NAV_LOOKUP as TRAINER_NAV_LOOKUP } from './TrainerSidebar';
-import { NAV_LOOKUP as EMPLOYER_NAV_LOOKUP } from './EmployerSidebar';
 import { getAdmissions } from '../services/admissionService';
 
 const ICON_PROPS = {
@@ -518,11 +517,11 @@ export const NAV_LOOKUP = (function flatten(items, acc = {}) {
   return acc;
 })(NAV_ITEMS);
 
-// Trainer Portal and Employer Portal each have their own flat sidebar
-// (TrainerSidebar.jsx / EmployerSidebar.jsx), not a role branch of
-// NAV_ITEMS above — merged in here so TopBar's single NAV_LOOKUP import
-// still resolves their page titles instead of falling back to "Dashboard".
-Object.assign(NAV_LOOKUP, TRAINER_NAV_LOOKUP, EMPLOYER_NAV_LOOKUP);
+// Trainer Portal has its own flat sidebar (TrainerSidebar.jsx), not a role
+// branch of NAV_ITEMS above — merged in here so TopBar's single NAV_LOOKUP
+// import still resolves its page titles instead of falling back to
+// "Dashboard".
+Object.assign(NAV_LOOKUP, TRAINER_NAV_LOOKUP);
 
 // A role sees an item only if it's listed in `roles`; if the item also
 // carries a `permission`, that's an additional per-user gate — except for

@@ -1,6 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const OpenAI = require('openai');
+const CourseModule = require('../models/CourseModule');
+const Quiz = require('../models/Quiz');
+const QuizAttempt = require('../models/QuizAttempt');
+const Assignment = require('../models/Assignment');
+const AssignmentSubmission = require('../models/AssignmentSubmission');
+const StudentAttendance = require('../models/StudentAttendance');
 
 const EMBEDDINGS_PATH = path.join(__dirname, '..', 'data', 'knowledgeBaseEmbeddings.json');
 const TOP_K = 5; // small corpus (8 chunks total) — generous top-k so a
@@ -41,7 +47,50 @@ function buildSystemPrompt(student) {
   const who = student
     ? `The student you're talking to is ${student.fullName || student.name || 'a TITAN student'}${student.course ? `, enrolled in ${student.course}` : ''}. Use this to personalize answers (e.g. referring to "your course") when relevant, but don't repeat it back unprompted.`
     : '';
-  return `You are the TITAN Assistant, a helpful chatbot inside TITAN's (Taj Institute of Technology & Applied Networks) Student Portal. You answer enrolled students' questions about TITAN — campuses, courses, eligibility, policies, and what the institute offers — using ONLY the context provided below each turn. For anything specific to THIS student's own records (their exact attendance %, grades, fee status, etc.), tell them to check the relevant Student Portal page (Attendance, Progress, Payment) instead of guessing, since you don't have access to their live account data. If the answer isn't in the provided context either, say you don't have that specific information and suggest they use "Ask a Doubt" or contact their campus. ${who} Keep answers concise, friendly, and specific — avoid generic filler.`;
+  return `You are the TITAN Assistant, a helpful chatbot inside TITAN's (Taj Institute of Technology & Applied Networks) Student Portal. You answer enrolled students' questions about TITAN — campuses, courses, eligibility, policies, and what the institute offers — using ONLY the context provided below each turn. You are ALSO given this student's real, live progress snapshot (attendance, quizzes, assignments, overall course progress) below — use it directly to answer questions about their own progress, don't deflect to "check the Progress page" when the numbers are right there. Only fall back to suggesting they check the portal, use "Ask a Doubt", or contact their campus for things genuinely not covered by either the knowledge context or their progress snapshot (e.g. exact fee amounts, grading disputes). ${who} Keep answers concise, friendly, and specific — avoid generic filler.`;
+}
+
+// Same queries progressController.getProgress / attendanceController.
+// getAttendanceSummary already run for their own pages — reused here
+// (not fetched over HTTP) so the bot can answer "what's my progress"
+// directly instead of deflecting to a page that has the exact same data.
+async function getStudentProgressSnapshot(student) {
+  const course = student.course;
+
+  const [modules, totalQuizzes, attemptedQuizIds, totalAssignments, submittedAssignmentIds, attendanceRecords] =
+    await Promise.all([
+      CourseModule.find({ student: student._id }),
+      Quiz.countDocuments({ course }),
+      QuizAttempt.distinct('quiz', { student: student._id }),
+      Assignment.countDocuments({ course }),
+      AssignmentSubmission.distinct('assignment', { student: student._id }),
+      StudentAttendance.find({ student: student._id, course }),
+    ]);
+
+  const totalTopics = modules.reduce((sum, m) => sum + m.topics.length, 0);
+  const completedTopics = modules.reduce((sum, m) => sum + m.topics.filter((t) => t.isCompleted).length, 0);
+
+  const categories = [
+    totalTopics > 0 ? completedTopics / totalTopics : null,
+    totalQuizzes > 0 ? Math.min(attemptedQuizIds.length, totalQuizzes) / totalQuizzes : null,
+    totalAssignments > 0 ? Math.min(submittedAssignmentIds.length, totalAssignments) / totalAssignments : null,
+  ].filter((v) => v !== null);
+  const overallPercentage = categories.length
+    ? Math.round((categories.reduce((sum, v) => sum + v, 0) / categories.length) * 100)
+    : 0;
+
+  const present = attendanceRecords.filter((r) => r.status === 'present').length;
+  const leave = attendanceRecords.filter((r) => r.status === 'leave').length;
+  const absent = attendanceRecords.filter((r) => r.status === 'absent').length;
+  const attendanceDenominator = present + absent;
+  const attendancePercentage =
+    attendanceDenominator > 0 ? Math.round((present / attendanceDenominator) * 1000) / 10 : 0;
+
+  return `Course: ${course || 'not set'}
+Overall course progress: ${overallPercentage}%
+Quizzes: ${attemptedQuizIds.length} of ${totalQuizzes} attempted
+Assignments: ${submittedAssignmentIds.length} of ${totalAssignments} submitted
+Attendance: ${attendancePercentage}% (${present} present, ${absent} absent, ${leave} leave, out of ${attendanceRecords.length} recorded classes)`;
 }
 
 exports.chat = async (req, res) => {
@@ -61,9 +110,11 @@ exports.chat = async (req, res) => {
       return res.status(503).json({ message: 'The assistant\'s knowledge base is not ready yet. Please try again later.' });
     }
 
-    const queryEmbedding = (
-      await client.embeddings.create({ model: 'text-embedding-3-small', input: message })
-    ).data[0].embedding;
+    const [queryEmbeddingRes, progressSnapshot] = await Promise.all([
+      client.embeddings.create({ model: 'text-embedding-3-small', input: message }),
+      getStudentProgressSnapshot(req.student).catch(() => null), // never block the chat on a progress-query failure
+    ]);
+    const queryEmbedding = queryEmbeddingRes.data[0].embedding;
 
     const topChunks = chunks
       .map((c) => ({ ...c, score: cosineSimilarity(queryEmbedding, c.embedding) }))
@@ -76,6 +127,7 @@ exports.chat = async (req, res) => {
     const messages = [
       { role: 'system', content: buildSystemPrompt(req.student) },
       { role: 'system', content: `Context:\n\n${context}` },
+      ...(progressSnapshot ? [{ role: 'system', content: `This student's live progress snapshot:\n\n${progressSnapshot}` }] : []),
       ...recentHistory
         .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
         .map((m) => ({ role: m.role, content: m.content })),

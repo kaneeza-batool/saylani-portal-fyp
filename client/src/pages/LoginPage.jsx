@@ -178,12 +178,6 @@ export default function LoginPage() {
             >
               Are you a trainer? Create an account
             </Link>
-            <Link
-              to="/employer/register"
-              className="block text-center text-caption text-navy-300 hover:text-gold-400 transition-colors"
-            >
-              Are you an employer? Create an account
-            </Link>
           </motion.div>
         </motion.form>
       </motion.div>
