@@ -20,7 +20,11 @@ const ROSTER_STATUSES = ['enrolled', 'completed', 'dropout'];
 async function main() {
   await mongoose.connect(process.env.MONGO_URI);
 
-  const slots = await Slot.find({}, 'course campus').lean();
+  // Only active slots — an inactive/retired Slot never surfaces to its own
+  // trainer either (see trainerDashboardController.myBatchesFilter, which
+  // filters status:'active'), so assigning a student there would make them
+  // invisible everywhere, not just to a different trainer.
+  const slots = await Slot.find({ status: 'active' }, 'course campus').lean();
   const slotsByKey = new Map(); // `${campusId}|${course}` -> [slotId, ...]
   for (const s of slots) {
     const key = `${s.campus}|${s.course}`;

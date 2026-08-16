@@ -84,3 +84,8 @@ export async function getMyAttendance() {
   const { data } = await api.get('/trainer/my-attendance');
   return data.items;
 }
+
+export async function markAttendanceByRollNumber(payload) {
+  const { data } = await api.post('/trainer/attendance/scan', payload);
+  return data;
+}

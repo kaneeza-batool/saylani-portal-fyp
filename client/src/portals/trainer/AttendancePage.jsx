@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMyAttendanceCourses, getAttendanceRoster, markAttendance } from '../../services/trainerDashboardService';
+import TrainerQrScanModal from '../../components/TrainerQrScanModal';
 
 // Real now — writes into the same StudentAttendance collection Super Admin
 // and Sub-Admin already read from (see trainerStudentAttendanceController
@@ -73,6 +74,7 @@ export default function AttendancePage() {
   const [course, setCourse] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [overrides, setOverrides] = useState({});
+  const [scanOpen, setScanOpen] = useState(false);
 
   useEffect(() => {
     if (!course && courses?.length) setCourse(courses[0].name);
@@ -137,13 +139,29 @@ export default function AttendancePage() {
             className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors"
           />
         </div>
-        <button
-          type="button"
-          onClick={markAllPresent}
-          className="border border-success-bg bg-success-bg text-success-text text-body-sm font-semibold px-3.5 py-[9px] rounded cursor-pointer transition-colors hover:brightness-95"
-        >
-          Mark All Present
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            disabled={!course}
+            onClick={() => setScanOpen(true)}
+            className="inline-flex items-center gap-1.5 border border-[var(--trainer-blue)] bg-surface text-[var(--trainer-blue)] text-body-sm font-semibold px-3.5 py-[9px] rounded cursor-pointer transition-colors hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
+            </svg>
+            Scan Student ID
+          </button>
+          <button
+            type="button"
+            onClick={markAllPresent}
+            className="border border-success-bg bg-success-bg text-success-text text-body-sm font-semibold px-3.5 py-[9px] rounded cursor-pointer transition-colors hover:brightness-95"
+          >
+            Mark All Present
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -179,6 +197,17 @@ export default function AttendancePage() {
           {saveMutation.isPending ? 'Saving...' : saveMutation.isSuccess ? 'Saved ✓' : 'Save Attendance'}
         </button>
       </div>
+
+      <TrainerQrScanModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        course={course}
+        date={date}
+        onMarked={(student) => {
+          setOverrides((prev) => ({ ...prev, [student._id]: 'present' }));
+          queryClient.invalidateQueries({ queryKey: ['trainer-attendance-roster', course, date] });
+        }}
+      />
     </motion.div>
   );
 }

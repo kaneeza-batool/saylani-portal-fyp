@@ -11,7 +11,12 @@ const {
   getPendingReviewCount,
 } = require('../controllers/trainerAssignmentController');
 const { listMyStudents, setStudentGrade } = require('../controllers/trainerStudentsController');
-const { listMyAttendanceCourses, getRosterForDate, markAttendance } = require('../controllers/trainerStudentAttendanceController');
+const {
+  listMyAttendanceCourses,
+  getRosterForDate,
+  markAttendance,
+  markByRollNumber,
+} = require('../controllers/trainerStudentAttendanceController');
 const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
 
@@ -36,5 +41,6 @@ router.patch('/students/:studentId/grade', setStudentGrade);
 router.get('/attendance/courses', listMyAttendanceCourses);
 router.get('/attendance', getRosterForDate);
 router.post('/attendance', markAttendance);
+router.post('/attendance/scan', markByRollNumber);
 
 module.exports = router;
