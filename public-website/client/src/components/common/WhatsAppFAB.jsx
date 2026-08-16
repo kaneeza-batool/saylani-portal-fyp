@@ -1,8 +1,8 @@
 import useFooterInView from '../../hooks/useFooterInView';
 
-// Same institute UAN shown in Footer/Contact (111-848-261), reformatted for
-// a wa.me deep link (country code + digits, no spaces/dashes/parens).
-const WHATSAPP_NUMBER = '92118848261';
+// Direct WhatsApp contact number, reformatted for a wa.me deep link
+// (country code + digits, no leading 0, no spaces/dashes/parens).
+const WHATSAPP_NUMBER = '923363861387';
 const WHATSAPP_MESSAGE = "Hi TITAN, I'd like to know more about your programs.";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
