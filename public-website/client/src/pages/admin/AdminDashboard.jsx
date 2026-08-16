@@ -8,7 +8,7 @@ import { CATEGORY_LABELS } from '../../data/categoryLabels';
    Table of every course (active + inactive) with Edit/Deactivate/Add New.
    ============================================================ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 const AdminDashboard = () => {
   const location = useLocation();
@@ -117,7 +117,19 @@ const AdminDashboard = () => {
             <tbody>
               {courses.map((course) => (
                 <tr key={course._id} className="border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50/60">
-                  <td className="px-4 py-3 font-semibold text-neutral-900 max-w-xs truncate">{course.title}</td>
+                  <td className="px-4 py-3 font-semibold text-neutral-900 max-w-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">{course.title}</span>
+                      {!course.img && (
+                        <span
+                          title="This course has no image set"
+                          className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border text-warning-text bg-warning-bg border-warning-text/20 whitespace-nowrap"
+                        >
+                          Missing Image
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">{CATEGORY_LABELS[course.category] || course.category}</td>
                   <td className="px-4 py-3">
                     <span

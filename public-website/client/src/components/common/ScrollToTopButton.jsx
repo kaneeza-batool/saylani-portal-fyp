@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import useFooterInView from '../../hooks/useFooterInView';
 
 const ScrollToTopButton = () => {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const footerInView = useFooterInView();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,7 +25,10 @@ const ScrollToTopButton = () => {
     });
   };
 
-  if (!showScrollBtn) return null;
+  // Hides once the footer is in view — this button sits at a fixed
+  // bottom-right screen position that would otherwise always land on top
+  // of the footer's last row once a visitor scrolls that far.
+  if (!showScrollBtn || footerInView) return null;
 
   return (
     <button
