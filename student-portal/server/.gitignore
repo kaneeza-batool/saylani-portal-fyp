@@ -1,3 +1,7 @@
 node_modules
 .env
 *.log
+
+# User-uploaded files — local disk storage, not source, same as the main
+# app's server/uploads/ convention.
+uploads/

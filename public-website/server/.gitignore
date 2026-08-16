@@ -1,3 +1,7 @@
 node_modules/
 .env
 logs/
+
+# Applicant-submitted files (CNIC scans, photos) — real PII, never source
+# control. uploads/courses/ (admin-curated marketing images) stays tracked.
+uploads/applications/
