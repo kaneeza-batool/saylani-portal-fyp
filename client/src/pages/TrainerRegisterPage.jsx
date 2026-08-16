@@ -5,10 +5,17 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getRoleHome } from '../utils/roleHome';
 import { fetchPublicCampuses } from '../services/authService';
+import DarkPasswordField from '../components/DarkPasswordField';
 
 const inputClass =
-  'titan-dark-input border border-white/15 bg-white/[0.04] text-white placeholder:text-navy-300 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors';
+  'titan-dark-input border border-white/15 bg-white/[0.04] text-white placeholder:text-navy-300 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 focus:shadow-[0_0_0_3px_rgba(201,162,39,0.15)] transition-all';
 const labelClass = 'text-caption font-semibold text-navy-100';
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+};
+const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } } };
 
 export default function TrainerRegisterPage() {
   const { user, loading, registerTrainer: submitRegistration } = useAuth();
@@ -61,7 +68,7 @@ export default function TrainerRegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-navy-900 font-sans px-4 overflow-hidden py-10">
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-navy-900 font-sans px-4 py-12 overflow-hidden">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_#12234A_0%,_#080F22_70%)]" />
         <motion.div
@@ -85,34 +92,52 @@ export default function TrainerRegisterPage() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative w-full max-w-[440px] bg-white/[0.03] backdrop-blur-xl border border-gold-500/20 rounded-xl p-[34px] flex flex-col gap-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+        className="relative w-full max-w-[440px] my-auto bg-white/[0.03] backdrop-blur-xl border border-gold-500/20 rounded-xl px-8 py-7 flex flex-col gap-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
       >
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-[160px]">
+        <div className="flex flex-col items-center gap-1.5">
+          <motion.div
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+            whileHover={{ scale: 1.04 }}
+            className="w-[80px]"
+          >
             <img
               src="/logo.png"
-              alt="TITAN — Taj Institute of Technology &amp; Applied Networks"
+              alt="TITAN"
               className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(201,162,39,0.45)]"
             />
+          </motion.div>
+          <div className="text-center mt-1">
+            <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-gold-400">
+              Taj Institute of Technology
+            </div>
+            <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-gold-400">&amp; Applied Networks</div>
           </div>
-          <div className="text-caption text-navy-300 font-normal mt-1">Trainer Portal — Create Account</div>
+          <div className="text-caption text-navy-300 font-normal mt-1.5">Trainer Portal — Create Account</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          <div className="flex flex-col gap-1.5">
+        <motion.form
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-3.5"
+        >
+          <motion.div variants={fieldVariants} className="flex flex-col gap-1.5">
             <label htmlFor="name" className={labelClass}>Full Name</label>
             <input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className={inputClass} />
-          </div>
+          </motion.div>
 
-          <div className="flex flex-col gap-1.5">
+          <motion.div variants={fieldVariants} className="flex flex-col gap-1.5">
             <label htmlFor="email" className={labelClass}>Email</label>
             <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@titan.edu" className={inputClass} />
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="phone" className={labelClass}>Phone</label>
               <input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0300-1234567" className={inputClass} />
@@ -121,9 +146,9 @@ export default function TrainerRegisterPage() {
               <label htmlFor="course" className={labelClass}>Course you teach</label>
               <input id="course" value={course} onChange={(e) => setCourse(e.target.value)} placeholder="e.g. Web Development" className={inputClass} />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="flex flex-col gap-1.5">
+          <motion.div variants={fieldVariants} className="flex flex-col gap-1.5">
             <label htmlFor="campus" className={labelClass}>Campus</label>
             <select
               id="campus"
@@ -139,35 +164,60 @@ export default function TrainerRegisterPage() {
                 </option>
               ))}
             </select>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="password" className={labelClass}>Password</label>
-              <input id="password" type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className={inputClass} />
+              <DarkPasswordField
+                id="password"
+                autoComplete="new-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="confirmPassword" className={labelClass}>Confirm Password</label>
-              <input id="confirmPassword" type="password" autoComplete="new-password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter password" className={inputClass} />
+              <DarkPasswordField
+                id="confirmPassword"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter password"
+              />
             </div>
-          </div>
+          </motion.div>
 
           {error && (
-            <div className="text-caption text-danger-600 bg-surface border border-danger-200 rounded px-3 py-2">{error}</div>
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="text-caption text-danger-600 bg-surface border border-danger-200 rounded px-3 py-2 overflow-hidden"
+            >
+              {error}
+            </motion.div>
           )}
 
-          <button
+          <motion.button
+            variants={fieldVariants}
+            whileHover={{ scale: 1.015 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={submitting}
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded px-4 py-[11px] text-body font-semibold bg-gradient-to-r from-gold-400 to-gold-600 text-navy-900 transition-all hover:shadow-[0_8px_24px_rgba(201,162,39,0.4)] hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded px-4 py-[11px] text-body font-semibold bg-gradient-to-r from-gold-400 to-gold-600 text-navy-900 transition-shadow hover:shadow-[0_8px_24px_rgba(201,162,39,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {submitting ? 'Creating account...' : 'Create Account'}
-          </button>
+          </motion.button>
 
-          <Link to="/login" className="text-center text-caption text-navy-300 hover:text-gold-400 transition-colors">
-            Already have an account? Sign in
-          </Link>
-        </form>
+          <motion.div variants={fieldVariants}>
+            <Link to="/login" className="block text-center text-caption text-navy-300 hover:text-gold-400 transition-colors">
+              Already have an account? Sign in
+            </Link>
+          </motion.div>
+        </motion.form>
       </motion.div>
     </div>
   );
