@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getAttendanceSummary, getAttendanceByMonth } from '../services/attendanceService';
-import { getProgress } from '../services/progressService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { staggerContainer } from '../lib/motionVariants';
 import { CertificateIcon } from '../components/icons';
@@ -71,16 +70,15 @@ export default function AttendancePage() {
     queryFn: () => getAttendanceByMonth(selectedMonth),
   });
 
-  const { data: progress } = useQuery({
-    queryKey: ['progress'],
-    queryFn: () => getProgress(),
-  });
-
   useEffect(() => {
     if (!selectedMonth && monthly?.month) setSelectedMonth(monthly.month);
   }, [monthly, selectedMonth]);
 
-  const message = summary ? attendanceMessage(summary.percentage, progress?.overallPercentage === 100) : null;
+  // isCourseComplete is always false here — Student.course is a plain name
+  // string (no Course id to fetch progress for), so this page has no way to
+  // know completion status. Was previously sourced from a getProgress() call
+  // with no id, which 500'd on every load and always resolved to false anyway.
+  const message = summary ? attendanceMessage(summary.percentage, false) : null;
   const bannerClass = {
     success: 'bg-success-bg text-success-text',
     warning: 'bg-warning-bg text-warning-text',
