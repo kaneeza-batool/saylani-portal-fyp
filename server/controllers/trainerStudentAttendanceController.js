@@ -2,22 +2,53 @@
 // trainerAttendanceController.js, which tracks a trainer's own check-in/
 // check-out (a completely different feature; same "trainer" word, wrong
 // file to touch, hence the more specific name here).
+const Slot = require('../models/Slot');
 const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
+const { myBatchesFilter } = require('./trainerDashboardController');
 
-// Course-scoped, same reasoning as trainerAssignmentController.js — Student
-// has no batch/Slot field, so "the roster for this batch" really means
-// "enrolled students in this course," the actual relationship the schema
-// supports.
+// Backs the Attendance page's course dropdown — the trainer's own courses
+// only, derived from their own batches (same ownership pattern as
+// trainerStudentsController.listMyStudents), NOT the global 7-course
+// catalog trainerQuizController.listCourses returns for Quiz Builder/
+// Assignments. A course name isn't unique to one trainer — two different
+// trainers can each own a batch called "Web Development" — so this list
+// (and every check below) is scoped by the trainer's own Slot ownership,
+// never by the course string alone.
+exports.listMyAttendanceCourses = async (req, res) => {
+  try {
+    const slots = await Slot.find(myBatchesFilter(req.user), 'course').lean();
+    const courses = [...new Set(slots.map((s) => s.course))].sort();
+    return res.status(200).json({ items: courses.map((name) => ({ name })) });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load your courses', error: err.message });
+  }
+};
+
+// The trainer's own batch id(s) for a given course name — the real
+// ownership boundary. Returns [] if the trainer owns no batch of that
+// course, which callers treat as a 403, not an empty-but-valid roster.
+async function myBatchIdsForCourse(user, course) {
+  const slots = await Slot.find({ ...myBatchesFilter(user), course }, '_id').lean();
+  return slots.map((s) => s._id);
+}
+
 exports.getRosterForDate = async (req, res) => {
   try {
     const { course, date } = req.query;
     if (!course || !date) return res.status(400).json({ message: 'course and date are required.' });
 
+    const batchIds = await myBatchIdsForCourse(req.user, course);
+    if (batchIds.length === 0) {
+      return res.status(403).json({ message: 'You can only take attendance for your own batches.' });
+    }
+
     const dayStart = new Date(new Date(date).toDateString());
 
     const [students, existing] = await Promise.all([
-      Student.find({ course, status: { $in: ['enrolled', 'completed'] } }, 'name rollNumber').sort({ name: 1 }).lean(),
+      Student.find({ batch: { $in: batchIds }, status: { $in: ['enrolled', 'completed'] } }, 'name rollNumber')
+        .sort({ name: 1 })
+        .lean(),
       StudentAttendance.find({ course, date: dayStart }).lean(),
     ]);
 
@@ -53,9 +84,20 @@ exports.markAttendance = async (req, res) => {
       return res.status(400).json({ message: 'course, date, and records are required.' });
     }
 
+    const batchIds = await myBatchIdsForCourse(req.user, course);
+    if (batchIds.length === 0) {
+      return res.status(403).json({ message: 'You can only take attendance for your own batches.' });
+    }
+
     const dayStart = new Date(new Date(date).toDateString());
     const studentIds = records.map((r) => r.studentId);
-    const students = await Student.find({ _id: { $in: studentIds } }).populate('campus', 'name').lean();
+    // Scoped to the trainer's own batch(es) for this course — a studentId
+    // in the payload that isn't actually in one of those batches is
+    // silently dropped below, same as an unrecognized id always was, not
+    // trusted just because the course name matched.
+    const students = await Student.find({ _id: { $in: studentIds }, batch: { $in: batchIds } })
+      .populate('campus', 'name')
+      .lean();
     const studentById = new Map(students.map((s) => [String(s._id), s]));
 
     const ops = records

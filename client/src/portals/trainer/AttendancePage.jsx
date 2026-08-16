@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getTrainerCourses, getAttendanceRoster, markAttendance } from '../../services/trainerDashboardService';
+import { getMyAttendanceCourses, getAttendanceRoster, markAttendance } from '../../services/trainerDashboardService';
 
 // Real now — writes into the same StudentAttendance collection Super Admin
 // and Sub-Admin already read from (see trainerStudentAttendanceController
@@ -69,7 +69,7 @@ function StudentRow({ row, onSetStatus }) {
 
 export default function AttendancePage() {
   const queryClient = useQueryClient();
-  const { data: courses } = useQuery({ queryKey: ['trainer-courses'], queryFn: getTrainerCourses });
+  const { data: courses } = useQuery({ queryKey: ['trainer-attendance-courses'], queryFn: getMyAttendanceCourses });
   const [course, setCourse] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [overrides, setOverrides] = useState({});

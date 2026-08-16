@@ -50,6 +50,11 @@ export async function getAssignmentRoster(id) {
   return data;
 }
 
+export async function getMyAttendanceCourses() {
+  const { data } = await api.get('/trainer/attendance/courses');
+  return data.items;
+}
+
 export async function getAttendanceRoster(course, date) {
   const { data } = await api.get('/trainer/attendance', { params: { course, date } });
   return data.roster;
