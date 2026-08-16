@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { createCourse, deleteCourse, fetchCourses, updateCourse } from '../../services/courseService';
-import CourseFormModal from '../../components/CourseFormModal';
-import ConfirmDialog from '../../components/ConfirmDialog';
+import { fetchCourses } from '../../services/courseService';
 import ExportButtons from '../../components/ExportButtons';
+
+// Read-only — this collection is the public website's own course catalog
+// (real marketing content it serves on /programs), not a resource this app
+// owns or writes. See server/models/Course.js and server/routes/courseRoutes.js
+// for why: two independent admin panels writing the same collection with
+// incompatible schemas is what produced blank rows here before this fix.
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
@@ -12,20 +16,20 @@ const STATUS_STYLE = {
 };
 
 const EXPORT_COLUMNS = [
-  { header: 'Course', accessor: (c) => c.name },
-  { header: 'Description', accessor: (c) => c.description },
-  { header: 'Duration (weeks)', accessor: (c) => c.durationWeeks },
-  { header: 'Status', accessor: (c) => c.status },
+  { header: 'Course', accessor: (c) => c.title },
+  { header: 'Category', accessor: (c) => c.category },
+  { header: 'Duration', accessor: (c) => c.duration },
+  { header: 'Status', accessor: (c) => (c.isActive ? 'active' : 'inactive') },
 ];
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.4fr_2fr_1fr_0.8fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.6fr_1fr_1.2fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
-      {[0, 1, 2, 3, 4].map((i) => (
+    <div className={`grid ${GRID_COLS} min-w-[640px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+      {[0, 1, 2, 3].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
@@ -33,14 +37,10 @@ function RowSkeleton() {
 }
 
 export default function CoursesPage() {
-  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
-  const [modal, setModal] = useState({ open: false, mode: 'add', item: null });
-  const [formError, setFormError] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -55,60 +55,9 @@ export default function CoursesPage() {
     keepPreviousData: true,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['courses'] });
-
-  const createMutation = useMutation({
-    mutationFn: createCourse,
-    onSuccess: () => {
-      invalidate();
-      setModal({ open: false, mode: 'add', item: null });
-      setFormError('');
-    },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to add course.'),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, payload }) => updateCourse(id, payload),
-    onSuccess: () => {
-      invalidate();
-      setModal({ open: false, mode: 'add', item: null });
-      setFormError('');
-    },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to update course.'),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteCourse,
-    onSuccess: () => {
-      invalidate();
-      setDeleteTarget(null);
-    },
-  });
-
-  const openAdd = () => {
-    setFormError('');
-    setModal({ open: true, mode: 'add', item: null });
-  };
-  const openEdit = (item) => {
-    setFormError('');
-    setModal({ open: true, mode: 'edit', item });
-  };
-  const closeModal = () => setModal((m) => ({ ...m, open: false }));
-
-  const handleSubmit = (values) => {
-    if (modal.mode === 'add') createMutation.mutate(values);
-    else updateMutation.mutate({ id: modal.item._id, payload: values });
-  };
-
-  const handleDelete = (item) => setDeleteTarget(item);
-  const confirmDelete = () => {
-    if (deleteTarget) deleteMutation.mutate(deleteTarget._id);
-  };
-
   const items = data?.items ?? [];
   const pages = data?.pages ?? 1;
   const total = data?.total ?? 0;
-  const submitting = createMutation.isPending || updateMutation.isPending;
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
@@ -140,28 +89,19 @@ export default function CoursesPage() {
 
         <div className="flex items-center gap-2.5">
           <ExportButtons title="Courses" filenameBase="titan-courses" columns={EXPORT_COLUMNS} rows={items} />
-
-          <button
-            type="button"
-            onClick={openAdd}
-            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Add Course
-          </button>
+          <span className="text-caption text-neutral-400">
+            Managed on the public website — <span className="font-semibold">view only</span>
+          </span>
         </div>
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
-        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Course', 'Description', 'Duration', 'Status'].map((h) => (
+        <div className={`grid ${GRID_COLS} min-w-[640px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+          {['Course', 'Category', 'Duration', 'Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
           ))}
-          <span className="text-overline uppercase text-neutral-500 text-right">Actions</span>
         </div>
 
         {isLoading ? (
@@ -173,42 +113,17 @@ export default function CoursesPage() {
         ) : (
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
             {items.map((c) => {
-              const s = STATUS_STYLE[c.status] ?? STATUS_STYLE.active;
+              const s = c.isActive ? STATUS_STYLE.active : STATUS_STYLE.inactive;
               return (
                 <motion.div
                   key={c._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[640px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
-                  <span className="text-body-sm font-semibold text-neutral-900 truncate">{c.name}</span>
-                  <span className="text-body-sm text-neutral-600 truncate">{c.description || '—'}</span>
-                  <span className="text-body-sm text-neutral-600">{c.durationWeeks} weeks</span>
+                  <span className="text-body-sm font-semibold text-neutral-900 truncate">{c.title}</span>
+                  <span className="text-body-sm text-neutral-600 truncate capitalize">{c.category}</span>
+                  <span className="text-body-sm text-neutral-600">{c.duration}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
-                  <div className="flex gap-1.5 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(c)}
-                      title="Edit"
-                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(c)}
-                      title="Delete"
-                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 6h18" />
-                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      </svg>
-                    </button>
-                  </div>
                 </motion.div>
               );
             })}
@@ -241,25 +156,6 @@ export default function CoursesPage() {
           </div>
         </div>
       )}
-
-      <CourseFormModal
-        open={modal.open}
-        mode={modal.mode}
-        initialValues={modal.item}
-        onClose={closeModal}
-        onSubmit={handleSubmit}
-        submitting={submitting}
-        error={formError}
-      />
-
-      <ConfirmDialog
-        open={!!deleteTarget}
-        title="Delete course"
-        message={deleteTarget ? `Delete ${deleteTarget.name}? This can't be undone.` : ''}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-        loading={deleteMutation.isPending}
-      />
     </motion.div>
   );
 }
