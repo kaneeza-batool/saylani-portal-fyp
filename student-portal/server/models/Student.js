@@ -83,6 +83,11 @@ const studentSchema = new mongoose.Schema(
     // manual admin action). Enum copied verbatim from the canonical
     // schema (server/models/Student.js) — never invent new values here.
     dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
+    // Mirrored for the same reason as status/dropReason above — set by a
+    // trainer on the Trainer Portal roster page (see server/models/
+    // Student.js), read-only here. Enum copied verbatim from the canonical
+    // schema — never invent new values here.
+    overallGrade: { type: String, enum: ['A+', 'A', 'B', 'C', 'D', null], default: null },
     // Employment/placement fields from the shared document (main app's
     // Student model — see server/models/Student.js), mirrored read-only for
     // the same hydration reason as status/course above: an undeclared path
