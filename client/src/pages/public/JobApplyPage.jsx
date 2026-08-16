@@ -6,6 +6,18 @@ import { fetchPublicJob, submitApplication } from '../../services/publicJobServi
 
 const fadeIn = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 
+// Same fix as server/controllers/publicJobController.js's isPastDeadline —
+// applicationDeadline parses as UTC midnight, so comparing that instant
+// directly closed the form hours into the deadline day itself for any
+// timezone ahead of UTC. Extending to the end of that UTC day keeps this
+// gate in sync with what the server actually still accepts.
+function isPastDeadline(applicationDeadline) {
+  if (!applicationDeadline) return false;
+  const endOfDeadlineDay = new Date(applicationDeadline);
+  endOfDeadlineDay.setUTCHours(23, 59, 59, 999);
+  return endOfDeadlineDay.getTime() < Date.now();
+}
+
 const EMPTY_FORM = { fullName: '', email: '', phone: '', address: '', education: '', experience: '', skills: '' };
 
 const inputClass =
@@ -43,6 +55,22 @@ export default function JobApplyPage() {
     }
     applyMutation.mutate();
   };
+
+  const deadlinePassed = isPastDeadline(job?.applicationDeadline);
+
+  if (!jobLoading && deadlinePassed) {
+    return (
+      <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl p-10 text-center flex flex-col items-center gap-3">
+        <div className="font-heading font-bold text-h5 text-neutral-900">Applications are closed</div>
+        <p className="text-body-sm text-neutral-500 max-w-[420px]">
+          The application deadline for <strong>{job.title}</strong> has passed. Check the Careers page for other current openings.
+        </p>
+        <Link to="/careers" className="mt-2 text-body-sm font-semibold text-gold-600 hover:underline">
+          Back to all openings
+        </Link>
+      </motion.div>
+    );
+  }
 
   if (applyMutation.isSuccess) {
     return (

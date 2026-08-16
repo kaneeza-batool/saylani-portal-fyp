@@ -24,7 +24,7 @@ function Stars({ value }) {
   return (
     <span className="text-body-sm tracking-tight" style={{ color: '#C9A227' }}>
       {'★'.repeat(value)}
-      <span className="text-neutral-200">{'★'.repeat(5 - value)}</span>
+      <span className="text-neutral-400">{'★'.repeat(5 - value)}</span>
     </span>
   );
 }

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const Slot = require('../models/Slot');
 const { toSafeStudent } = require('./authController');
 
 // fullName/fatherName/campus/cnic/courses are staff-managed (set at
@@ -16,6 +17,30 @@ const MAX_AVATAR_BYTES = 4 * 1024 * 1024;
 
 exports.getProfile = async (req, res) => {
   return res.status(200).json({ student: toSafeStudent(req.student) });
+};
+
+// A student's own batch (Student.batch -> Slot) IS their trainer link —
+// this was previously never surfaced to the frontend at all (login/profile
+// responses stopped at course/campus), so the portal never actually showed
+// who a student's trainer was even though the data existed. `trainer` is
+// the free-text display name (always present, same field Trainer Portal's
+// own ownership checks fall back to — see myBatchesFilter in the main
+// app's trainerDashboardController.js), not the assignedTrainer ObjectId,
+// which isn't always set.
+exports.getMyTrainer = async (req, res) => {
+  try {
+    if (!req.student.batch) {
+      return res.status(200).json({ trainer: null });
+    }
+    const slot = await Slot.findById(req.student.batch).select('trainer course schedule').lean();
+    if (!slot) return res.status(200).json({ trainer: null });
+
+    return res.status(200).json({
+      trainer: { name: slot.trainer || null, course: slot.course || null, schedule: slot.schedule || null },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load trainer info', error: err.message });
+  }
 };
 
 exports.updateProfile = async (req, res) => {

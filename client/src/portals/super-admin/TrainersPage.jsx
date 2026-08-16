@@ -146,7 +146,7 @@ export default function TrainersPage() {
           <button
             type="button"
             onClick={() => setResetError(null)}
-            className="border-none bg-transparent text-red-700 cursor-pointer font-semibold shrink-0"
+            className="border-none bg-transparent text-red-700 cursor-pointer font-semibold shrink-0 px-2 py-1"
           >
             Dismiss
           </button>

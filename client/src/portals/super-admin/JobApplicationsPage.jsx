@@ -32,10 +32,21 @@ const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, trans
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
 const GRID_COLS = 'grid-cols-[1.3fr_1.3fr_0.9fr_0.9fr_0.8fr_0.9fr_0.8fr]';
 
-function MatchBadge({ score }) {
+function MatchBadge({ score, shortlistThreshold }) {
   if (score === null || score === undefined) return <span className="text-body-sm text-neutral-300">—</span>;
-  const className = score >= 70 ? 'bg-success-bg text-success-text' : score >= 40 ? 'bg-warning-bg text-warning-text' : 'bg-neutral-100 text-neutral-500';
-  return <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${className}`}>{score}% match</span>;
+  const meetsCriteria = shortlistThreshold !== null && shortlistThreshold !== undefined && score >= shortlistThreshold;
+  const className = meetsCriteria
+    ? 'bg-success-bg text-success-text'
+    : score >= 70
+      ? 'bg-success-bg text-success-text'
+      : score >= 40
+        ? 'bg-warning-bg text-warning-text'
+        : 'bg-neutral-100 text-neutral-500';
+  return (
+    <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${className}`} title={meetsCriteria ? 'Meets this job\'s shortlist criteria' : undefined}>
+      {score}% {meetsCriteria ? 'Strong match' : 'match'}
+    </span>
+  );
 }
 
 function RowSkeleton() {
@@ -64,11 +75,12 @@ export default function JobApplicationsPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput.trim()), 350);
+    const t = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 350);
     return () => clearTimeout(t);
   }, [searchInput]);
-
-  useEffect(() => setPage(1), [search, status, job, sort]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['job-applications', { search, status, job, sort, page }],
@@ -77,6 +89,7 @@ export default function JobApplicationsPage() {
   });
 
   const { data: jobOptions } = useQuery({ queryKey: ['job-options'], queryFn: fetchJobOptions });
+  const thresholdByJobId = new Map((jobOptions ?? []).map((j) => [String(j._id), j.minMatchScoreForShortlist]));
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['job-applications'] });
 
@@ -84,7 +97,10 @@ export default function JobApplicationsPage() {
     mutationFn: ({ id, status: newStatus }) => updateApplicationStatus(id, newStatus),
     onSuccess: (updated) => {
       invalidate();
-      setViewTarget(updated);
+      // Only refresh the open panel's data — if the admin already closed it
+      // (viewTarget is null) while this request was in flight, don't
+      // reopen it out from under them.
+      setViewTarget((prev) => (prev ? updated : prev));
     },
   });
 
@@ -120,7 +136,10 @@ export default function JobApplicationsPage() {
           </div>
           <select
             value={job}
-            onChange={(e) => setJob(e.target.value)}
+            onChange={(e) => {
+              setJob(e.target.value);
+              setPage(1);
+            }}
             className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="all">All jobs</option>
@@ -132,7 +151,10 @@ export default function JobApplicationsPage() {
           </select>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
             className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="all">All statuses</option>
@@ -144,7 +166,10 @@ export default function JobApplicationsPage() {
           </select>
           <select
             value={sort}
-            onChange={(e) => setSort(e.target.value)}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1);
+            }}
             className="border border-neutral-200 rounded px-2.5 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-gold-500 transition-colors"
           >
             <option value="recent">Newest first</option>
@@ -185,7 +210,7 @@ export default function JobApplicationsPage() {
                   <span className="text-body-sm text-neutral-600 truncate">{a.jobTitle}</span>
                   <span className="text-body-sm text-neutral-600">{a.phone}</span>
                   <span className="text-body-sm text-neutral-600">{fmtDate(a.createdAt)}</span>
-                  <MatchBadge score={a.matchScore} />
+                  <MatchBadge score={a.matchScore} shortlistThreshold={thresholdByJobId.get(String(a.job))} />
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
                   <div className="flex gap-1.5 justify-end">
                     <button

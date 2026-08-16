@@ -84,9 +84,14 @@
   50% { transform: translate(-50px, -30px); }
 }
 @keyframes admin-card-in {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes admin-field-in {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-admin-drift-1 { animation: admin-drift-1 18s ease-in-out infinite; }
 .animate-admin-drift-2 { animation: admin-drift-2 22s ease-in-out infinite; }
 .animate-admin-card-in { animation: admin-card-in 0.5s ease-out; }
+.animate-admin-field-in { animation: admin-field-in 0.35s ease-out both; }

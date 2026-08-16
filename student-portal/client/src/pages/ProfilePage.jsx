@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getProfile, updateProfile, uploadAvatar } from '../services/studentService';
+import { getProfile, updateProfile, uploadAvatar, getMyTrainer } from '../services/studentService';
 import { getEnrolledCourses } from '../services/courseService';
 import { useAuth } from '../context/AuthContext';
 import { initialsOf } from '../components/Sidebar';
@@ -93,6 +93,11 @@ export default function ProfilePage() {
   const { data: courses } = useQuery({
     queryKey: ['courses'],
     queryFn: getEnrolledCourses,
+  });
+
+  const { data: trainer, isLoading: trainerLoading } = useQuery({
+    queryKey: ['student', 'my-trainer'],
+    queryFn: getMyTrainer,
   });
 
   const updateMutation = useMutation({
@@ -479,6 +484,28 @@ export default function ProfilePage() {
           </div>
         )}
       </InfoCard>
+
+      <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
+        <div className="flex items-center gap-2 px-5 sm:px-6 py-4 border-b border-neutral-200">
+          <ProfileIcon className="w-4 h-4 text-primary-800 shrink-0" />
+          <h3 className="font-heading text-base font-bold text-neutral-900 flex-1">My Trainer</h3>
+        </div>
+        <div className="p-5 sm:p-6">
+          {trainerLoading ? (
+            <div className="h-10 bg-neutral-100 rounded animate-pulse" />
+          ) : trainer?.name ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ViewField label="Trainer" value={trainer.name} />
+              <ViewField label="Course" value={trainer.course} />
+              <ViewField label="Schedule" value={trainer.schedule} />
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-500">
+              You haven't been assigned to a batch yet — your trainer will show here once you are.
+            </p>
+          )}
+        </div>
+      </motion.div>
 
       <motion.div variants={fadeInUp} className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">
         <div className="flex items-center gap-2 px-5 sm:px-6 py-4 border-b border-neutral-200">

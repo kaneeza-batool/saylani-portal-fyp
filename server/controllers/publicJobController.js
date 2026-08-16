@@ -3,6 +3,27 @@ const JobApplication = require('../models/JobApplication');
 const { computeMatchScore } = require('../utils/matchScore');
 const { sendMail } = require('../utils/mailer');
 
+// A job with no deadline set (null) stays open indefinitely — only jobs
+// that HAVE a deadline get excluded once it's passed. Listing still shows
+// an expired job (so "Applications closed" can be shown instead of a 404),
+// only submitApplication actually blocks.
+//
+// applicationDeadline is stored from a plain "YYYY-MM-DD" <input type="date">
+// value, which Date parses as UTC midnight — comparing that instant directly
+// against Date.now() closes applications hours into the deadline day itself
+// for any timezone ahead of UTC (e.g. 5am local in Pakistan, UTC+5), cutting
+// off the entire day the admin meant to still accept applications on.
+// Extending to the end of that UTC day keeps the deadline open through the
+// whole intended calendar day for Pakistan and any timezone behind it, and
+// only errs a few hours late for timezones further ahead — the safe
+// direction for a deadline to be wrong in.
+function isPastDeadline(job) {
+  if (!job.applicationDeadline) return false;
+  const endOfDeadlineDay = new Date(job.applicationDeadline);
+  endOfDeadlineDay.setUTCHours(23, 59, 59, 999);
+  return endOfDeadlineDay.getTime() < Date.now();
+}
+
 exports.listPublicJobs = async (req, res) => {
   try {
     const jobs = await Job.find({ published: true, status: 'open' }).sort({ createdAt: -1 });
@@ -26,6 +47,9 @@ exports.submitApplication = async (req, res) => {
   try {
     const job = await Job.findOne({ _id: req.params.id, published: true, status: 'open' });
     if (!job) return res.status(404).json({ message: 'This job is no longer accepting applications.' });
+    if (isPastDeadline(job)) {
+      return res.status(410).json({ message: 'The application deadline for this job has passed.' });
+    }
 
     const { fullName, email, phone, address, education, experience, skills } = req.body;
     if (!fullName || !email || !phone || !education) {

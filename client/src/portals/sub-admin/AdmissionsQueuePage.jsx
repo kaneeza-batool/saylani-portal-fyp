@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdmissions, approveAdmission, rejectAdmission } from '../../services/admissionService';
+import CandidateProfilePanel from '../../components/CandidateProfilePanel';
 
 // Card-per-applicant queue, same pattern as
 // portals/super-admin/trainers/TrainersAttendanceRequest.jsx (the existing
@@ -17,6 +18,7 @@ function fmtDate(d) {
 export default function AdmissionsQueuePage() {
   const queryClient = useQueryClient();
   const [notice, setNotice] = useState(null);
+  const [viewTarget, setViewTarget] = useState(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admissions'],
@@ -28,6 +30,7 @@ export default function AdmissionsQueuePage() {
       (action === 'approve' ? approveAdmission(id) : rejectAdmission(id)).then((result) => ({ ...result, name })),
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admissions'] });
+      setViewTarget((current) => (current?._id === variables.id ? null : current));
       if (variables.action === 'approve' && result.batchAssignment && !result.batchAssignment.assigned) {
         setNotice(
           result.batchAssignment.reason === 'no_seats_available'
@@ -63,7 +66,7 @@ export default function AdmissionsQueuePage() {
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="border-none bg-transparent text-warning-text cursor-pointer text-caption font-semibold shrink-0"
+            className="border-none bg-transparent text-warning-text cursor-pointer text-caption font-semibold shrink-0 px-2 py-1"
           >
             Dismiss
           </button>
@@ -108,6 +111,13 @@ export default function AdmissionsQueuePage() {
                 >
                   <button
                     type="button"
+                    onClick={() => setViewTarget(a)}
+                    className="border border-neutral-200 bg-surface text-neutral-700 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100"
+                  >
+                    View
+                  </button>
+                  <button
+                    type="button"
                     disabled={actionMutation.isPending}
                     onClick={() => actionMutation.mutate({ id: a._id, action: 'approve', name: a.name })}
                     className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -128,6 +138,15 @@ export default function AdmissionsQueuePage() {
           ))}
         </motion.div>
       )}
+
+      <CandidateProfilePanel
+        open={!!viewTarget}
+        applicant={viewTarget}
+        onClose={() => setViewTarget(null)}
+        actionPending={actionMutation.isPending}
+        onApprove={viewTarget ? () => actionMutation.mutate({ id: viewTarget._id, action: 'approve', name: viewTarget.name }) : undefined}
+        onReject={viewTarget ? () => actionMutation.mutate({ id: viewTarget._id, action: 'reject' }) : undefined}
+      />
     </motion.div>
   );
 }

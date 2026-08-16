@@ -48,7 +48,7 @@ export default function SlideOverPanel({ open, title, onClose, formId, saveLabel
             type="submit"
             form={formId}
             disabled={submitting}
-            className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4.5 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="border-none bg-gold-500 text-white text-body-sm font-semibold px-4 py-[10px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Saving...' : saveLabel}
           </button>

@@ -9,8 +9,6 @@ import { staggerContainer } from '../lib/motionVariants';
 import { CertificateIcon } from '../components/icons';
 import RequestCorrectionModal from '../components/RequestCorrectionModal';
 import RequestAttendanceModal from '../components/RequestAttendanceModal';
-import QrCheckInModal from '../components/QrCheckInModal';
-import { useAuth } from '../context/AuthContext';
 
 const STATUS_STYLE = {
   present: 'bg-success-bg text-success-text',
@@ -89,17 +87,16 @@ function RowSkeleton() {
   );
 }
 
-// Self-service check-in for today. Primary path is a real camera QR scan
-// of the student's own ID card (see QrCheckInModal — same payload shape as
-// StudentIdCardModal's QR); a plain one-tap check-in is offered alongside
-// for a device with no working camera, and Request Instead is the fallback
-// for either path failing. If a record already exists (trainer marked the
-// class, or you already checked in), none of these silently overwrite it —
-// that's what Request Attendance is for.
-function SelfMarkCard({ student, onOpenRequest }) {
+// Self-service check-in for today — a plain one-tap check-in, no QR
+// scanning (trainers are the source of truth for marking a class; this is
+// only for a student to flag themselves present when the trainer hasn't
+// marked yet). Request Instead is the fallback if that's wrong. If a
+// record already exists (trainer marked the class, or you already checked
+// in), this doesn't silently overwrite it — that's what Request Attendance
+// is for.
+function SelfMarkCard({ onOpenRequest }) {
   const queryClient = useQueryClient();
   const [result, setResult] = useState(null); // { type: 'success' | 'already' | 'error', message }
-  const [qrOpen, setQrOpen] = useState(false);
 
   const mutation = useMutation({
     mutationFn: selfMarkAttendance,
@@ -116,11 +113,6 @@ function SelfMarkCard({ student, onOpenRequest }) {
     },
   });
 
-  function handleQrMarked() {
-    setQrOpen(false);
-    setResult({ type: 'success' });
-  }
-
   const canAct = !result || result.type === 'error';
 
   return (
@@ -128,10 +120,10 @@ function SelfMarkCard({ student, onOpenRequest }) {
       <div className="flex items-center gap-3">
         <div className="w-11 h-11 rounded-lg bg-primary-50 text-primary-800 flex items-center justify-center shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
+            <path d="M8 14l2 2 4-4" />
+            <rect x="3" y="4" width="18" height="17" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M8 2v4M16 2v4" />
           </svg>
         </div>
         <div>
@@ -141,7 +133,7 @@ function SelfMarkCard({ student, onOpenRequest }) {
               ? "You're marked present for today ✓"
               : result?.type === 'already'
                 ? result.message
-                : 'Scan your own ID QR code to check in for today.'}
+                : "Check in if your trainer hasn't marked today's class yet."}
           </p>
         </div>
       </div>
@@ -150,24 +142,11 @@ function SelfMarkCard({ student, onOpenRequest }) {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={() => setQrOpen(true)}
-            className="inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
-            </svg>
-            Scan QR Code
-          </button>
-          <button
-            type="button"
             disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
-            className="rounded-md px-4 py-2.5 text-sm font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {mutation.isPending ? 'Checking in...' : 'No camera — check in without scanning'}
+            {mutation.isPending ? 'Checking in...' : 'Check In'}
           </button>
         </div>
       )}
@@ -178,17 +157,14 @@ function SelfMarkCard({ student, onOpenRequest }) {
           onClick={onOpenRequest}
           className="self-start text-xs font-semibold text-primary-800 hover:text-primary-900 hover:underline"
         >
-          QR didn't work? Request attendance instead
+          Something wrong? Request attendance instead
         </button>
       )}
-
-      <QrCheckInModal open={qrOpen} onClose={() => setQrOpen(false)} student={student} onMarked={handleQrMarked} />
     </div>
   );
 }
 
 export default function AttendancePage() {
-  const { student } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [correctionRecord, setCorrectionRecord] = useState(null);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
@@ -227,7 +203,7 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <SelfMarkCard student={student} onOpenRequest={() => setRequestModalOpen(true)} />
+      <SelfMarkCard onOpenRequest={() => setRequestModalOpen(true)} />
 
       <motion.div
         variants={staggerContainer}
