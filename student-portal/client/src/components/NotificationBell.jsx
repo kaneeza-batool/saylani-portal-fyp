@@ -91,21 +91,42 @@ export default function NotificationBell() {
                     n.isRead ? 'bg-white hover:bg-neutral-50' : 'bg-info-bg/50 hover:bg-info-bg'
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => !n.isRead && markReadMutation.mutate(n._id)}
-                    className="flex items-start gap-3 flex-1 min-w-0 text-left"
-                  >
-                    <span className="text-lg leading-none shrink-0">{n.icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-sm ${n.isRead ? 'font-medium text-neutral-700' : 'font-bold text-neutral-900'}`}>
-                        {n.title}
-                      </p>
-                      <p className="text-xs text-neutral-500 mt-0.5">{n.message}</p>
-                      <p className="text-[11px] text-neutral-400 mt-1">{timeAgo(n.createdAt)}</p>
-                    </div>
-                    {!n.isRead && <span className="w-2 h-2 rounded-full bg-accent-500 shrink-0 mt-1.5" />}
-                  </button>
+                  {(() => {
+                    const NotificationContent = (
+                      <>
+                        <span className="text-lg leading-none shrink-0">{n.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm ${n.isRead ? 'font-medium text-neutral-700' : 'font-bold text-neutral-900'}`}>
+                            {n.title}
+                          </p>
+                          <p className="text-xs text-neutral-500 mt-0.5">{n.message}</p>
+                          <p className="text-[11px] text-neutral-400 mt-1">{timeAgo(n.createdAt)}</p>
+                        </div>
+                        {!n.isRead && <span className="w-2 h-2 rounded-full bg-accent-500 shrink-0 mt-1.5" />}
+                      </>
+                    );
+                    const handleClick = () => {
+                      if (!n.isRead) markReadMutation.mutate(n._id);
+                      setOpen(false);
+                    };
+                    // Only notifications with somewhere to go (see
+                    // link on the model) navigate — purely informational
+                    // ones (no link) just mark themselves read in place,
+                    // same as before.
+                    return n.link ? (
+                      <Link to={n.link} onClick={handleClick} className="flex items-start gap-3 flex-1 min-w-0 text-left">
+                        {NotificationContent}
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => !n.isRead && markReadMutation.mutate(n._id)}
+                        className="flex items-start gap-3 flex-1 min-w-0 text-left"
+                      >
+                        {NotificationContent}
+                      </button>
+                    );
+                  })()}
                   <button
                     type="button"
                     onClick={() => dismissMutation.mutate(n._id)}

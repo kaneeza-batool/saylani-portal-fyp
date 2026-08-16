@@ -51,8 +51,11 @@ const studentSchema = new mongoose.Schema(
     // Optional, set by this app's own EnrollNow form (see
     // applicationController.submitApplication) — distinct from avatarUrl
     // below, a student-portal profile picture uploaded post-enrollment.
+    // CNIC front/back are separate fields, not one "scan" — a CNIC has two
+    // sides and an applicant needs to be able to attach both.
     applicationPhotoUrl: { type: String, default: '' },
-    applicationCnicScanUrl: { type: String, default: '' },
+    applicationCnicFrontUrl: { type: String, default: '' },
+    applicationCnicBackUrl: { type: String, default: '' },
 
     password: { type: String, minlength: 8, select: false },
     resetPasswordTokenHash: { type: String, select: false },

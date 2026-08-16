@@ -20,10 +20,13 @@ const applicationSchema = new mongoose.Schema(
     preferredBatch: { type: String, trim: true, default: '' },
     hasLaptop: { type: Boolean, default: false },
     // Optional — the application form doesn't require these, so most
-    // applications won't have either set. Relative paths served from
+    // applications won't have any set. Relative paths served from
     // /uploads/applications (see middleware/upload.js's applicationUpload).
+    // CNIC front/back are separate fields, not one "scan" — a CNIC has two
+    // sides and an applicant needs to be able to attach both.
     photoUrl: { type: String, default: '' },
-    cnicScanUrl: { type: String, default: '' },
+    cnicFrontUrl: { type: String, default: '' },
+    cnicBackUrl: { type: String, default: '' },
     referenceNumber: { type: String, required: true, unique: true },
     // No Sub-Admin portal is wired up yet to review these, so every
     // application just sits at 'pending' forever. Once that admission

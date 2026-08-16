@@ -205,9 +205,14 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // roster: 'active' (not the sitewide-standard 'true') — this KPI
+  // deliberately excludes dropout too, unlike every other "Students" count
+  // in the app (super-admin Dashboard, Reports, Campus Map), by explicit
+  // request: a sub-admin dropping a student out should see this number
+  // move immediately, not stay flat because dropout still counts as roster.
   const students = useQuery({
     queryKey: ['sub-admin-dashboard-students'],
-    queryFn: () => fetchStudents({ limit: 1, roster: true }),
+    queryFn: () => fetchStudents({ limit: 1, roster: 'active' }),
   });
 
   // limit bumped from 1 to BATCH_OVERVIEW_LIMIT (5) so this same query also
@@ -232,7 +237,12 @@ export default function DashboardPage() {
 
   const actionMutation = useMutation({
     mutationFn: ({ id, action }) => (action === 'approve' ? approveAdmission(id) : rejectAdmission(id)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissions'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admissions'] });
+      // Approving/rejecting moves a student in or out of the roster — the
+      // Students KPI card on this same page needs to reflect it too.
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-dashboard-students'] });
+    },
   });
 
   const isButtonPending = (id, action) =>

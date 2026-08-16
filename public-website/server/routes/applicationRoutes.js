@@ -8,7 +8,11 @@ const router = express.Router();
 router.post(
   '/',
   publicWriteLimiter,
-  applicationUpload.fields([{ name: 'photo', maxCount: 1 }, { name: 'cnicScan', maxCount: 1 }]),
+  applicationUpload.fields([
+    { name: 'photo', maxCount: 1 },
+    { name: 'cnicFront', maxCount: 1 },
+    { name: 'cnicBack', maxCount: 1 },
+  ]),
   submitApplication
 );
 

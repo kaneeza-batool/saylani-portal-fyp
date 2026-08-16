@@ -30,6 +30,12 @@ export default function AdmissionsQueuePage() {
       (action === 'approve' ? approveAdmission(id) : rejectAdmission(id)).then((result) => ({ ...result, name })),
     onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admissions'] });
+      // Approving/rejecting moves a student in or out of the roster —
+      // invalidate both portals' dashboard student counts too (shared page,
+      // safe no-op for whichever one isn't currently mounted) so the KPI
+      // reflects it immediately instead of only after a manual reload.
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-dashboard-students'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
       setViewTarget((current) => (current?._id === variables.id ? null : current));
       if (variables.action === 'approve' && result.batchAssignment && !result.batchAssignment.assigned) {
         setNotice(
