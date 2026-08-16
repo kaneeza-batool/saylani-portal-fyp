@@ -124,10 +124,15 @@ function CreatePasswordForm() {
   const navigate = useNavigate();
   const [cnic, setCnic] = useState('');
   const [verified, setVerified] = useState(false);
+  // Whether this CNIC's account already has a password — determines whether
+  // the next step asks for a phone number too (recreation) or not
+  // (first-time setup). See authController.setPassword for why: a CNIC
+  // alone is never enough to overwrite an existing password.
+  const [hasExistingPassword, setHasExistingPassword] = useState(false);
   const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
   const [verifying, setVerifying] = useState(false);
 
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -135,16 +140,11 @@ function CreatePasswordForm() {
   async function handleVerify(e) {
     e.preventDefault();
     setError('');
-    setInfo('');
     setVerifying(true);
     try {
       const { hasPassword } = await authService.verifyCnic(cnic);
-      if (hasPassword) {
-        setInfo('This account already has a password. Please use the Login tab instead.');
-        setVerified(false);
-      } else {
-        setVerified(true);
-      }
+      setHasExistingPassword(hasPassword);
+      setVerified(true);
     } catch (err) {
       setError(err.response?.data?.message || 'CNIC verification failed.');
       setVerified(false);
@@ -164,9 +164,13 @@ function CreatePasswordForm() {
       setError('Passwords do not match.');
       return;
     }
+    if (hasExistingPassword && !phone.trim()) {
+      setError('Enter the phone number on file to create a new password.');
+      return;
+    }
     setSubmitting(true);
     try {
-      await completeSetPassword(cnic, password);
+      await completeSetPassword(cnic, password, hasExistingPassword ? phone : undefined);
       navigate('/courses');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set password.');
@@ -179,9 +183,6 @@ function CreatePasswordForm() {
     return (
       <form onSubmit={handleVerify} className="flex flex-col gap-4">
         <ErrorBanner message={error} />
-        {info && (
-          <div className="rounded-md bg-info-bg text-info-text text-sm font-medium px-3.5 py-2.5">{info}</div>
-        )}
         <div>
           <label className={labelClass}>CNIC</label>
           <input
@@ -207,9 +208,29 @@ function CreatePasswordForm() {
   return (
     <form onSubmit={handleSetPassword} className="flex flex-col gap-4">
       <ErrorBanner message={error} />
-      <div className="rounded-md bg-success-bg text-success-text text-sm font-medium px-3.5 py-2.5">
-        CNIC verified. Choose a password to finish setting up your account.
-      </div>
+      {hasExistingPassword ? (
+        <div className="rounded-md bg-info-bg text-info-text text-sm font-medium px-3.5 py-2.5">
+          This account already has a password. Confirm the phone number on file to replace it — your profile,
+          attendance, fees, and quiz history all stay exactly as they are.
+        </div>
+      ) : (
+        <div className="rounded-md bg-success-bg text-success-text text-sm font-medium px-3.5 py-2.5">
+          CNIC verified. Choose a password to finish setting up your account.
+        </div>
+      )}
+      {hasExistingPassword && (
+        <div>
+          <label className={labelClass}>Phone number on file</label>
+          <input
+            type="text"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="03001234567"
+            className={inputClass}
+            required
+          />
+        </div>
+      )}
       <PasswordField label="New Password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
       <PasswordField
         label="Confirm Password"
@@ -222,7 +243,7 @@ function CreatePasswordForm() {
         disabled={submitting}
         className="w-full rounded-md px-5 py-2.5 text-sm font-semibold uppercase tracking-wide bg-primary-800 text-white transition-colors hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
       >
-        {submitting ? 'Setting password...' : 'Set Password'}
+        {submitting ? 'Setting password...' : hasExistingPassword ? 'Replace Password' : 'Set Password'}
       </button>
     </form>
   );
