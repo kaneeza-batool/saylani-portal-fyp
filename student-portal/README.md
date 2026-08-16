@@ -1,7 +1,7 @@
 # TITAN Student Portal
 
-Standalone full-stack scaffold — React (Vite) client + Express/Mongoose server.
-Not yet wired into the other TITAN portals; has its own database and auth.
+Standalone full-stack app — React (Vite) client + Express/Mongoose server.
+Shares the main TITAN app's MongoDB database (`titan-portal`) for student data, but has its own auth and is not otherwise wired into the other TITAN portals.
 
 ## Structure
 
@@ -27,27 +27,27 @@ cp .env.example .env   # then fill in MONGO_URI, JWT_SECRET, JWT_REFRESH_SECRET
 npm run dev
 ```
 
-Runs on **http://localhost:5001**. Health check: `GET /api/health` → `{ "status": "ok" }`.
+Runs on **http://localhost:5100**. Health check: `GET /api/health` → `{ "status": "ok" }`.
 
 ### Client
 
 ```bash
 cd client
 npm install
-cp .env.example .env   # VITE_API_URL defaults to http://localhost:5001/api
+cp .env.example .env   # VITE_API_URL defaults to http://localhost:5100/api
 npm run dev
 ```
 
-Runs on **http://localhost:5173** (Vite default). Opening it in a browser calls
-the server's `/api/health` endpoint on load and shows whether the backend is
-reachable.
+Runs on **http://localhost:5273** (pinned in `vite.config.js`, not the Vite default —
+`public-website`'s `/login` page redirects here assuming this exact port).
 
 ## Ports
 
 | App | Port |
 |---|---|
-| Client (Vite) | 5173 |
-| Server (Express) | 5001 |
+| Client (Vite) | 5273 |
+| Server (Express) | 5100 |
 
-Note: the sibling `super-admin-portal` server runs on port 5000 — 5001 was
-chosen here to avoid a collision if both are running at once.
+Note: the root `client`/`server` app (Super Admin, Campus Manager, Trainer portals)
+runs on 5173/5000, and the sibling `public-website` app runs on 5373/5200 —
+see the root `README.md` for the full port map.
