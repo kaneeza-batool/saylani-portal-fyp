@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { createStudent, deleteStudent, fetchStudents, updateStudent } from '../../services/studentService';
+import { generateFeeVoucher } from '../../services/feeService';
 import StudentFormModal from '../../components/StudentFormModal';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import ExportButtons from '../../components/ExportButtons';
@@ -14,7 +15,7 @@ const EXPORT_COLUMNS = [
   { header: 'Course', accessor: (s) => s.course },
   { header: 'Campus', accessor: (s) => s.campus },
   { header: 'Status', accessor: (s) => s.status },
-  { header: 'Payment', accessor: (s) => s.payment },
+  { header: 'Payment Status', accessor: (s) => (s.feeStatus ? PAYMENT_STYLE[s.feeStatus.status]?.label ?? s.feeStatus.status : '—') },
 ];
 
 const STATUS_FILTERS = [
@@ -44,7 +45,12 @@ const DROP_REASON_LABEL = {
   manual: 'Dropped manually by an admin.',
 };
 
+// Driven by feeStatus (server-computed from the current month's FeeVoucher,
+// see studentController.getStudents), not the separate Student.payment
+// field the edit-student modal still manages — that field only exists to
+// trigger the payment/dropout cascade and isn't what this column reflects.
 const PAYMENT_STYLE = {
+  not_generated: { label: 'Not Generated', className: 'bg-neutral-100 text-neutral-500' },
   paid: { label: 'Paid', className: 'bg-success-bg text-success-text' },
   pending: { label: 'Pending', className: 'bg-warning-bg text-warning-text' },
   overdue: { label: 'Overdue', className: 'bg-danger-50 text-danger-600' },
@@ -190,6 +196,11 @@ export default function StudentsPage() {
   };
   const handleReenroll = (student) => statusMutation.mutate({ id: student._id, payload: { status: 'enrolled' } });
 
+  const generateMutation = useMutation({
+    mutationFn: (studentId) => generateFeeVoucher(studentId),
+    onSuccess: () => invalidate(),
+  });
+
   const students = data?.students ?? [];
   const pages = data?.pages ?? 1;
   const total = data?.total ?? 0;
@@ -251,7 +262,7 @@ export default function StudentsPage() {
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
         <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Student', 'Phone', 'Course', 'Campus', 'Status', 'Payment'].map((h) => (
+          {['Student', 'Phone', 'Course', 'Campus', 'Status', 'Payment Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -269,7 +280,7 @@ export default function StudentsPage() {
           <motion.div variants={staggerContainer} initial="hidden" animate="show" className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
             {students.map((s) => {
               const statusStyle = STATUS_STYLE[s.status] ?? STATUS_STYLE.enrolled;
-              const paymentStyle = PAYMENT_STYLE[s.payment] ?? PAYMENT_STYLE.pending;
+              const paymentStyle = s.feeStatus ? PAYMENT_STYLE[s.feeStatus.status] ?? PAYMENT_STYLE.pending : null;
               return (
                 <motion.div
                   key={s._id}
@@ -294,8 +305,26 @@ export default function StudentsPage() {
                   >
                     {statusStyle.label}
                   </span>
-                  <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${paymentStyle.className}`}>{paymentStyle.label}</span>
+                  {paymentStyle ? (
+                    <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${paymentStyle.className}`}>{paymentStyle.label}</span>
+                  ) : (
+                    <span className="text-body-sm text-neutral-400">—</span>
+                  )}
                   <div className="flex gap-1.5 justify-end">
+                    {s.feeStatus?.status === 'not_generated' && (
+                      <button
+                        type="button"
+                        onClick={() => generateMutation.mutate(s._id)}
+                        disabled={generateMutation.isPending && generateMutation.variables === s._id}
+                        title="Generate this month's fee voucher"
+                        className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-gold-50 hover:border-gold-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B7862C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="5" width="18" height="14" rx="2" />
+                          <path d="M12 9v6M9 12h6" />
+                        </svg>
+                      </button>
+                    )}
                     {s.status === 'dropout' ? (
                       <button
                         type="button"
