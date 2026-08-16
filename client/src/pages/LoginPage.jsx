@@ -86,21 +86,15 @@ export default function LoginPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
             whileHover={{ scale: 1.04 }}
-            className="w-[92px]"
+            className="w-[150px]"
           >
             <img
               src="/logo.png"
-              alt="TITAN"
+              alt="TITAN — Taj Institute of Technology &amp; Applied Networks"
               className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(201,162,39,0.45)]"
             />
           </motion.div>
-          <div className="text-center mt-1">
-            <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-gold-400">
-              Taj Institute of Technology
-            </div>
-            <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-gold-400">&amp; Applied Networks</div>
-          </div>
-          <div className="text-body-sm text-navy-300 font-normal mt-1.5">Sign in to your account</div>
+          <div className="text-body-sm text-navy-300 font-normal mt-1">Sign in to your account</div>
         </div>
 
         <motion.form
