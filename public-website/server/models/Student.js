@@ -51,6 +51,13 @@ const studentSchema = new mongoose.Schema(
     lastQualification: { type: String, trim: true },
     avatarUrl: { type: String, default: '' },
     hasCompletedOnboarding: { type: Boolean, default: false },
+    // Only field from the canonical schema's employment/background block
+    // this app needs — it's the one question the public apply form actually
+    // asks (EnrollNow.jsx's "Do you have a laptop?" step). Without declaring
+    // it here, Student.create() below silently drops it (Mongoose strict
+    // mode default on an undeclared path) even though applicationController
+    // passes it through.
+    hasLaptop: { type: Boolean, default: null },
   },
   { timestamps: true }
 );

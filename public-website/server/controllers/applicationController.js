@@ -64,6 +64,7 @@ exports.submitApplication = async (req, res) => {
       campus: campusId,
       status: 'pending',
       hasCompletedOnboarding: false,
+      hasLaptop: !!hasLaptop,
     });
 
     // referenceNumber is random + unique-indexed; retry on the (rare)
