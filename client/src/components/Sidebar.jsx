@@ -152,6 +152,19 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'fees-sub',
+    label: 'Fees',
+    to: '/sub-admin/fees',
+    roles: ['sub_admin'],
+    permission: { module: 'FEES', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10M9.5 9.5c0-1.4 1.2-2.5 2.5-2.5s2.5.9 2.5 2c0 3-5 1.5-5 4.5 0 1.1 1.2 2 2.5 2s2.5-1.1 2.5-2.5" />
+      </svg>
+    ),
+  },
+  {
     id: 'alerts-sub',
     label: 'Alerts',
     to: '/sub-admin/alerts',
@@ -325,6 +338,18 @@ export const NAV_ITEMS = [
       { id: 'donorportal-campaigns', label: 'Campaigns', to: '/admin/donorportal/campaigns' },
       { id: 'donorportal-donations', label: 'Donations', to: '/admin/donorportal/donations' },
     ],
+  },
+  {
+    id: 'fees',
+    label: 'Fees',
+    to: '/admin/fees',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10M9.5 9.5c0-1.4 1.2-2.5 2.5-2.5s2.5.9 2.5 2c0 3-5 1.5-5 4.5 0 1.1 1.2 2 2.5 2s2.5-1.1 2.5-2.5" />
+      </svg>
+    ),
   },
   {
     id: 'reports',
