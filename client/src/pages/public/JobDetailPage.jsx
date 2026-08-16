@@ -5,6 +5,18 @@ import { fetchPublicJob } from '../../services/publicJobService';
 
 const fadeIn = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 
+// Same fix as server/controllers/publicJobController.js's isPastDeadline —
+// applicationDeadline parses as UTC midnight, so comparing that instant
+// directly closed applications hours into the deadline day itself for any
+// timezone ahead of UTC. Extending to the end of that UTC day keeps this
+// badge/CTA in sync with what the server actually still accepts.
+function isPastDeadline(applicationDeadline) {
+  if (!applicationDeadline) return false;
+  const endOfDeadlineDay = new Date(applicationDeadline);
+  endOfDeadlineDay.setUTCHours(23, 59, 59, 999);
+  return endOfDeadlineDay.getTime() < Date.now();
+}
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const { data: job, isLoading, isError } = useQuery({ queryKey: ['public-job', id], queryFn: () => fetchPublicJob(id) });
@@ -24,7 +36,7 @@ export default function JobDetailPage() {
     );
   }
 
-  const deadlinePassed = job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
+  const deadlinePassed = isPastDeadline(job.applicationDeadline);
   const applyCta = deadlinePassed ? (
     <span className="shrink-0 border border-neutral-200 bg-neutral-100 text-neutral-400 text-body font-semibold px-5 py-[11px] rounded cursor-not-allowed">
       Applications Closed

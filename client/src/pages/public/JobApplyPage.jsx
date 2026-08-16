@@ -6,6 +6,18 @@ import { fetchPublicJob, submitApplication } from '../../services/publicJobServi
 
 const fadeIn = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 
+// Same fix as server/controllers/publicJobController.js's isPastDeadline —
+// applicationDeadline parses as UTC midnight, so comparing that instant
+// directly closed the form hours into the deadline day itself for any
+// timezone ahead of UTC. Extending to the end of that UTC day keeps this
+// gate in sync with what the server actually still accepts.
+function isPastDeadline(applicationDeadline) {
+  if (!applicationDeadline) return false;
+  const endOfDeadlineDay = new Date(applicationDeadline);
+  endOfDeadlineDay.setUTCHours(23, 59, 59, 999);
+  return endOfDeadlineDay.getTime() < Date.now();
+}
+
 const EMPTY_FORM = { fullName: '', email: '', phone: '', address: '', education: '', experience: '', skills: '' };
 
 const inputClass =
@@ -44,7 +56,7 @@ export default function JobApplyPage() {
     applyMutation.mutate();
   };
 
-  const deadlinePassed = job?.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
+  const deadlinePassed = isPastDeadline(job?.applicationDeadline);
 
   if (!jobLoading && deadlinePassed) {
     return (
