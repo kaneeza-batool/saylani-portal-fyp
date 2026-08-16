@@ -120,10 +120,15 @@ export default function StudentsPage() {
     keepPreviousData: true,
   });
 
+  // Also invalidates the Dashboard's own student query — without this, a
+  // status change here (e.g. dropping a student out) left the Dashboard's
+  // "Students" KPI showing stale data until the sub-admin manually reloaded
+  // the page, since the two pages cache under different query keys.
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }) => updateStudent(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sub-admin-students'] });
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-dashboard-students'] });
       setEditTarget(null);
       setFormError('');
     },
@@ -136,6 +141,7 @@ export default function StudentsPage() {
     mutationFn: ({ id, payload }) => updateStudent(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sub-admin-students'] });
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-dashboard-students'] });
       setDropTarget(null);
     },
   });

@@ -39,11 +39,20 @@ exports.getStudents = async (req, res) => {
 
     const filter = { ...req.campusFilter };
     // roster=true excludes admissions applicants (pending/rejected) — opt-in
-    // so this endpoint's default behavior (used by super-admin StudentsPage
-    // and the sub-admin Dashboard KPI, neither of which sends it) is
-    // unchanged. A specific `status` still narrows further/overrides it.
+    // so this endpoint's default behavior (used by super-admin StudentsPage)
+    // is unchanged. A specific `status` still narrows further/overrides it.
+    //
+    // roster=active is the same idea but also excludes dropout — used only
+    // by the sub-admin Dashboard KPI card, by explicit request: everywhere
+    // else in the app ("Students" on the super-admin Dashboard, Reports,
+    // Campus Map) deliberately counts dropout as part of the roster, kept
+    // consistent on purpose (see project memory on the 2026-08-16 count
+    // reconciliation). The sub-admin Dashboard is a deliberate, scoped
+    // exception to that convention, not a drift to fix back.
     if (roster === 'true') {
       filter.status = { $nin: ['pending', 'rejected'] };
+    } else if (roster === 'active') {
+      filter.status = { $nin: ['pending', 'rejected', 'dropout'] };
     }
     if (status && status !== 'all') {
       filter.status = status;
