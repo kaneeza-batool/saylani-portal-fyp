@@ -28,6 +28,7 @@ const courseRoutes = require('./routes/courseRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const adminCourseRoutes = require('./routes/adminCourseRoutes');
 const enrollmentMetaRoutes = require('./routes/enrollmentMetaRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);
 app.use('/api', enrollmentMetaRoutes);
+app.use('/api/chat', chatRoutes);
 
 const PORT = process.env.PORT || 5002;
 
