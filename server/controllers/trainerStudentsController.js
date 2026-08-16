@@ -6,6 +6,7 @@ const StudentPortalAssignment = require('../models/StudentPortalAssignment');
 const StudentPortalAssignmentSubmission = require('../models/StudentPortalAssignmentSubmission');
 const { myBatchesFilter } = require('./trainerDashboardController');
 const { logAudit } = require('../utils/auditLogger');
+const { computeCourseProgress } = require('../utils/courseProgress');
 
 // Students in the logged-in trainer's own batches, with the same four
 // metrics the roster table shows: attendance %, quiz average, latest
@@ -81,6 +82,11 @@ exports.listMyStudents = async (req, res) => {
       if (!latestSubmissionByStudent.has(sid)) latestSubmissionByStudent.set(sid, sub);
     }
 
+    // Course progress — same formula the student sees on their own Student
+    // Portal (see courseProgress.js), not just the local quizAvg/submission
+    // snapshot above, so this number agrees with what the student sees.
+    const progressByStudent = await computeCourseProgress(students.map((s) => ({ _id: s._id, course: s.course })));
+
     const items = students.map((s) => {
       const sid = String(s._id);
       const att = attendanceByStudent.get(sid) || { present: 0, absent: 0, leave: 0 };
@@ -100,6 +106,7 @@ exports.listMyStudents = async (req, res) => {
         quizAvg,
         quizAttempts: quiz?.attempts ?? 0,
         submission: latestSubmission ? latestSubmission.status : 'not_submitted',
+        progress: progressByStudent.get(sid) ?? 0,
         grade: s.overallGrade || null,
         course: s.course,
         campus: s.campus?.name || null,

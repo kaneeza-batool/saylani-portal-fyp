@@ -436,6 +436,20 @@ export function MaximizeIcon(props) {
   );
 }
 
+export function BotIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="8" width="16" height="12" rx="3" />
+      <path d="M12 8V4" />
+      <circle cx="12" cy="3" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="14" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="14" r="1.3" fill="currentColor" stroke="none" />
+      <path d="M9 18h6" />
+      <path d="M2 12h2M20 12h2" />
+    </svg>
+  );
+}
+
 export function MailIcon(props) {
   return (
     <svg {...base} {...props}>

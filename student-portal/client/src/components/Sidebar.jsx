@@ -23,6 +23,7 @@ import {
   ChevronUpDownIcon,
   FlameIcon,
   CloseIcon,
+  BotIcon,
 } from './icons';
 
 const MILESTONES = [60, 30, 7];
@@ -60,6 +61,7 @@ export const NAV_ITEMS = [
   { label: 'Quiz', base: '/quiz', icon: QuizIcon, courseless: true },
   { label: 'Resources', base: '/resources', icon: BookOpenIcon, courseless: true },
   { label: 'Ask a Doubt', base: '/doubts', icon: MessageCircleIcon, courseless: true },
+  { label: 'TITAN Assistant', base: '/assistant', icon: BotIcon, courseless: true },
 ];
 
 export const NAV_LOOKUP = NAV_ITEMS.reduce((acc, item) => {

@@ -23,6 +23,7 @@ const agendaRoutes = require('./routes/agendaRoutes');
 const resourceRoutes = require('./routes/resourceRoutes');
 const skillPassportRoutes = require('./routes/skillPassportRoutes');
 const questionRoutes = require('./routes/questionRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 
@@ -51,6 +52,7 @@ app.use('/api/agenda', agendaRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/skill-passport', skillPassportRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/chat', chatRoutes);
 
 const PORT = process.env.PORT || 5001;
 
