@@ -5,6 +5,7 @@
 const Slot = require('../models/Slot');
 const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
+const StudentPortalNotification = require('../models/StudentPortalNotification');
 const { myBatchesFilter } = require('./trainerDashboardController');
 const { logAudit } = require('../utils/auditLogger');
 
@@ -125,6 +126,29 @@ exports.markAttendance = async (req, res) => {
       });
 
     if (ops.length) await StudentAttendance.bulkWrite(ops);
+
+    // Only 'absent' is actually worth a ping — a present-mark is just the
+    // routine default (see getRosterForDate's opt-out UX above), and
+    // notifying on every single day's attendance would drown out anything
+    // else in the student's notification list. Own try/catch so a
+    // notification failure never turns an already-saved attendance mark
+    // into a reported failure.
+    const absentStudentIds = records.filter((r) => r.status === 'absent' && studentById.has(r.studentId)).map((r) => r.studentId);
+    if (absentStudentIds.length) {
+      try {
+        await StudentPortalNotification.insertMany(
+          absentStudentIds.map((studentId) => ({
+            student: studentId,
+            icon: '📅',
+            title: 'Marked Absent',
+            message: `You were marked absent for ${course} on ${dayStart.toDateString()}.`,
+            link: '/attendance',
+          }))
+        );
+      } catch (notifyErr) {
+        console.error('Failed to create absence notifications:', notifyErr.message);
+      }
+    }
 
     if (ops.length) {
       logAudit({

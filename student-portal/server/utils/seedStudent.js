@@ -2,10 +2,11 @@ require('dotenv').config();
 
 const mongoose = require('mongoose');
 const Student = require('../models/Student');
+const Campus = require('../models/Campus');
 
 const SEED_STUDENT = {
-  fullName: 'Ayesha Yousuf',
-  fatherName: 'Muhammad Yousuf',
+  name: 'Ayesha Yousuf',
+  father: 'Muhammad Yousuf',
   cnic: '4550476281307',
   password: 'Student123!',
   phone: '0300-4561234',
@@ -14,7 +15,6 @@ const SEED_STUDENT = {
   gender: 'female',
   dateOfBirth: new Date('2003-05-14'),
   lastQualification: 'Intermediate',
-  campus: 'Saylani TITAN Sukkur Campus',
   city: 'Sukkur',
   // Same placeholder every other seeded student gets — see
   // seedBatchStudents.js's PLACEHOLDER_AVATAR comment. Run
@@ -38,13 +38,17 @@ async function seed() {
       existing.avatarUrl = existing.avatarUrl || SEED_STUDENT.avatarUrl;
       existing.hasCompletedOnboarding = true;
       await existing.save();
-      console.log(`Backfilled onboarding fields onto existing student: ${existing.fullName}.`);
+      console.log(`Backfilled onboarding fields onto existing student: ${existing.name}.`);
     } else {
-      console.log(`Student with CNIC ${SEED_STUDENT.cnic} already exists (${existing.fullName}). Skipping.`);
+      console.log(`Student with CNIC ${SEED_STUDENT.cnic} already exists (${existing.name}). Skipping.`);
     }
   } else {
-    const student = await Student.create(SEED_STUDENT);
-    console.log(`Seeded student: ${student.fullName} (CNIC: ${student.cnic})`);
+    const campus = await Campus.findOne({ name: 'Saylani TITAN Sukkur Campus' });
+    if (!campus) {
+      throw new Error('Saylani TITAN Sukkur Campus not found — run seedCampusAndSubAdmin.js in the main app first.');
+    }
+    const student = await Student.create({ ...SEED_STUDENT, campus: campus._id });
+    console.log(`Seeded student: ${student.name} (CNIC: ${student.cnic})`);
   }
 
   await mongoose.disconnect();
