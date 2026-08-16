@@ -171,12 +171,18 @@ export default function LoginPage() {
             {submitting ? 'Signing in...' : 'Sign in'}
           </motion.button>
 
-          <motion.div variants={fieldVariants}>
+          <motion.div variants={fieldVariants} className="flex flex-col gap-1.5">
             <Link
               to="/trainer/register"
               className="block text-center text-caption text-navy-300 hover:text-gold-400 transition-colors"
             >
               Are you a trainer? Create an account
+            </Link>
+            <Link
+              to="/employer/register"
+              className="block text-center text-caption text-navy-300 hover:text-gold-400 transition-colors"
+            >
+              Are you an employer? Create an account
             </Link>
           </motion.div>
         </motion.form>

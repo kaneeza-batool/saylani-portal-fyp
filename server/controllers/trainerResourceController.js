@@ -3,6 +3,7 @@ const path = require('path');
 const Resource = require('../models/Resource');
 const Slot = require('../models/Slot');
 const { myBatchesFilter } = require('./trainerDashboardController');
+const { logAudit } = require('../utils/auditLogger');
 
 // Same ownership boundary as attendance/roster scoping — a course a trainer
 // doesn't actually have an active batch for isn't one they can upload into,
@@ -39,6 +40,14 @@ exports.uploadResource = async (req, res) => {
       trainerName: req.user.name,
     });
 
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'Resource',
+      resourceId: resource._id,
+      summary: `Uploaded resource "${resource.title}" for ${resource.course}`,
+    });
+
     return res.status(201).json({ item: resource });
   } catch (err) {
     if (req.file) fs.unlink(req.file.path, () => {});
@@ -65,6 +74,15 @@ exports.deleteResource = async (req, res) => {
     fs.unlink(filePath, () => {});
 
     await resource.deleteOne();
+
+    logAudit({
+      actor: req.user,
+      action: 'delete',
+      resourceType: 'Resource',
+      resourceId: resource._id,
+      summary: `Deleted resource "${resource.title}" for ${resource.course}`,
+    });
+
     return res.status(200).json({ message: 'Resource deleted.' });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to delete resource', error: err.message });

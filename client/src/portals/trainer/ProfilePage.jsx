@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { inputClass, labelClass } from './formFieldStyles';
-import { getMyAttendance } from '../../services/trainerDashboardService';
+import { getMyAttendance, getMyTrainerProfile } from '../../services/trainerDashboardService';
 import { fetchAttendanceRequests, createAttendanceRequest } from '../../services/attendanceRequestService';
 import AttendanceCorrectionModal from '../../components/AttendanceCorrectionModal';
 
@@ -14,16 +14,10 @@ import AttendanceCorrectionModal from '../../components/AttendanceCorrectionModa
 //
 // Phone, employee ID, course, and city aren't on the User auth model
 // (see server/models/User.js) — they only exist on the standalone
-// Trainer CRUD record (server/models/Trainer.js), which isn't linked to
-// a logged-in trainer session yet. So those four are read-only
-// placeholders here, while name/email/password go through the real
-// useAuth().updateProfile() the rest of the app already uses.
-const TRAINER_DETAILS = {
-  phone: '+92 300 1234567',
-  employeeId: 'TRN-1042',
-  course: 'Web Development',
-  city: 'Karachi',
-};
+// Trainer CRUD record (server/models/Trainer.js), fetched via
+// GET /trainer/profile (joined by email, same as getMyAttendance) —
+// name/email/password go through the real useAuth().updateProfile()
+// the rest of the app already uses.
 
 function initials(name) {
   return (
@@ -156,6 +150,11 @@ export default function ProfilePage() {
   const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
 
+  const { data: trainerProfile, isLoading: trainerProfileLoading } = useQuery({
+    queryKey: ['trainer-my-profile'],
+    queryFn: getMyTrainerProfile,
+  });
+
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -226,19 +225,27 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <span className="text-overline uppercase text-neutral-500">Phone</span>
-            <span className="text-body-sm text-neutral-900">{TRAINER_DETAILS.phone}</span>
+            <span className="text-body-sm text-neutral-900">
+              {trainerProfileLoading ? '…' : trainerProfile?.phone || '—'}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-overline uppercase text-neutral-500">Employee ID</span>
-            <span className="text-body-sm text-neutral-900">{TRAINER_DETAILS.employeeId}</span>
+            <span className="text-body-sm text-neutral-900">
+              {trainerProfileLoading ? '…' : trainerProfile?.employeeId || '—'}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-overline uppercase text-neutral-500">Course</span>
-            <span className="text-body-sm text-neutral-900">{TRAINER_DETAILS.course}</span>
+            <span className="text-body-sm text-neutral-900">
+              {trainerProfileLoading ? '…' : trainerProfile?.course || '—'}
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-overline uppercase text-neutral-500">City</span>
-            <span className="text-body-sm text-neutral-900">{TRAINER_DETAILS.city}</span>
+            <span className="text-body-sm text-neutral-900">
+              {trainerProfileLoading ? '…' : trainerProfile?.city || '—'}
+            </span>
           </div>
         </div>
       </motion.div>

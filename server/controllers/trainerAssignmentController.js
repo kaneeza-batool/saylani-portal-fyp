@@ -2,6 +2,7 @@ const StudentPortalAssignment = require('../models/StudentPortalAssignment');
 const StudentPortalAssignmentSubmission = require('../models/StudentPortalAssignmentSubmission');
 const Student = require('../models/Student');
 const { sendMail } = require('../utils/mailer');
+const { logAudit } = require('../utils/auditLogger');
 
 // Same fixed course list as trainerQuizController.js — kept local rather
 // than shared, matching how course lists are duplicated elsewhere in this
@@ -35,6 +36,14 @@ exports.createAssignment = async (req, res) => {
       isHackathon: Boolean(isHackathon),
       referenceLinks: Array.isArray(referenceLinks) ? referenceLinks.filter((l) => l?.trim()) : [],
       createdByTrainer: req.user._id,
+    });
+
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'StudentPortalAssignment',
+      resourceId: assignment._id,
+      summary: `Created assignment "${assignment.title}" for ${assignment.course}`,
     });
 
     return res.status(201).json({ assignment });
@@ -198,6 +207,14 @@ exports.reviewSubmission = async (req, res) => {
     submission.grade = grade || '';
     submission.trainerRemarks = trainerRemarks || '';
     await submission.save();
+
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'StudentPortalAssignmentSubmission',
+      resourceId: submission._id,
+      summary: `Reviewed submission for "${submission.assignment.title}" as ${decision}`,
+    });
 
     // Best-effort — a failed email must never block the review itself
     // from being recorded (same tolerance as jobApplicationController's

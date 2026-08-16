@@ -70,8 +70,8 @@ function App() {
                 <Route path="/fee" element={<PaymentPage />} />
                 <Route path="/assignment" element={<AssignmentPage />} />
                 <Route path="/quiz" element={<QuizListPage />} />
-                <Route path="/leaderboard/:courseId" element={<LeaderboardPage />} />
-                <Route path="/certificate/:courseId" element={<CertificatePage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/certificate" element={<CertificatePage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/feedback" element={<MyFeedbackPage />} />

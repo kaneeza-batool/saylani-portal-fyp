@@ -19,6 +19,7 @@ import VerifyCertificate from '../../pages/public/VerifyCertificate';
 import EntryTestStatus from '../../pages/public/EntryTestStatus';
 import CheckResult from '../../pages/public/CheckResult';
 import DownloadIdCard from '../../pages/public/DownloadIdCard';
+import Registry from '../../pages/public/Registry';
 import PrivacyPolicy from '../../pages/public/PrivacyPolicy';
 import TermsOfService from '../../pages/public/TermsOfService';
 import NotFound from '../../pages/public/NotFound';
@@ -54,9 +55,8 @@ const PublicRoutes = () => {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
 
-        {/* Placeholder paths to avoid application crashing */}
         <Route path="/apply" element={<EnrollNow />} />
-        <Route path="/registry" element={<div className="py-20 text-center text-sm font-medium text-neutral-500">Academic Registry coming soon.</div>} />
+        <Route path="/registry" element={<Registry />} />
 
         {/* 404 — kept inside the layout so a mistyped URL still leaves Navbar/Footer navigation available */}
         <Route path="*" element={<NotFound />} />

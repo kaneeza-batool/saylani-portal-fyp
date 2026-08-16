@@ -16,10 +16,12 @@ const donationSchema = new mongoose.Schema(
     message: { type: String, default: '', trim: true },
     // Donor opts out of appearing on the public donor wall by name.
     anonymous: { type: Boolean, default: false },
-    // No real payment gateway is wired up — a donation starts `pending` and
-    // an admin manually marks it `confirmed` once the transfer is verified
-    // (mirrors how a real institute would reconcile bank/mobile-wallet
-    // transfers), or `rejected` if it can't be verified.
+    // No real payment gateway is wired up for ANY method (card included —
+    // CardPaymentForm.jsx only runs a client-side Luhn/expiry check, never
+    // an actual charge) — every donation starts `pending` and an admin
+    // manually marks it `confirmed` once the transfer/charge is verified
+    // (mirrors how a real institute would reconcile bank/mobile-wallet/
+    // card transfers by hand), or `rejected` if it can't be verified.
     status: { type: String, enum: ['pending', 'confirmed', 'rejected'], default: 'pending' },
   },
   { timestamps: true }

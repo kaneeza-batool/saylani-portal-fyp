@@ -57,6 +57,12 @@ const studentSchema = new mongoose.Schema(
     // which field actually changed.
     dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
     address: { type: String, default: '', trim: true },
+    // Submitted at admission-application time (public-website's EnrollNow
+    // form, both optional) — distinct from `avatarUrl` below, which is a
+    // student-portal profile picture uploaded post-enrollment during
+    // onboarding. These two are never the same upload.
+    applicationPhotoUrl: { type: String, default: '' },
+    applicationCnicScanUrl: { type: String, default: '' },
     // Overall course grade, set by a trainer on the Trainer Portal roster
     // page. No collection anywhere derives or aggregates this automatically
     // (assignment submissions have their own separate per-submission grade,

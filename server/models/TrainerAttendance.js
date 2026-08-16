@@ -15,4 +15,10 @@ const trainerAttendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Same duplicate-checkin guard StudentAttendance.js already has at the DB
+// level — the check-in flow (trainerAttendanceController.js) only did an
+// app-level findOne-then-create check before this, leaving a race window
+// where two near-simultaneous check-ins could both pass that check.
+trainerAttendanceSchema.index({ trainer: 1, date: 1 }, { unique: true });
+
 module.exports = mongoose.model('TrainerAttendance', trainerAttendanceSchema);

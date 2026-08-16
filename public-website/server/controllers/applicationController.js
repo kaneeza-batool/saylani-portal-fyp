@@ -40,6 +40,11 @@ exports.submitApplication = async (req, res) => {
     if (!Student.COURSES.includes(course)) return res.status(400).json({ message: 'Please select a valid course' });
     if (!campusId) return res.status(400).json({ message: 'Please select a campus' });
 
+    // Both optional — the form never requires either (see EnrollNow.jsx's
+    // Documents step), so most applications will have neither set.
+    const photoUrl = req.files?.photo?.[0] ? `/uploads/applications/${req.files.photo[0].filename}` : '';
+    const cnicScanUrl = req.files?.cnicScan?.[0] ? `/uploads/applications/${req.files.cnicScan[0].filename}` : '';
+
     // Friendly duplicate check before create — Student.cnic is
     // unique-indexed, but that alone would surface as a raw 500/E11000.
     const existingStudent = await Student.findOne({ cnic: normalizedCnic });
@@ -65,6 +70,8 @@ exports.submitApplication = async (req, res) => {
       status: 'pending',
       hasCompletedOnboarding: false,
       hasLaptop: !!hasLaptop,
+      applicationPhotoUrl: photoUrl,
+      applicationCnicScanUrl: cnicScanUrl,
     });
 
     // referenceNumber is random + unique-indexed; retry on the (rare)
@@ -88,6 +95,8 @@ exports.submitApplication = async (req, res) => {
             selectedProgram: selectedProgram.trim(),
             preferredBatch: preferredBatch?.trim() || '',
             hasLaptop: !!hasLaptop,
+            photoUrl,
+            cnicScanUrl,
             referenceNumber: generateReferenceNumber(),
           });
         } catch (err) {

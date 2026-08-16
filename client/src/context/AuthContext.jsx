@@ -40,6 +40,16 @@ export function AuthProvider({ children }) {
     [queryClient]
   );
 
+  const registerEmployer = useCallback(
+    async (payload) => {
+      queryClient.clear();
+      const registeredUser = await authService.registerEmployer(payload);
+      setUser(registeredUser);
+      return registeredUser;
+    },
+    [queryClient]
+  );
+
   const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
@@ -53,7 +63,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, registerTrainer, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, registerTrainer, registerEmployer, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );
