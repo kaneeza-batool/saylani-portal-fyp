@@ -44,6 +44,22 @@ export default function JobApplyPage() {
     applyMutation.mutate();
   };
 
+  const deadlinePassed = job?.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
+
+  if (!jobLoading && deadlinePassed) {
+    return (
+      <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl p-10 text-center flex flex-col items-center gap-3">
+        <div className="font-heading font-bold text-h5 text-neutral-900">Applications are closed</div>
+        <p className="text-body-sm text-neutral-500 max-w-[420px]">
+          The application deadline for <strong>{job.title}</strong> has passed. Check the Careers page for other current openings.
+        </p>
+        <Link to="/careers" className="mt-2 text-body-sm font-semibold text-gold-600 hover:underline">
+          Back to all openings
+        </Link>
+      </motion.div>
+    );
+  }
+
   if (applyMutation.isSuccess) {
     return (
       <motion.div variants={fadeIn} initial="hidden" animate="show" className="bg-surface border border-neutral-200 rounded-xl p-10 text-center flex flex-col items-center gap-3">

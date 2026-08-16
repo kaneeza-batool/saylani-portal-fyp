@@ -108,7 +108,7 @@ exports.deleteApplication = async (req, res) => {
 
 exports.getJobOptions = async (req, res) => {
   try {
-    const jobs = await Job.find({}, 'title company').sort({ title: 1 });
+    const jobs = await Job.find({}, 'title company minMatchScoreForShortlist').sort({ title: 1 });
     return res.status(200).json({ items: jobs });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load jobs', error: err.message });

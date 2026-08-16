@@ -3,6 +3,14 @@ const JobApplication = require('../models/JobApplication');
 const { computeMatchScore } = require('../utils/matchScore');
 const { sendMail } = require('../utils/mailer');
 
+// A job with no deadline set (null) stays open indefinitely — only jobs
+// that HAVE a deadline get excluded once it's passed. Listing still shows
+// an expired job (so "Applications closed" can be shown instead of a 404),
+// only submitApplication actually blocks.
+function isPastDeadline(job) {
+  return Boolean(job.applicationDeadline) && new Date(job.applicationDeadline).getTime() < Date.now();
+}
+
 exports.listPublicJobs = async (req, res) => {
   try {
     const jobs = await Job.find({ published: true, status: 'open' }).sort({ createdAt: -1 });
@@ -26,6 +34,9 @@ exports.submitApplication = async (req, res) => {
   try {
     const job = await Job.findOne({ _id: req.params.id, published: true, status: 'open' });
     if (!job) return res.status(404).json({ message: 'This job is no longer accepting applications.' });
+    if (isPastDeadline(job)) {
+      return res.status(410).json({ message: 'The application deadline for this job has passed.' });
+    }
 
     const { fullName, email, phone, address, education, experience, skills } = req.body;
     if (!fullName || !email || !phone || !education) {

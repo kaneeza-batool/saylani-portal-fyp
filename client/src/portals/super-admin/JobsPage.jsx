@@ -17,17 +17,24 @@ const EXPORT_COLUMNS = [
   { header: 'Location', accessor: (j) => j.location },
   { header: 'Type', accessor: (j) => j.type },
   { header: 'Status', accessor: (j) => j.status },
+  { header: 'Deadline', accessor: (j) => (j.applicationDeadline ? new Date(j.applicationDeadline).toLocaleDateString() : '') },
   { header: 'Published', accessor: (j) => (j.published ? 'Yes' : 'No') },
 ];
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.6fr_1.4fr_1.2fr_1fr_0.8fr_0.9fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.4fr_1.2fr_1fr_0.9fr_0.8fr_0.9fr_0.9fr_0.8fr]';
+
+function fmtDeadline(d) {
+  if (!d) return { text: '—', past: false };
+  const past = new Date(d).getTime() < Date.now();
+  return { text: new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }), past };
+}
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
-      {[0, 1, 2, 3, 4, 5].map((i) => (
+    <div className={`grid ${GRID_COLS} min-w-[820px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+      {[0, 1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
@@ -166,8 +173,8 @@ export default function JobsPage() {
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
-        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Title', 'Company', 'Location', 'Type', 'Status', 'Published'].map((h) => (
+        <div className={`grid ${GRID_COLS} min-w-[820px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+          {['Title', 'Company', 'Location', 'Type', 'Status', 'Deadline', 'Published'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -185,17 +192,21 @@ export default function JobsPage() {
           <motion.div variants={staggerContainer} initial="hidden" animate="show">
             {items.map((j) => {
               const s = STATUS_STYLE[j.status] ?? STATUS_STYLE.open;
+              const deadline = fmtDeadline(j.applicationDeadline);
               return (
                 <motion.div
                   key={j._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[820px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <span className="text-body-sm font-semibold text-neutral-900 truncate">{j.title}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{j.company}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{j.location || '—'}</span>
                   <span className="text-body-sm text-neutral-600">{j.type}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
+                  <span className={`text-body-sm ${deadline.past ? 'text-danger-600 font-semibold' : 'text-neutral-600'}`}>
+                    {deadline.text}
+                  </span>
                   <span
                     className={`text-badge px-2.5 py-1 rounded-pill w-fit ${
                       j.published ? 'bg-success-bg text-success-text' : 'bg-neutral-100 text-neutral-500'

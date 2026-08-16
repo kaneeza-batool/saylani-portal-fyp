@@ -11,7 +11,17 @@ const EMPTY_FORM = {
   description: '',
   requirementsText: '',
   published: false,
+  applicationDeadline: '',
+  minMatchScoreForShortlist: '',
 };
+
+// Job.applicationDeadline is a Date; a <input type="date"> needs/returns a
+// plain 'YYYY-MM-DD' string, so it's converted both ways at the form
+// boundary rather than changing what the API sends/receives.
+function toDateInputValue(date) {
+  if (!date) return '';
+  return new Date(date).toISOString().slice(0, 10);
+}
 
 export default function JobFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -20,7 +30,13 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
     if (open) {
       setForm(
         initialValues
-          ? { ...EMPTY_FORM, ...initialValues, requirementsText: (initialValues.requirements ?? []).join('\n') }
+          ? {
+              ...EMPTY_FORM,
+              ...initialValues,
+              requirementsText: (initialValues.requirements ?? []).join('\n'),
+              applicationDeadline: toDateInputValue(initialValues.applicationDeadline),
+              minMatchScoreForShortlist: initialValues.minMatchScoreForShortlist ?? '',
+            }
           : EMPTY_FORM
       );
     }
@@ -30,13 +46,15 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const { requirementsText, ...rest } = form;
+    const { requirementsText, applicationDeadline, minMatchScoreForShortlist, ...rest } = form;
     onSubmit({
       ...rest,
       requirements: requirementsText
         .split('\n')
         .map((r) => r.trim())
         .filter(Boolean),
+      applicationDeadline: applicationDeadline || null,
+      minMatchScoreForShortlist: minMatchScoreForShortlist === '' ? null : Number(minMatchScoreForShortlist),
     });
   };
 
@@ -85,14 +103,28 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className={labelClass} htmlFor="job-status">
-            Status
-          </label>
-          <select id="job-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
-            <option value="open">Open</option>
-            <option value="closed">Closed</option>
-          </select>
+        <div className="flex gap-3">
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className={labelClass} htmlFor="job-status">
+              Status
+            </label>
+            <select id="job-status" value={form.status} onChange={setField('status')} className={`${inputClass} bg-surface`}>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5 flex-1">
+            <label className={labelClass} htmlFor="job-deadline">
+              Application deadline
+            </label>
+            <input
+              id="job-deadline"
+              type="date"
+              value={form.applicationDeadline}
+              onChange={setField('applicationDeadline')}
+              className={inputClass}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -121,6 +153,26 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
             placeholder={'e.g.\nBS in Computer Science\n2+ years experience\nStrong communication skills'}
             className={inputClass}
           />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass} htmlFor="job-min-match">
+            Shortlist criteria — minimum match score (optional)
+          </label>
+          <input
+            id="job-min-match"
+            type="number"
+            min="0"
+            max="100"
+            value={form.minMatchScoreForShortlist}
+            onChange={setField('minMatchScoreForShortlist')}
+            placeholder="e.g. 60"
+            className={inputClass}
+          />
+          <p className="text-caption text-neutral-400">
+            Applicants scoring at or above this against the requirements above are badged as a "Strong match" on the
+            Applications page — a guide for shortlisting, not automatic.
+          </p>
         </div>
 
         <label className="flex items-center gap-2.5 cursor-pointer">

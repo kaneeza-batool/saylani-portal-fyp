@@ -24,6 +24,20 @@ export default function JobDetailPage() {
     );
   }
 
+  const deadlinePassed = job.applicationDeadline && new Date(job.applicationDeadline).getTime() < Date.now();
+  const applyCta = deadlinePassed ? (
+    <span className="shrink-0 border border-neutral-200 bg-neutral-100 text-neutral-400 text-body font-semibold px-5 py-[11px] rounded cursor-not-allowed">
+      Applications Closed
+    </span>
+  ) : (
+    <Link
+      to={`/careers/${job._id}/apply`}
+      className="shrink-0 border-none bg-gold-500 text-white text-body font-semibold px-5 py-[11px] rounded cursor-pointer transition-colors hover:bg-gold-600"
+    >
+      Apply Now
+    </Link>
+  );
+
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="show" className="flex flex-col gap-5">
       <Link to="/careers" className="text-caption font-semibold text-neutral-500 hover:text-gold-600 transition-colors w-fit">
@@ -36,17 +50,18 @@ export default function JobDetailPage() {
             <h1 className="font-heading font-bold text-h4 text-navy-900">{job.title}</h1>
             <div className="text-body text-neutral-500 mt-1">{job.company}</div>
           </div>
-          <Link
-            to={`/careers/${job._id}/apply`}
-            className="shrink-0 border-none bg-gold-500 text-white text-body font-semibold px-5 py-[11px] rounded cursor-pointer transition-colors hover:bg-gold-600"
-          >
-            Apply Now
-          </Link>
+          {applyCta}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {job.location && <span className="text-badge px-2.5 py-1 rounded-pill bg-neutral-100 text-neutral-600">{job.location}</span>}
           <span className="text-badge px-2.5 py-1 rounded-pill bg-info-bg text-info-text">{job.type}</span>
+          {job.applicationDeadline && (
+            <span className={`text-badge px-2.5 py-1 rounded-pill ${deadlinePassed ? 'bg-danger-50 text-danger-600' : 'bg-neutral-100 text-neutral-600'}`}>
+              {deadlinePassed ? 'Deadline passed: ' : 'Apply by '}
+              {new Date(job.applicationDeadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          )}
         </div>
 
         {job.description && (
@@ -70,12 +85,7 @@ export default function JobDetailPage() {
           </div>
         )}
 
-        <Link
-          to={`/careers/${job._id}/apply`}
-          className="mt-2 self-start border-none bg-gold-500 text-white text-body font-semibold px-5 py-[11px] rounded cursor-pointer transition-colors hover:bg-gold-600"
-        >
-          Apply Now
-        </Link>
+        <div className="mt-2 self-start">{applyCta}</div>
       </div>
     </motion.div>
   );

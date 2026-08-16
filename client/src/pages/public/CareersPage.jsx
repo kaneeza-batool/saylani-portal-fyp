@@ -41,11 +41,16 @@ export default function CareersPage() {
               <div className="flex flex-col gap-1.5 min-w-0">
                 <div className="font-heading font-bold text-h6 text-neutral-900">{job.title}</div>
                 <div className="text-body-sm text-neutral-500">{job.company}</div>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {job.location && (
                     <span className="text-badge px-2.5 py-1 rounded-pill bg-neutral-100 text-neutral-600">{job.location}</span>
                   )}
                   <span className="text-badge px-2.5 py-1 rounded-pill bg-info-bg text-info-text">{job.type}</span>
+                  {job.applicationDeadline && (
+                    <span className="text-badge px-2.5 py-1 rounded-pill bg-neutral-100 text-neutral-600">
+                      Apply by {new Date(job.applicationDeadline).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
                 </div>
               </div>
 

@@ -13,6 +13,18 @@ const jobSchema = new mongoose.Schema(
     // is still drafting it, and only becomes visible on the public careers
     // page once explicitly published.
     published: { type: Boolean, default: false },
+    // Optional — a job with no deadline stays open indefinitely (same as
+    // today). Once set, publicJobController checks it alongside
+    // status:'open' on every public read/apply, same enforcement point as
+    // status so a job can't be applied to through a stale cached page after
+    // its deadline passes.
+    applicationDeadline: { type: Date, default: null },
+    // Optional threshold on computeMatchScore's 0-100 output (see
+    // utils/matchScore.js) — when set, JobApplicationsPage badges any
+    // applicant at or above this score as a "Strong match" so an admin can
+    // shortlist by criteria instead of reading every application by hand.
+    // Purely a display aid: never auto-changes an application's status.
+    minMatchScoreForShortlist: { type: Number, min: 0, max: 100, default: null },
   },
   { timestamps: true }
 );
