@@ -130,3 +130,53 @@ exports.markAttendance = async (req, res) => {
     return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
   }
 };
+
+// Quick single-student mark — the trainer scans a student's own ID card QR
+// (same payload StudentIdCardModal/QrCheckInModal already use:
+// {org:'TITAN', type:'Student', id: rollNumber, name}) or types their roll
+// number in by hand, and that one student is marked present immediately.
+// Same ownership boundary as the bulk path: the roll number must belong to
+// a student in one of the trainer's own batches for this course, or it's
+// rejected rather than silently marking someone outside their roster.
+exports.markByRollNumber = async (req, res) => {
+  try {
+    const { course, date, rollNumber } = req.body;
+    if (!course || !date || !rollNumber) {
+      return res.status(400).json({ message: 'course, date, and rollNumber are required.' });
+    }
+
+    const batchIds = await myBatchIdsForCourse(req.user, course);
+    if (batchIds.length === 0) {
+      return res.status(403).json({ message: 'You can only take attendance for your own batches.' });
+    }
+
+    const student = await Student.findOne({ rollNumber: Number(rollNumber), batch: { $in: batchIds } }).populate(
+      'campus',
+      'name'
+    );
+    if (!student) {
+      return res.status(404).json({ message: `No student with roll number ${rollNumber} in this batch.` });
+    }
+
+    const dayStart = new Date(new Date(date).toDateString());
+    const record = await StudentAttendance.findOneAndUpdate(
+      { student: student._id, date: dayStart },
+      {
+        $set: {
+          student: student._id,
+          studentName: student.name,
+          rollNumber: student.rollNumber,
+          course,
+          campus: student.campus?.name || '',
+          date: dayStart,
+          status: 'present',
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return res.status(200).json({ student: { _id: student._id, name: student.name, rollNumber: student.rollNumber }, record });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
+  }
+};
