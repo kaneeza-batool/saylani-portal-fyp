@@ -1,5 +1,7 @@
 const Slot = require('../models/Slot');
 const Student = require('../models/Student');
+const Trainer = require('../models/Trainer');
+const TrainerAttendance = require('../models/TrainerAttendance');
 
 // Matches a Slot to the logged-in trainer two ways: the real link
 // (assignedTrainer, set when a slot is created/edited with this trainer's
@@ -65,5 +67,23 @@ exports.getMyBatches = async (req, res) => {
     return res.status(200).json({ batches });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load trainer dashboard', error: err.message });
+  }
+};
+
+// The trainer's own check-in/out history (TrainerAttendance — a separate
+// thing from the student rosters this controller otherwise deals with).
+// Matched via email against the standalone Trainer CRUD record, same link
+// authController.registerTrainer sets up when a trainer self-registers —
+// there's no direct User<->Trainer ref, so email is the join key.
+exports.getMyAttendance = async (req, res) => {
+  try {
+    const trainerProfile = await Trainer.findOne({ email: req.user.email }).select('_id');
+    if (!trainerProfile) return res.status(200).json({ items: [] });
+
+    const records = await TrainerAttendance.find({ trainer: trainerProfile._id }).sort({ date: -1 }).limit(30).lean();
+
+    return res.status(200).json({ items: records });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load attendance', error: err.message });
   }
 };

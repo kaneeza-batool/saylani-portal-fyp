@@ -57,6 +57,10 @@ import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReports
 import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
 import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
 import SubAdminAuditLogPage from './portals/sub-admin/AuditLogPage';
+import SubAdminAttendanceRequestsPage from './portals/sub-admin/AttendanceRequestsPage';
+import StudentFeedbackPage from './portals/super-admin/StudentFeedbackPage';
+import RolesPermissionsPage from './portals/super-admin/RolesPermissionsPage';
+import SubAdminStudentFeedbackPage from './portals/sub-admin/StudentFeedbackPage';
 import TrainerLayout from './layouts/TrainerLayout';
 import TrainerDashboardPage from './portals/trainer/DashboardPage';
 import TrainerBatchesPage from './portals/trainer/BatchesPage';
@@ -140,6 +144,8 @@ function App() {
                     <Route path="campus-map" element={<CampusMapPage />} />
                     <Route path="alerts" element={<AlertsPage />} />
                     <Route path="admissions" element={<AdmissionsQueuePage />} />
+                    <Route path="student-feedback" element={<StudentFeedbackPage />} />
+                    <Route path="roles-permissions" element={<RolesPermissionsPage />} />
                   </Route>
                 </Route>
 
@@ -160,6 +166,8 @@ function App() {
                     <Route path="trainers" element={<SubAdminTrainersPage />} />
                     <Route path="batches" element={<SubAdminBatchesPage />} />
                     <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
+                    <Route path="attendance-requests" element={<SubAdminAttendanceRequestsPage />} />
+                    <Route path="student-feedback" element={<SubAdminStudentFeedbackPage />} />
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
                     <Route path="alerts" element={<SubAdminAlertsPage />} />
                     <Route path="audit-log" element={<SubAdminAuditLogPage />} />

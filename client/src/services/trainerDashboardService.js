@@ -79,3 +79,8 @@ export async function setStudentGrade(studentId, grade) {
   const { data } = await api.patch(`/trainer/students/${studentId}/grade`, { grade });
   return data.student;
 }
+
+export async function getMyAttendance() {
+  const { data } = await api.get('/trainer/my-attendance');
+  return data.items;
+}

@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from '../../components/navigation/Navbar';
 import Footer from '../../components/common/Footer';
 import QuizFAB from '../../components/common/QuizFAB';
+import WhatsAppFAB from '../../components/common/WhatsAppFAB';
 
 const PublicLayout = () => {
   return (
@@ -19,6 +20,9 @@ const PublicLayout = () => {
 
       {/* Site-wide floating entry point into the Find Your Path quiz */}
       <QuizFAB />
+
+      {/* Site-wide WhatsApp click-to-chat entry point */}
+      <WhatsAppFAB />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 const express = require('express');
-const { getMyBatches } = require('../controllers/trainerDashboardController');
+const { getMyBatches, getMyAttendance } = require('../controllers/trainerDashboardController');
 const { listCourses, listMyQuizzes, createQuiz } = require('../controllers/trainerQuizController');
 const {
   createAssignment,
@@ -20,6 +20,7 @@ const router = express.Router();
 router.use(protect, restrictTo('trainer'));
 
 router.get('/dashboard', getMyBatches);
+router.get('/my-attendance', getMyAttendance);
 router.get('/students', listMyStudents);
 router.get('/courses', listCourses);
 router.get('/quizzes', listMyQuizzes);

@@ -427,7 +427,18 @@ export default function StudentsPage() {
         type="Student"
         person={
           idCardTarget
-            ? { name: idCardTarget.name, idNumber: idCardTarget.rollNumber, line1: idCardTarget.course, line2: idCardTarget.campus }
+            ? {
+                name: idCardTarget.name,
+                idNumber: idCardTarget.rollNumber,
+                line1: idCardTarget.course,
+                line2: idCardTarget.campus?.name,
+                // avatarUrl is a path relative to the Student Portal's own
+                // static server (e.g. /images/avatars/x.jpg), not this app's
+                // origin — see student-portal/server/controllers/
+                // studentController.js's uploadAvatar. Absolute-ize it
+                // against that portal's base URL or the <img> 404s here.
+                photo: idCardTarget.avatarUrl ? `${import.meta.env.VITE_STUDENT_PORTAL_URL_BASE}${idCardTarget.avatarUrl}` : undefined,
+              }
             : null
         }
       />
