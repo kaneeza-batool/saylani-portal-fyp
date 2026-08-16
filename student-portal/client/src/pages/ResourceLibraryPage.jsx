@@ -12,6 +12,7 @@ const SOURCE_STYLE = {
   Figma: 'bg-warning-bg text-warning-text',
   Notion: 'bg-neutral-100 text-neutral-600',
   Link: 'bg-neutral-100 text-neutral-500',
+  'Trainer Upload': 'bg-success-bg text-success-text',
 };
 
 function ResourceCard({ resource }) {
@@ -109,7 +110,7 @@ export default function ResourceLibraryPage() {
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-sm font-medium text-neutral-500">
-            {resources?.length ? 'No resources match your search.' : 'No reference links found for this course yet.'}
+            {resources?.length ? 'No resources match your search.' : 'No resources shared for your course yet.'}
           </p>
         </div>
       ) : (

@@ -1,4 +1,6 @@
 const Assignment = require('../models/Assignment');
+const Slot = require('../models/Slot');
+const Resource = require('../models/Resource');
 
 // Best-effort classification from the URL itself — there's no separate
 // "resource" record anywhere, these are just Assignment.referenceLinks
@@ -32,6 +34,38 @@ function inferTitle(url, source) {
   }
 }
 
+// A student's own batch (Student.batch -> Slot) tells us exactly which
+// trainer+course "owns" them, the same ownership pair the Trainer Portal's
+// Resources page scopes uploads to (see server/controllers/
+// trainerResourceController.js's ownsCourse). assignedTrainer is the
+// precise match when a trainer self-registered; trainerName is the
+// pragmatic fallback for slots that only ever got a free-text trainer name
+// — same dual-match convention the main app's myBatchesFilter already uses
+// for the reverse direction (trainer -> their own slots).
+async function getUploadedResourcesForStudent(student) {
+  if (!student.batch) return [];
+  const slot = await Slot.findById(student.batch).select('course trainer assignedTrainer').lean();
+  if (!slot) return [];
+
+  const or = [];
+  if (slot.assignedTrainer) or.push({ trainer: slot.assignedTrainer });
+  if (slot.trainer) or.push({ trainerName: new RegExp(`^${escapeRegex(slot.trainer)}$`, 'i') });
+  if (!or.length) return [];
+
+  const uploads = await Resource.find({ course: slot.course, $or: or }).sort({ createdAt: -1 }).lean();
+  return uploads.map((r) => ({
+    url: r.fileUrl,
+    source: 'Trainer Upload',
+    title: r.title,
+    assignmentId: r._id,
+    assignmentTitle: r.description || `Shared by ${r.trainerName}`,
+  }));
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 exports.getResourceLibrary = async (req, res) => {
   try {
     const assignments = await Assignment.find({ course: req.student.course }).sort({ dueDate: 1 });
@@ -49,6 +83,8 @@ exports.getResourceLibrary = async (req, res) => {
         });
       }
     }
+
+    resources.push(...(await getUploadedResourcesForStudent(req.student)));
 
     return res.status(200).json({ resources });
   } catch (err) {
