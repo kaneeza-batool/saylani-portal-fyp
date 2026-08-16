@@ -3,6 +3,7 @@ const Slot = require('../models/Slot');
 const FeeVoucher = require('../models/FeeVoucher');
 const { logAudit } = require('../utils/auditLogger');
 const { currentMonthLabel, isOverdue, BILLABLE_STATUSES } = require('../utils/feePlan');
+const { computeCourseProgress } = require('../utils/courseProgress');
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -87,16 +88,29 @@ exports.getStudents = async (req, res) => {
     const voucherByStudentId = new Map(vouchers.map((v) => [String(v.student), v]));
     const now = new Date();
 
+    // Same population as feeStatus (billable = has actually had a real
+    // course journey) — a pending/rejected applicant never took a quiz or
+    // submitted an assignment, so "progress" is meaningless for them.
+    // Formula matches what the student sees on their own Student Portal
+    // (see courseProgress.js) — previously this table showed no progress
+    // number at all.
+    const progressByStudentId = await computeCourseProgress(
+      students.filter((s) => BILLABLE_STATUSES.includes(s.status)).map((s) => ({ _id: s._id, course: s.course }))
+    );
+
     const studentsWithFeeStatus = students.map((s) => {
-      if (!BILLABLE_STATUSES.includes(s.status)) return { ...s, feeStatus: null };
+      const progress = progressByStudentId.get(String(s._id)) ?? null;
+
+      if (!BILLABLE_STATUSES.includes(s.status)) return { ...s, feeStatus: null, progress: null };
 
       const voucher = voucherByStudentId.get(String(s._id));
-      if (!voucher) return { ...s, feeStatus: { status: 'not_generated' } };
+      if (!voucher) return { ...s, feeStatus: { status: 'not_generated' }, progress };
 
       const status = voucher.status === 'paid' ? 'paid' : isOverdue(voucher, now) ? 'overdue' : 'pending';
       return {
         ...s,
         feeStatus: { status, dueDate: voucher.dueDate, amount: voucher.amount, voucherId: voucher.voucherId },
+        progress,
       };
     });
 

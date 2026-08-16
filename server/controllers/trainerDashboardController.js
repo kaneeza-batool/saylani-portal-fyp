@@ -2,6 +2,7 @@ const Slot = require('../models/Slot');
 const Student = require('../models/Student');
 const Trainer = require('../models/Trainer');
 const TrainerAttendance = require('../models/TrainerAttendance');
+const { computeCourseProgress } = require('../utils/courseProgress');
 
 // Matches a Slot to the logged-in trainer two ways: the real link
 // (assignedTrainer, set when a slot is created/edited with this trainer's
@@ -40,27 +41,46 @@ exports.myBatchesFilter = myBatchesFilter;
 exports.getMyBatches = async (req, res) => {
   try {
     const slots = await Slot.find(myBatchesFilter(req.user)).populate('campus', 'name city').sort({ createdAt: -1 });
+    const slotIds = slots.map((s) => s._id);
 
     // Explicit roster filter, not just the batch-assignment invariant
     // (pending/rejected applicants never get a batch — see Student.js) —
     // written the same way as every other student-count site so this stays
     // correct even if that invariant is ever relaxed elsewhere.
-    const counts = await Student.aggregate([
-      { $match: { batch: { $in: slots.map((s) => s._id) }, status: { $nin: ['pending', 'rejected'] } } },
-      { $group: { _id: '$batch', count: { $sum: 1 } } },
-    ]);
-    const countBySlotId = new Map(counts.map((c) => [String(c._id), c.count]));
+    const students = await Student.find(
+      { batch: { $in: slotIds }, status: { $nin: ['pending', 'rejected'] } },
+      'batch course'
+    ).lean();
+    const studentsBySlot = new Map();
+    for (const s of students) {
+      const key = String(s.batch);
+      if (!studentsBySlot.has(key)) studentsBySlot.set(key, []);
+      studentsBySlot.get(key).push(s);
+    }
+
+    // Real course progress per student (same formula the student sees on
+    // their own Student Portal — see courseProgress.js), averaged per
+    // batch. This used to be seat-fill % (students/seatsTotal), which is
+    // already shown as its own "X / Y students" line on the same card —
+    // pure duplication, and not what "progress" means anywhere else this
+    // app shows it.
+    const progressByStudentId = await computeCourseProgress(students.map((s) => ({ _id: s._id, course: s.course })));
 
     const batches = slots.map((slot) => {
-      const students = countBySlotId.get(String(slot._id)) ?? 0;
+      const slotStudents = studentsBySlot.get(String(slot._id)) || [];
+      const avgProgress = slotStudents.length
+        ? Math.round(
+            slotStudents.reduce((sum, s) => sum + (progressByStudentId.get(String(s._id)) ?? 0), 0) / slotStudents.length
+          )
+        : 0;
       return {
         id: slot._id,
         course: slot.course,
         schedule: slot.schedule,
         campus: slot.campus?.name || null,
-        students,
+        students: slotStudents.length,
         seatsTotal: slot.seatsTotal,
-        pct: slot.seatsTotal > 0 ? Math.round((students / slot.seatsTotal) * 100) : 0,
+        pct: avgProgress,
       };
     });
 
