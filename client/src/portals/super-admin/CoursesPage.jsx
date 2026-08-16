@@ -90,7 +90,15 @@ export default function CoursesPage() {
         <div className="flex items-center gap-2.5">
           <ExportButtons title="Courses" filenameBase="titan-courses" columns={EXPORT_COLUMNS} rows={items} />
           <span className="text-caption text-neutral-400">
-            Managed on the public website — <span className="font-semibold">view only</span>
+            View only —{' '}
+            <a
+              href="http://localhost:5373/admin/login"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-gold-600 hover:text-gold-700 underline"
+            >
+              manage courses on the public website ↗
+            </a>
           </span>
         </div>
       </div>
