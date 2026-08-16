@@ -17,8 +17,10 @@ const {
   markAttendance,
   markByRollNumber,
 } = require('../controllers/trainerStudentAttendanceController');
+const { uploadResource, listMyResources, deleteResource } = require('../controllers/trainerResourceController');
 const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
+const { resourceUpload } = require('../utils/upload');
 
 const router = express.Router();
 
@@ -42,5 +44,8 @@ router.get('/attendance/courses', listMyAttendanceCourses);
 router.get('/attendance', getRosterForDate);
 router.post('/attendance', markAttendance);
 router.post('/attendance/scan', markByRollNumber);
+router.get('/resources', listMyResources);
+router.post('/resources', resourceUpload.single('file'), uploadResource);
+router.delete('/resources/:id', deleteResource);
 
 module.exports = router;
