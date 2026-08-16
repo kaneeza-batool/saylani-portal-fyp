@@ -177,7 +177,13 @@ const FeaturedPrograms = () => {
           {tracks.map((t) => (
             <Card key={t._id} className="flex flex-col justify-between bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm hover:shadow-xl hover:border-accent-500 transition-all duration-300 group">
               <Link to={`/programs/${t.slug}`} className="relative h-48 overflow-hidden bg-neutral-100 block no-underline">
-                <img src={resolveImageUrl(t.img)} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                {t.img ? (
+                  <img src={resolveImageUrl(t.img)} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary-100 to-neutral-100">
+                    <span className="te-mono text-[10px] font-bold text-primary-800/50 uppercase tracking-widest">TITAN</span>
+                  </div>
+                )}
               </Link>
               <div className="p-6 flex-1 flex flex-col justify-between">
                 <div>

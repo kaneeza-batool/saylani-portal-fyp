@@ -16,13 +16,22 @@ const SUBMISSION_STYLE = {
 const GRID_COLS = 'grid-cols-[1.6fr_0.9fr_0.9fr_1.1fr_1fr]';
 
 function initials(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
+  return (
+    (name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
+
+function attendanceTone(pct) {
+  if (pct == null) return 'text-neutral-400';
+  if (pct >= 80) return 'text-success-text';
+  if (pct >= 60) return 'text-warning-text';
+  return 'text-danger-600';
 }
 
 const fadeInUp = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
@@ -85,7 +94,11 @@ export default function StudentsPage() {
         </div>
 
         {isLoading ? (
-          <div className="px-[18px] py-8 text-center text-body-sm text-neutral-400">Loading students…</div>
+          <div className="p-6 flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-10 bg-neutral-100 rounded animate-pulse" />
+            ))}
+          </div>
         ) : !students?.length ? (
           <div className="px-[18px] py-8 text-center text-body-sm text-neutral-400">
             {batches.length === 0 ? 'You have no assigned batches yet.' : 'No students in this batch yet.'}
@@ -105,9 +118,14 @@ export default function StudentsPage() {
                     <div className="w-8 h-8 rounded shrink-0 bg-success-bg text-success-text flex items-center justify-center font-heading font-bold text-[12px]">
                       {initials(s.name)}
                     </div>
-                    <span className="text-body-sm font-semibold text-neutral-900 truncate">{s.name}</span>
+                    <div className="min-w-0">
+                      <div className="text-body-sm font-semibold text-neutral-900 truncate">{s.name}</div>
+                      <div className="text-badge text-neutral-400 font-normal">Roll #{s.rollNumber}</div>
+                    </div>
                   </div>
-                  <span className="text-body-sm text-neutral-600">{s.attendance != null ? `${s.attendance}%` : '—'}</span>
+                  <span className={`text-body-sm font-semibold ${attendanceTone(s.attendance)}`}>
+                    {s.attendance != null ? `${s.attendance}%` : '—'}
+                  </span>
                   <span className="text-body-sm text-neutral-600">{s.quizAvg != null ? `${s.quizAvg}%` : '—'}</span>
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${style.className}`}>{style.label}</span>
                   <select
