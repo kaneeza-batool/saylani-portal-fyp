@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdmissions, approveAdmission, rejectAdmission } from '../../services/admissionService';
@@ -15,6 +16,7 @@ function fmtDate(d) {
 
 export default function AdmissionsQueuePage() {
   const queryClient = useQueryClient();
+  const [notice, setNotice] = useState(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admissions'],
@@ -22,8 +24,20 @@ export default function AdmissionsQueuePage() {
   });
 
   const actionMutation = useMutation({
-    mutationFn: ({ id, action }) => (action === 'approve' ? approveAdmission(id) : rejectAdmission(id)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admissions'] }),
+    mutationFn: ({ id, action, name }) =>
+      (action === 'approve' ? approveAdmission(id) : rejectAdmission(id)).then((result) => ({ ...result, name })),
+    onSuccess: (result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admissions'] });
+      if (variables.action === 'approve' && result.batchAssignment && !result.batchAssignment.assigned) {
+        setNotice(
+          result.batchAssignment.reason === 'no_seats_available'
+            ? `${result.name} was approved, but every matching batch is full — assign one manually.`
+            : `${result.name} was approved, but no batch exists yet for their course at this campus — assign one manually.`
+        );
+      } else {
+        setNotice(null);
+      }
+    },
   });
 
   const isButtonPending = (id, action) =>
@@ -42,6 +56,19 @@ export default function AdmissionsQueuePage() {
           </span>
         )}
       </div>
+
+      {notice && (
+        <div className="bg-warning-bg border border-warning-text/30 rounded-xl p-3 flex items-center justify-between gap-3 text-body-sm text-warning-text">
+          <span>{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="border-none bg-transparent text-warning-text cursor-pointer text-caption font-semibold shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-3">
@@ -82,7 +109,7 @@ export default function AdmissionsQueuePage() {
                   <button
                     type="button"
                     disabled={actionMutation.isPending}
-                    onClick={() => actionMutation.mutate({ id: a._id, action: 'approve' })}
+                    onClick={() => actionMutation.mutate({ id: a._id, action: 'approve', name: a.name })}
                     className="border-none bg-gold-500 text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-gold-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isButtonPending(a._id, 'approve') ? 'Approving...' : 'Approve'}
