@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getAttendanceReports } from '../../services/studentAttendanceService';
+import { getAttendanceReports, getStudentAttendanceRecords, updateAttendanceRecord } from '../../services/studentAttendanceService';
 import { fetchSlots } from '../../services/slotService';
 import ExportButtons from '../../components/ExportButtons';
 
@@ -26,7 +26,82 @@ function defaultRange() {
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.6fr_1.6fr_0.8fr_0.8fr_0.8fr_1fr]';
+const GRID_COLS = 'grid-cols-[1.6fr_1.6fr_0.8fr_0.8fr_0.8fr_1fr_0.9fr]';
+
+// Same three-way status toggle as the Trainer Portal's own attendance
+// marking (trainer/AttendancePage.jsx StudentRow) — reused visually rather
+// than inventing a new control for "pick a status".
+const STATUS_STYLE = {
+  present: { label: 'Present', className: 'bg-success-bg text-success-text' },
+  absent: { label: 'Absent', className: 'bg-danger-50 text-danger-600' },
+  leave: { label: 'Leave', className: 'bg-warning-bg text-warning-text' },
+};
+const STATUS_ORDER = ['present', 'absent', 'leave'];
+
+function fmtRecordDate(d) {
+  return new Date(d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// Individual day-by-day records for one student, opened per-row — a
+// trainer marked someone absent, the campus manager corrects it here after
+// seeing a leave slip. Each button click saves immediately (same
+// no-separate-save-step convention as the Admissions Queue's approve/reject
+// and the Trainer Portal's grade dropdown), not a form with its own submit.
+function RecordsRow({ studentRow, range }) {
+  const queryClient = useQueryClient();
+  const { data: records, isLoading } = useQuery({
+    queryKey: ['sub-admin-attendance-records', studentRow.studentId, range],
+    queryFn: () => getStudentAttendanceRecords(studentRow.studentId, range),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: ({ id, status }) => updateAttendanceRecord(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-attendance-records', studentRow.studentId, range] });
+      // The parent report's present/absent/leave counts and % are now
+      // stale — refetch so the collapsed row reflects the correction too.
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-attendance-reports'] });
+    },
+  });
+
+  return (
+    <div className="bg-neutral-50 border-b border-neutral-100 px-[18px] py-3.5">
+      {isLoading ? (
+        <div className="text-body-sm text-neutral-400">Loading records…</div>
+      ) : !records?.length ? (
+        <div className="text-body-sm text-neutral-400">No attendance records for {studentRow.name} in this range.</div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {records.map((rec) => {
+            const isSaving = editMutation.isPending && editMutation.variables?.id === rec._id;
+            return (
+              <div key={rec._id} className="flex items-center justify-between gap-3">
+                <span className="text-body-sm text-neutral-600 w-[140px] shrink-0">{fmtRecordDate(rec.date)}</span>
+                <div className="flex border border-neutral-200 rounded overflow-hidden">
+                  {STATUS_ORDER.map((key, i) => (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={isSaving}
+                      onClick={() => editMutation.mutate({ id: rec._id, status: key })}
+                      className={[
+                        'px-3.5 py-[7px] text-[12px] font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                        i > 0 ? 'border-l border-neutral-200' : '',
+                        rec.status === key ? STATUS_STYLE[key].className : 'bg-surface text-neutral-400 hover:bg-neutral-100',
+                      ].join(' ')}
+                    >
+                      {STATUS_STYLE[key].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function RowSkeleton() {
   return (
@@ -57,6 +132,7 @@ export default function AttendanceReportsPage() {
   const [range, setRange] = useState(defaultRange);
   const [batch, setBatch] = useState('all');
   const [batchOptions, setBatchOptions] = useState([]);
+  const [expandedId, setExpandedId] = useState(null);
 
   useEffect(() => {
     fetchSlots({ status: 'active', limit: 100 })
@@ -120,7 +196,7 @@ export default function AttendanceReportsPage() {
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
         <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Student', 'Batch', 'Present', 'Absent', 'Leave', 'Attendance %'].map((h) => (
+          {['Student', 'Batch', 'Present', 'Absent', 'Leave', 'Attendance %', 'Records'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -149,20 +225,31 @@ export default function AttendanceReportsPage() {
             animate="show"
             className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}
           >
-            {rows.map((r) => (
-              <motion.div
-                key={r.studentId}
-                variants={fadeInUp}
-                className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
-              >
-                <span className="text-body-sm font-semibold text-neutral-900 truncate">{r.name}</span>
-                <span className="text-body-sm text-neutral-600 truncate">{r.batch?.schedule || '—'}</span>
-                <span className="text-body-sm text-neutral-600">{r.present}</span>
-                <span className="text-body-sm text-neutral-600">{r.absent}</span>
-                <span className="text-body-sm text-neutral-600">{r.leave}</span>
-                <span className="text-body-sm">{pctLabel(r.percentage)}</span>
-              </motion.div>
-            ))}
+            {rows.map((r) => {
+              const isExpanded = expandedId === r.studentId;
+              return (
+                <motion.div key={r.studentId} variants={fadeInUp}>
+                  <div
+                    className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  >
+                    <span className="text-body-sm font-semibold text-neutral-900 truncate">{r.name}</span>
+                    <span className="text-body-sm text-neutral-600 truncate">{r.batch?.schedule || '—'}</span>
+                    <span className="text-body-sm text-neutral-600">{r.present}</span>
+                    <span className="text-body-sm text-neutral-600">{r.absent}</span>
+                    <span className="text-body-sm text-neutral-600">{r.leave}</span>
+                    <span className="text-body-sm">{pctLabel(r.percentage)}</span>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isExpanded ? null : r.studentId)}
+                      className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 w-fit"
+                    >
+                      {isExpanded ? 'Hide' : 'View / Edit'}
+                    </button>
+                  </div>
+                  {isExpanded && <RecordsRow studentRow={r} range={range} />}
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </motion.div>

@@ -110,6 +110,36 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'attendance-mark-sub',
+    label: 'Mark Attendance',
+    to: '/sub-admin/attendance/mark',
+    roles: ['sub_admin'],
+    permission: { module: 'ATTENDANCE_MARK', action: 'write' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M8 2v4M16 2v4" />
+        <path d="M8 14l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'attendance-multi-sub',
+    label: 'Multi Attendance',
+    to: '/sub-admin/attendance/multi',
+    roles: ['sub_admin'],
+    permission: { module: 'ATTENDANCE_ADD_MULTI', action: 'write' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M8 2v4M16 2v4" />
+        <path d="M8 14l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
     id: 'feedback-sub',
     label: 'Feedback',
     to: '/sub-admin/feedback',
