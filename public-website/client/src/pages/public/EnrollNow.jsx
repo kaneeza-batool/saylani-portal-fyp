@@ -32,7 +32,8 @@ function initialForm() {
     campusId: '',
     preferredBatch: '',
     photo: null,
-    cnicScan: null,
+    cnicFront: null,
+    cnicBack: null,
   };
 }
 
@@ -182,7 +183,8 @@ const EnrollNow = () => {
       payload.append('preferredBatch', form.preferredBatch);
       payload.append('hasLaptop', form.hasLaptop === 'yes');
       if (form.photo) payload.append('photo', form.photo);
-      if (form.cnicScan) payload.append('cnicScan', form.cnicScan);
+      if (form.cnicFront) payload.append('cnicFront', form.cnicFront);
+      if (form.cnicBack) payload.append('cnicBack', form.cnicBack);
 
       const res = await axios.post(`${API_URL}/api/applications`, payload);
       setApplication(res.data.application);
@@ -372,17 +374,31 @@ const EnrollNow = () => {
               {form.photo && <p className="mt-1 text-xs text-neutral-500">{form.photo.name}</p>}
               {errors.photo && <p className={errorClass}>{errors.photo}</p>}
             </div>
-            <div>
-              <label className={labelClass}>CNIC Scan (front or back)</label>
-              <input
-                type="file"
-                accept={CNIC_SCAN_TYPES.join(',')}
-                onChange={handleFileChange('cnicScan', CNIC_SCAN_TYPES, 'CNIC scan')}
-                className={`${inputClass} py-2`}
-                style={{ borderRadius: 'var(--radius-standard)' }}
-              />
-              {form.cnicScan && <p className="mt-1 text-xs text-neutral-500">{form.cnicScan.name}</p>}
-              {errors.cnicScan && <p className={errorClass}>{errors.cnicScan}</p>}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClass}>CNIC — Front</label>
+                <input
+                  type="file"
+                  accept={CNIC_SCAN_TYPES.join(',')}
+                  onChange={handleFileChange('cnicFront', CNIC_SCAN_TYPES, 'CNIC front')}
+                  className={`${inputClass} py-2`}
+                  style={{ borderRadius: 'var(--radius-standard)' }}
+                />
+                {form.cnicFront && <p className="mt-1 text-xs text-neutral-500">{form.cnicFront.name}</p>}
+                {errors.cnicFront && <p className={errorClass}>{errors.cnicFront}</p>}
+              </div>
+              <div>
+                <label className={labelClass}>CNIC — Back</label>
+                <input
+                  type="file"
+                  accept={CNIC_SCAN_TYPES.join(',')}
+                  onChange={handleFileChange('cnicBack', CNIC_SCAN_TYPES, 'CNIC back')}
+                  className={`${inputClass} py-2`}
+                  style={{ borderRadius: 'var(--radius-standard)' }}
+                />
+                {form.cnicBack && <p className="mt-1 text-xs text-neutral-500">{form.cnicBack.name}</p>}
+                {errors.cnicBack && <p className={errorClass}>{errors.cnicBack}</p>}
+              </div>
             </div>
           </div>
         )}
@@ -450,7 +466,7 @@ const EnrollNow = () => {
               <div className="flex justify-between pb-2">
                 <span className="text-neutral-500">Documents</span>
                 <span className="font-semibold text-neutral-900">
-                  {[form.photo && 'Photo', form.cnicScan && 'CNIC scan'].filter(Boolean).join(', ') || 'None attached'}
+                  {[form.photo && 'Photo', form.cnicFront && 'CNIC front', form.cnicBack && 'CNIC back'].filter(Boolean).join(', ') || 'None attached'}
                 </span>
               </div>
             </div>

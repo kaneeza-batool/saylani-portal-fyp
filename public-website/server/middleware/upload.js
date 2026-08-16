@@ -26,9 +26,11 @@ const upload = multer({
   },
 });
 
-// Optional documents on the admission application form: a photo and a CNIC
-// scan. Same disk-storage/size-cap pattern as the course-image upload above,
-// its own subfolder and mimetypes (CNIC scan can reasonably be a PDF scan,
+// Optional documents on the admission application form: a photo and both
+// sides of the CNIC (front and back are separate fields — a CNIC has two
+// sides and an applicant needs to be able to attach both, not just one).
+// Same disk-storage/size-cap pattern as the course-image upload above, its
+// own subfolder and mimetypes (a CNIC scan can reasonably be a PDF scan,
 // not just a photo of the card).
 const applicationsDir = path.join(__dirname, '../uploads/applications');
 if (!fs.existsSync(applicationsDir)) {
@@ -53,7 +55,7 @@ const applicationUpload = multer({
     if (file.fieldname === 'photo' && !PHOTO_TYPES.includes(file.mimetype)) {
       return cb(new Error('Photo must be a JPG, PNG, or WEBP image.'));
     }
-    if (file.fieldname === 'cnicScan' && !CNIC_SCAN_TYPES.includes(file.mimetype)) {
+    if ((file.fieldname === 'cnicFront' || file.fieldname === 'cnicBack') && !CNIC_SCAN_TYPES.includes(file.mimetype)) {
       return cb(new Error('CNIC scan must be a JPG, PNG, WEBP, or PDF file.'));
     }
     cb(null, true);

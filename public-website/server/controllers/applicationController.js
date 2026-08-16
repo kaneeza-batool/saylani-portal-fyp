@@ -40,10 +40,13 @@ exports.submitApplication = async (req, res) => {
     if (!Student.COURSES.includes(course)) return res.status(400).json({ message: 'Please select a valid course' });
     if (!campusId) return res.status(400).json({ message: 'Please select a campus' });
 
-    // Both optional — the form never requires either (see EnrollNow.jsx's
-    // Documents step), so most applications will have neither set.
+    // All optional — the form never requires any of these (see EnrollNow.jsx's
+    // Documents step), so most applications will have none set. CNIC front
+    // and back are separate fields/files, not one "scan" — a CNIC has two
+    // sides and an applicant needs to be able to attach both.
     const photoUrl = req.files?.photo?.[0] ? `/uploads/applications/${req.files.photo[0].filename}` : '';
-    const cnicScanUrl = req.files?.cnicScan?.[0] ? `/uploads/applications/${req.files.cnicScan[0].filename}` : '';
+    const cnicFrontUrl = req.files?.cnicFront?.[0] ? `/uploads/applications/${req.files.cnicFront[0].filename}` : '';
+    const cnicBackUrl = req.files?.cnicBack?.[0] ? `/uploads/applications/${req.files.cnicBack[0].filename}` : '';
 
     // Friendly duplicate check before create — Student.cnic is
     // unique-indexed, but that alone would surface as a raw 500/E11000.
@@ -71,7 +74,8 @@ exports.submitApplication = async (req, res) => {
       hasCompletedOnboarding: false,
       hasLaptop: !!hasLaptop,
       applicationPhotoUrl: photoUrl,
-      applicationCnicScanUrl: cnicScanUrl,
+      applicationCnicFrontUrl: cnicFrontUrl,
+      applicationCnicBackUrl: cnicBackUrl,
     });
 
     // referenceNumber is random + unique-indexed; retry on the (rare)
@@ -96,7 +100,8 @@ exports.submitApplication = async (req, res) => {
             preferredBatch: preferredBatch?.trim() || '',
             hasLaptop: !!hasLaptop,
             photoUrl,
-            cnicScanUrl,
+            cnicFrontUrl,
+            cnicBackUrl,
             referenceNumber: generateReferenceNumber(),
           });
         } catch (err) {
