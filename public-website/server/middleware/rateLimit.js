@@ -23,4 +23,17 @@ const chatLimiter = rateLimit({
   message: { message: 'Too many messages from this network. Please try again in 15 minutes.' },
 });
 
-module.exports = { publicWriteLimiter, chatLimiter };
+// Guards the unauthenticated CNIC/reference-number lookup routes (entry
+// test status, result check, ID card) — these take no write action, so the
+// ceiling is higher than publicWriteLimiter, but they still need a limit:
+// with no cap at all, a script can iterate CNIC numbers against these
+// endpoints and enumerate who is a real applicant/student.
+const lookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many lookups from this network. Please try again in 15 minutes.' },
+});
+
+module.exports = { publicWriteLimiter, chatLimiter, lookupLimiter };

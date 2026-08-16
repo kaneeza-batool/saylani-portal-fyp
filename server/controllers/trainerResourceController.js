@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const Resource = require('../models/Resource');
 const Slot = require('../models/Slot');
+const Student = require('../models/Student');
+const StudentPortalNotification = require('../models/StudentPortalNotification');
 const { myBatchesFilter } = require('./trainerDashboardController');
 const { logAudit } = require('../utils/auditLogger');
 
@@ -47,6 +49,29 @@ exports.uploadResource = async (req, res) => {
       resourceId: resource._id,
       summary: `Uploaded resource "${resource.title}" for ${resource.course}`,
     });
+
+    // Notify every enrolled student in the trainer's own batch(es) for this
+    // course — same batch-ownership scoping as trainerStudentsController's
+    // roster query. Own try/catch so a notification failure never turns an
+    // already-saved upload into a reported failure.
+    try {
+      const slots = await Slot.find({ ...myBatchesFilter(req.user), course }, '_id').lean();
+      const slotIds = slots.map((s) => s._id);
+      const students = await Student.find({ batch: { $in: slotIds }, status: { $nin: ['pending', 'rejected'] } }, '_id').lean();
+      if (students.length) {
+        await StudentPortalNotification.insertMany(
+          students.map((s) => ({
+            student: s._id,
+            icon: '📎',
+            title: 'New Resource Shared',
+            message: `${req.user.name} shared "${resource.title}" for ${resource.course}.`,
+            link: '/resources',
+          }))
+        );
+      }
+    } catch (notifyErr) {
+      console.error('Failed to create resource-shared notifications:', notifyErr.message);
+    }
 
     return res.status(201).json({ item: resource });
   } catch (err) {

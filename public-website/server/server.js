@@ -27,6 +27,10 @@ const idCardRoutes = require('./routes/idCardRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const adminCourseRoutes = require('./routes/adminCourseRoutes');
+const adminEntryTestRoutes = require('./routes/adminEntryTestRoutes');
+const adminResultRoutes = require('./routes/adminResultRoutes');
+const adminIdCardRoutes = require('./routes/adminIdCardRoutes');
+const adminContactRoutes = require('./routes/adminContactRoutes');
 const enrollmentMetaRoutes = require('./routes/enrollmentMetaRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 
@@ -45,6 +49,10 @@ app.use('/api/id-cards', idCardRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin/courses', adminCourseRoutes);
+app.use('/api/admin/entry-test', adminEntryTestRoutes);
+app.use('/api/admin/results', adminResultRoutes);
+app.use('/api/admin/id-cards', adminIdCardRoutes);
+app.use('/api/admin/contact-submissions', adminContactRoutes);
 app.use('/api', enrollmentMetaRoutes);
 app.use('/api/chat', chatRoutes);
 

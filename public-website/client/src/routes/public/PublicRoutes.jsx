@@ -5,6 +5,13 @@ import { AdminAuthProvider } from '../../context/AdminAuthContext';
 import AdminLogin from '../../pages/admin/AdminLogin';
 import AdminDashboard from '../../pages/admin/AdminDashboard';
 import AdminCourseForm from '../../pages/admin/AdminCourseForm';
+import EntryTestApplicants from '../../pages/admin/EntryTestApplicants';
+import EntryTestApplicantForm from '../../pages/admin/EntryTestApplicantForm';
+import AcademicResults from '../../pages/admin/AcademicResults';
+import AcademicResultForm from '../../pages/admin/AcademicResultForm';
+import StudentIdCards from '../../pages/admin/StudentIdCards';
+import StudentIdCardForm from '../../pages/admin/StudentIdCardForm';
+import ContactSubmissions from '../../pages/admin/ContactSubmissions';
 import Home from '../../pages/public/Home';
 import About from '../../pages/public/About';
 import Programs from '../../pages/public/Programs';
@@ -73,6 +80,16 @@ const PublicRoutes = () => {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="courses/new" element={<AdminCourseForm />} />
           <Route path="courses/:id/edit" element={<AdminCourseForm />} />
+          <Route path="entry-test" element={<EntryTestApplicants />} />
+          <Route path="entry-test/new" element={<EntryTestApplicantForm />} />
+          <Route path="entry-test/:id/edit" element={<EntryTestApplicantForm />} />
+          <Route path="results" element={<AcademicResults />} />
+          <Route path="results/new" element={<AcademicResultForm />} />
+          <Route path="results/:id/edit" element={<AcademicResultForm />} />
+          <Route path="id-cards" element={<StudentIdCards />} />
+          <Route path="id-cards/new" element={<StudentIdCardForm />} />
+          <Route path="id-cards/:id/edit" element={<StudentIdCardForm />} />
+          <Route path="contact-submissions" element={<ContactSubmissions />} />
         </Route>
       </Route>
     </Routes>
