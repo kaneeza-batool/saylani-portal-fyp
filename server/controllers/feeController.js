@@ -1,10 +1,14 @@
 const FeeVoucher = require('../models/FeeVoucher');
 const Student = require('../models/Student');
 const { logAudit } = require('../utils/auditLogger');
-
-function isOverdue(voucher, now) {
-  return voucher.status === 'pending' && new Date(voucher.dueDate) < now;
-}
+const {
+  monthlyFeeForCourse,
+  currentMonthLabel,
+  currentMonthDueDate,
+  buildVoucherId,
+  isOverdue,
+  BILLABLE_STATUSES,
+} = require('../utils/feePlan');
 
 // FeeVoucher has no campus field of its own (see model) — Student.campus is
 // the real ref, so campus scoping goes through the student roster first,
@@ -139,5 +143,130 @@ exports.updateFee = async (req, res) => {
     return res.status(200).json({ voucher });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to update fee voucher', error: err.message });
+  }
+};
+
+// Same "resource looked up by :id, deliberate 403 not 404" reasoning as
+// updateFee above — a sub_admin trying a Karachi student's id from Sukkur
+// gets 403, not a leaky/generic 404.
+exports.generateFee = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.studentId).select('name rollNumber course campus status');
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    if (req.user.role !== 'super_admin' && String(student.campus) !== String(req.user.campus_id)) {
+      return res.status(403).json({ message: 'You do not have access to this student' });
+    }
+
+    if (!BILLABLE_STATUSES.includes(student.status)) {
+      return res.status(400).json({ message: 'Cannot generate a fee voucher for a student who is not on the roster' });
+    }
+
+    const now = new Date();
+    const month = currentMonthLabel(now);
+
+    const existing = await FeeVoucher.findOne({ student: student._id, month });
+    if (existing) {
+      return res.status(200).json({ voucher: existing, created: false });
+    }
+
+    const requestedAmount = Number(req.body?.amount);
+    const amount = requestedAmount > 0 ? requestedAmount : monthlyFeeForCourse(student.course);
+
+    let voucher;
+    try {
+      voucher = await FeeVoucher.create({
+        student: student._id,
+        month,
+        amount,
+        type: 'Monthly',
+        dueDate: currentMonthDueDate(now),
+        voucherId: buildVoucherId(now, student.rollNumber),
+        status: 'pending',
+      });
+    } catch (err) {
+      // Duplicate-key race: another request generated the same student+month
+      // voucher between our findOne above and this create — fall back to it
+      // instead of erroring, keeping this endpoint idempotent either way.
+      if (err.code === 11000) {
+        const raced = await FeeVoucher.findOne({ student: student._id, month });
+        if (raced) return res.status(200).json({ voucher: raced, created: false });
+      }
+      throw err;
+    }
+
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'FeeVoucher',
+      resourceId: voucher._id,
+      summary: `Generated ${month} fee voucher for "${student.name}" (Rs. ${amount})`,
+      resourceCampus: student.campus,
+    });
+
+    return res.status(201).json({ voucher, created: true });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to generate fee voucher', error: err.message });
+  }
+};
+
+// campusScope resolves super_admin to an unscoped filter (see campusScope.js)
+// — for super_admin this deliberately spans every campus, same "no
+// sub-admin-specific fork needed" convention FeesPage.jsx already relies on
+// for GET /fees.
+exports.bulkGenerateFees = async (req, res) => {
+  try {
+    const now = new Date();
+    const month = currentMonthLabel(now);
+
+    const students = await Student.find({ ...req.campusFilter, status: 'enrolled' }, 'name rollNumber course campus')
+      .lean();
+
+    if (students.length === 0) {
+      return res.status(200).json({ created: 0, skipped: 0 });
+    }
+
+    const studentIds = students.map((s) => s._id);
+    const existingVouchers = await FeeVoucher.find({ student: { $in: studentIds }, month }, 'student').lean();
+    const existingIds = new Set(existingVouchers.map((v) => String(v.student)));
+
+    const toCreate = students.filter((s) => !existingIds.has(String(s._id)));
+    const skipped = students.length - toCreate.length;
+
+    if (toCreate.length === 0) {
+      return res.status(200).json({ created: 0, skipped });
+    }
+
+    const docs = toCreate.map((s) => ({
+      student: s._id,
+      month,
+      amount: monthlyFeeForCourse(s.course),
+      type: 'Monthly',
+      dueDate: currentMonthDueDate(now),
+      voucherId: buildVoucherId(now, s.rollNumber),
+      status: 'pending',
+    }));
+
+    let created;
+    try {
+      created = await FeeVoucher.insertMany(docs, { ordered: false });
+    } catch (err) {
+      // Same duplicate-key race as generateFee, just batched — count only
+      // what actually landed instead of failing the whole request.
+      created = err.insertedDocs || [];
+    }
+
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'FeeVoucher',
+      resourceId: null,
+      summary: `Bulk-generated ${created.length} ${month} fee voucher(s)`,
+      resourceCampus: req.user.role === 'super_admin' ? null : req.user.campus_id,
+    });
+
+    return res.status(201).json({ created: created.length, skipped: students.length - created.length });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to bulk-generate fee vouchers', error: err.message });
   }
 };

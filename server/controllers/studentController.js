@@ -1,6 +1,8 @@
 const Student = require('../models/Student');
 const Slot = require('../models/Slot');
+const FeeVoucher = require('../models/FeeVoucher');
 const { logAudit } = require('../utils/auditLogger');
+const { currentMonthLabel, isOverdue, BILLABLE_STATUSES } = require('../utils/feePlan');
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -57,12 +59,40 @@ exports.getStudents = async (req, res) => {
         .populate('batch', 'schedule course')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Student.countDocuments(filter),
     ]);
 
+    // feeStatus drives the Students table's Payment Status column and its
+    // per-row "generate" action — computed here (not read off Student.payment,
+    // a separate manually-edited field, see Student.js) from whether a
+    // FeeVoucher exists for the current month, same status/overdue logic as
+    // feeController.getFees. Only computed for billable (roster) students —
+    // pending/rejected applicants were never billed, so null for those.
+    const billableIds = students.filter((s) => BILLABLE_STATUSES.includes(s.status)).map((s) => s._id);
+    const month = currentMonthLabel();
+    const vouchers = billableIds.length
+      ? await FeeVoucher.find({ student: { $in: billableIds }, month }).lean()
+      : [];
+    const voucherByStudentId = new Map(vouchers.map((v) => [String(v.student), v]));
+    const now = new Date();
+
+    const studentsWithFeeStatus = students.map((s) => {
+      if (!BILLABLE_STATUSES.includes(s.status)) return { ...s, feeStatus: null };
+
+      const voucher = voucherByStudentId.get(String(s._id));
+      if (!voucher) return { ...s, feeStatus: { status: 'not_generated' } };
+
+      const status = voucher.status === 'paid' ? 'paid' : isOverdue(voucher, now) ? 'overdue' : 'pending';
+      return {
+        ...s,
+        feeStatus: { status, dueDate: voucher.dueDate, amount: voucher.amount, voucherId: voucher.voucherId },
+      };
+    });
+
     return res.status(200).json({
-      students,
+      students: studentsWithFeeStatus,
       total,
       page,
       limit,
@@ -85,7 +115,25 @@ exports.getStudent = async (req, res) => {
 
 exports.createStudent = async (req, res) => {
   try {
-    const { name, father, cnic, phone, email, course, campus, status, address, batch } = req.body;
+    const {
+      name,
+      father,
+      cnic,
+      phone,
+      email,
+      course,
+      campus,
+      status,
+      address,
+      batch,
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
+    } = req.body;
     if (!name || !father || !cnic || !phone || !email || !course || !campus) {
       return res.status(400).json({
         message: 'name, father, cnic, phone, email, course, and campus are required',
@@ -107,6 +155,13 @@ exports.createStudent = async (req, res) => {
       status: status || 'enrolled',
       address,
       payment: 'pending',
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
     });
 
     logAudit({
@@ -131,7 +186,26 @@ exports.createStudent = async (req, res) => {
 
 exports.updateStudent = async (req, res) => {
   try {
-    const { name, father, cnic, phone, email, course, campus, status, payment, address, batch } = req.body;
+    const {
+      name,
+      father,
+      cnic,
+      phone,
+      email,
+      course,
+      campus,
+      status,
+      payment,
+      address,
+      batch,
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
+    } = req.body;
 
     // Pending/rejected are admissions-applicant states, only reachable
     // through the Admissions Queue's approve/reject flow (admissionController.js)
@@ -156,7 +230,24 @@ exports.updateStudent = async (req, res) => {
     // different campus id — drop it silently rather than let them reassign
     // a student out of their campus, or error on a form just re-submitting
     // the student's existing (unchanged) campus value.
-    const updates = { name, father, cnic, phone, email, course, status, payment, address };
+    const updates = {
+      name,
+      father,
+      cnic,
+      phone,
+      email,
+      course,
+      status,
+      payment,
+      address,
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
+    };
     if (req.user.role === 'super_admin') {
       updates.campus = campus;
     }

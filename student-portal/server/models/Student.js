@@ -83,6 +83,19 @@ const studentSchema = new mongoose.Schema(
     // manual admin action). Enum copied verbatim from the canonical
     // schema (server/models/Student.js) — never invent new values here.
     dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
+    // Employment/placement fields from the shared document (main app's
+    // Student model — see server/models/Student.js), mirrored read-only for
+    // the same hydration reason as status/course above: an undeclared path
+    // is silently dropped on every read here, strict mode default. Enum
+    // values copied verbatim from the canonical schema — never invent new
+    // ones here.
+    employmentStatus: { type: String, enum: ['employed', 'unemployed', null], default: null },
+    salary: { type: Number, min: 0 },
+    companyName: { type: String, trim: true },
+    jobTitle: { type: String, trim: true },
+    employmentStartDate: { type: Date },
+    computerProficiency: { type: String, enum: ['beginner', 'intermediate', 'advanced', null], default: null },
+    hasLaptop: { type: Boolean, default: null },
     // kept as a field (not yet an enum tied to other portals) so this
     // collection can merge with super-admin-portal's role system later
     role: { type: String, default: 'student' },
