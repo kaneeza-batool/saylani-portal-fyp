@@ -51,7 +51,8 @@ const studentSchema = new mongoose.Schema(
     // step (see server/models/Student.js and public-website/server/
     // controllers/applicationController.js), never written from this app.
     applicationPhotoUrl: { type: String, default: '' },
-    applicationCnicScanUrl: { type: String, default: '' },
+    applicationCnicFrontUrl: { type: String, default: '' },
+    applicationCnicBackUrl: { type: String, default: '' },
     // Set true the first time an avatar is ever uploaded (see
     // studentController.uploadAvatar) — the mandatory "Complete Your
     // Profile" onboarding step (ProtectedRoute) gates on THIS flag, not on
