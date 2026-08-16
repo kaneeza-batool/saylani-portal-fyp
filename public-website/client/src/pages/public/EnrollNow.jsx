@@ -7,7 +7,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CNIC_RE = /^\d{13}$/;
 const PHONE_RE = /^[\d+\-\s]{7,15}$/;
 
-const STEPS = ['Personal Info', 'Education', 'Program Selection', 'Review & Submit'];
+const STEPS = ['Personal Info', 'Education', 'Program Selection', 'Documents', 'Review & Submit'];
+
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const CNIC_SCAN_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
 const QUALIFICATIONS = ['Matric', 'Intermediate', "Bachelor's", "Master's", 'Other'];
 const BATCH_OPTIONS = ['Morning', 'Evening', 'Weekend', 'Online-Only'];
@@ -27,6 +31,8 @@ function initialForm() {
     course: '',
     campusId: '',
     preferredBatch: '',
+    photo: null,
+    cnicScan: null,
   };
 }
 
@@ -49,6 +55,9 @@ function validateStep(step, form) {
     if (!form.course) errors.course = 'Please select a course.';
     if (!form.campusId) errors.campusId = 'Please select a campus.';
   }
+  // Step 3 (Documents) has no required fields — photo/CNIC scan are
+  // optional. File type/size are validated at selection time instead (see
+  // handleFileChange), so there's nothing left to check here on Next.
   return errors;
 }
 
@@ -119,6 +128,31 @@ const EnrollNow = () => {
     setErrors((prev) => ({ ...prev, cnic: undefined }));
   };
 
+  // Both photo and cnicScan are optional — an invalid file is rejected
+  // right here (never stored in form state) rather than waiting until
+  // submit, so a bad file can't silently block a step that has no other
+  // required fields to fail on.
+  const handleFileChange = (field, allowedTypes, label) => (e) => {
+    const file = e.target.files?.[0] || null;
+    if (!file) {
+      setForm((prev) => ({ ...prev, [field]: null }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+      return;
+    }
+    if (!allowedTypes.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, [field]: `${label} must be ${allowedTypes.includes('application/pdf') ? 'a JPG, PNG, WEBP, or PDF' : 'a JPG, PNG, or WEBP'} file.` }));
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      setErrors((prev) => ({ ...prev, [field]: `${label} must be under 5MB.` }));
+      e.target.value = '';
+      return;
+    }
+    setForm((prev) => ({ ...prev, [field]: file }));
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
   const goNext = () => {
     const stepErrors = validateStep(step, form);
     setErrors(stepErrors);
@@ -132,22 +166,25 @@ const EnrollNow = () => {
     setStatus('submitting');
     setServerError('');
     try {
-      const res = await axios.post(`${API_URL}/api/applications`, {
-        fullName: form.fullName,
-        fatherName: form.fatherName,
-        cnic: form.cnic,
-        phone: form.phone,
-        email: form.email,
-        address: form.address,
-        dateOfBirth: form.dateOfBirth,
-        gender: form.gender,
-        lastQualification: form.lastQualification,
-        course: form.course,
-        selectedProgram: form.course,
-        campusId: form.campusId,
-        preferredBatch: form.preferredBatch,
-        hasLaptop: form.hasLaptop === 'yes',
-      });
+      const payload = new FormData();
+      payload.append('fullName', form.fullName);
+      payload.append('fatherName', form.fatherName);
+      payload.append('cnic', form.cnic);
+      payload.append('phone', form.phone);
+      payload.append('email', form.email);
+      payload.append('address', form.address);
+      payload.append('dateOfBirth', form.dateOfBirth);
+      payload.append('gender', form.gender);
+      payload.append('lastQualification', form.lastQualification);
+      payload.append('course', form.course);
+      payload.append('selectedProgram', form.course);
+      payload.append('campusId', form.campusId);
+      payload.append('preferredBatch', form.preferredBatch);
+      payload.append('hasLaptop', form.hasLaptop === 'yes');
+      if (form.photo) payload.append('photo', form.photo);
+      if (form.cnicScan) payload.append('cnicScan', form.cnicScan);
+
+      const res = await axios.post(`${API_URL}/api/applications`, payload);
       setApplication(res.data.application);
       setStatus('success');
     } catch (err) {
@@ -316,8 +353,42 @@ const EnrollNow = () => {
           </div>
         )}
 
-        {/* Step 3: Review & Submit */}
+        {/* Step 3: Documents (optional) */}
         {step === 3 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-neutral-900">Documents (optional)</h2>
+            <p className="text-sm text-neutral-500">
+              Adding these now can speed up review, but you can skip this step and submit them later if asked.
+            </p>
+            <div>
+              <label className={labelClass}>Photo</label>
+              <input
+                type="file"
+                accept={PHOTO_TYPES.join(',')}
+                onChange={handleFileChange('photo', PHOTO_TYPES, 'Photo')}
+                className={`${inputClass} py-2`}
+                style={{ borderRadius: 'var(--radius-standard)' }}
+              />
+              {form.photo && <p className="mt-1 text-xs text-neutral-500">{form.photo.name}</p>}
+              {errors.photo && <p className={errorClass}>{errors.photo}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>CNIC Scan (front or back)</label>
+              <input
+                type="file"
+                accept={CNIC_SCAN_TYPES.join(',')}
+                onChange={handleFileChange('cnicScan', CNIC_SCAN_TYPES, 'CNIC scan')}
+                className={`${inputClass} py-2`}
+                style={{ borderRadius: 'var(--radius-standard)' }}
+              />
+              {form.cnicScan && <p className="mt-1 text-xs text-neutral-500">{form.cnicScan.name}</p>}
+              {errors.cnicScan && <p className={errorClass}>{errors.cnicScan}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Review & Submit */}
+        {step === 4 && (
           <div className="space-y-5">
             <h2 className="text-lg font-bold text-neutral-900">Review & Submit</h2>
 
@@ -372,9 +443,15 @@ const EnrollNow = () => {
                   {campuses.find((c) => c._id === form.campusId)?.name || ''}
                 </span>
               </div>
-              <div className="flex justify-between pb-2">
+              <div className="flex justify-between border-b border-neutral-100 pb-2">
                 <span className="text-neutral-500">Preferred Batch</span>
                 <span className="font-semibold text-neutral-900">{form.preferredBatch || 'No preference'}</span>
+              </div>
+              <div className="flex justify-between pb-2">
+                <span className="text-neutral-500">Documents</span>
+                <span className="font-semibold text-neutral-900">
+                  {[form.photo && 'Photo', form.cnicScan && 'CNIC scan'].filter(Boolean).join(', ') || 'None attached'}
+                </span>
               </div>
             </div>
 

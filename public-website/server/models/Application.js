@@ -19,6 +19,11 @@ const applicationSchema = new mongoose.Schema(
     selectedProgram: { type: String, required: true, trim: true },
     preferredBatch: { type: String, trim: true, default: '' },
     hasLaptop: { type: Boolean, default: false },
+    // Optional — the application form doesn't require these, so most
+    // applications won't have either set. Relative paths served from
+    // /uploads/applications (see middleware/upload.js's applicationUpload).
+    photoUrl: { type: String, default: '' },
+    cnicScanUrl: { type: String, default: '' },
     referenceNumber: { type: String, required: true, unique: true },
     // No Sub-Admin portal is wired up yet to review these, so every
     // application just sits at 'pending' forever. Once that admission

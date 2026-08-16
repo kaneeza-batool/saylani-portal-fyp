@@ -48,6 +48,11 @@ const studentSchema = new mongoose.Schema(
     dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
     overallGrade: { type: String, enum: ['A+', 'A', 'B', 'C', 'D', null], default: null },
     address: { type: String, default: '', trim: true },
+    // Optional, set by this app's own EnrollNow form (see
+    // applicationController.submitApplication) — distinct from avatarUrl
+    // below, a student-portal profile picture uploaded post-enrollment.
+    applicationPhotoUrl: { type: String, default: '' },
+    applicationCnicScanUrl: { type: String, default: '' },
 
     password: { type: String, minlength: 8, select: false },
     resetPasswordTokenHash: { type: String, select: false },

@@ -1,32 +1,65 @@
 const nodemailer = require('nodemailer');
 
-// DEV ONLY — Ethereal is Nodemailer's fake SMTP testing service: emails
-// sent through it are never actually delivered anywhere, it just captures
-// them and hands back a preview URL. That's why sendContactConfirmation
-// logs the preview URL to the server console instead of relying on a real
-// inbox. Before production, replace this whole transporter with a real
-// provider (Gmail SMTP, SendGrid, Postmark, etc.) configured via env vars.
+// No real SMTP creds configured (SMTP_HOST/USER/PASS in .env)? Falls back to
+// an auto-provisioned Ethereal test inbox so the feature works out of the
+// box in a fresh clone/demo — sent mail is only visible via the preview URL
+// logged to the console, not a real inbox. Add real SMTP env vars (see
+// .env.example) to send mail that actually lands in someone's inbox. Same
+// pattern as the main app's server/utils/mailer.js — this file used to be
+// hardcoded to Ethereal only with no way to ever send real mail.
 let transporterPromise = null;
+let usingEthereal = false;
 
-function getTransporter() {
-  if (!transporterPromise) {
-    transporterPromise = nodemailer.createTestAccount().then((testAccount) =>
+function buildTransporter() {
+  if (process.env.SMTP_HOST) {
+    return Promise.resolve(
       nodemailer.createTransport({
-        host: testAccount.smtp.host,
-        port: testAccount.smtp.port,
-        secure: testAccount.smtp.secure,
-        auth: { user: testAccount.user, pass: testAccount.pass },
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: Number(process.env.SMTP_PORT) === 465,
+        auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
       })
     );
   }
+
+  usingEthereal = true;
+  return nodemailer.createTestAccount().then((testAccount) =>
+    nodemailer.createTransport({
+      host: testAccount.smtp.host,
+      port: testAccount.smtp.port,
+      secure: testAccount.smtp.secure,
+      auth: { user: testAccount.user, pass: testAccount.pass },
+    })
+  );
+}
+
+function getTransporter() {
+  if (!transporterPromise) transporterPromise = buildTransporter();
   return transporterPromise;
 }
 
-async function sendContactConfirmation(toEmail, name, subject) {
+async function send({ to, subject, text, html }) {
   const transporter = await getTransporter();
-
   const info = await transporter.sendMail({
-    from: '"TITAN" <no-reply@titan-institute.test>',
+    from: process.env.SMTP_FROM || '"TITAN" <no-reply@titan-institute.test>',
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  if (usingEthereal) {
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    // This is the ONLY way to see the "sent" email in dev, since Ethereal
+    // never delivers to a real inbox — open this URL to view it.
+    console.log(`\n📧 (Ethereal preview — no SMTP_HOST configured) ${subject} -> ${to}: ${previewUrl}\n`);
+    return previewUrl;
+  }
+  return null;
+}
+
+async function sendContactConfirmation(toEmail, name, subject) {
+  return send({
     to: toEmail,
     subject: `We received your message: ${subject}`,
     text: `Hi ${name},\n\nThanks for reaching out to TITAN. We've received your message and our admissions team will get back to you soon.\n\nSubject: ${subject}`,
@@ -38,19 +71,10 @@ async function sendContactConfirmation(toEmail, name, subject) {
       </div>
     `,
   });
-
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  // This is the ONLY way to see the "sent" email in dev, since Ethereal
-  // never delivers to a real inbox — open this URL to view it.
-  console.log(`\n📧 Contact confirmation email sent (Ethereal test inbox). Preview: ${previewUrl}\n`);
-  return previewUrl;
 }
 
 async function sendApplicationConfirmation(toEmail, name, referenceNumber, programTitle) {
-  const transporter = await getTransporter();
-
-  const info = await transporter.sendMail({
-    from: '"TITAN Admissions" <no-reply@titan-institute.test>',
+  return send({
     to: toEmail,
     subject: `Application received — reference ${referenceNumber}`,
     text: `Hi ${name},\n\nThanks for applying to TITAN's ${programTitle} program. Your application has been received.\n\nReference number: ${referenceNumber}\nKeep this reference number to check your application status later.\n\nOur admissions team will review your application and get back to you within 48 hours.`,
@@ -66,12 +90,6 @@ async function sendApplicationConfirmation(toEmail, name, referenceNumber, progr
       </div>
     `,
   });
-
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  // This is the ONLY way to see the "sent" email in dev, since Ethereal
-  // never delivers to a real inbox — open this URL to view it.
-  console.log(`\n📧 Application confirmation email sent (Ethereal test inbox). Preview: ${previewUrl}\n`);
-  return previewUrl;
 }
 
 module.exports = { sendContactConfirmation, sendApplicationConfirmation };
