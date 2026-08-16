@@ -55,6 +55,7 @@ import SubAdminBatchesPage from './portals/sub-admin/BatchesPage';
 import SubAdminStudentsPage from './portals/sub-admin/StudentsPage';
 import SubAdminAttendanceReportsPage from './portals/sub-admin/AttendanceReportsPage';
 import SubAdminFeedbackPage from './portals/sub-admin/FeedbackPage';
+import FeesPage from './portals/sub-admin/FeesPage';
 import SubAdminAlertsPage from './portals/sub-admin/AlertsPage';
 import SubAdminAuditLogPage from './portals/sub-admin/AuditLogPage';
 import SubAdminAttendanceRequestsPage from './portals/sub-admin/AttendanceRequestsPage';
@@ -146,6 +147,7 @@ function App() {
                     <Route path="admissions" element={<AdmissionsQueuePage />} />
                     <Route path="student-feedback" element={<StudentFeedbackPage />} />
                     <Route path="roles-permissions" element={<RolesPermissionsPage />} />
+                    <Route path="fees" element={<FeesPage />} />
                   </Route>
                 </Route>
 
@@ -168,7 +170,13 @@ function App() {
                     <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
                     <Route path="attendance-requests" element={<SubAdminAttendanceRequestsPage />} />
                     <Route path="student-feedback" element={<SubAdminStudentFeedbackPage />} />
+                    {/* Same components super-admin uses at /admin/attendance/mark|multi —
+                        no sub-admin-specific fork needed, they were already portable
+                        (no role checks); the backend enforces campus scope. */}
+                    <Route path="attendance/mark" element={<MarkAttendance />} />
+                    <Route path="attendance/multi" element={<MultiAttendance />} />
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
+                    <Route path="fees" element={<FeesPage />} />
                     <Route path="alerts" element={<SubAdminAlertsPage />} />
                     <Route path="audit-log" element={<SubAdminAuditLogPage />} />
                   </Route>

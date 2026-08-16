@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { fetchTrainers } from '../../services/trainerService';
+import { fetchTrainers, updateTrainerStatus } from '../../services/trainerService';
 import ExportButtons from '../../components/ExportButtons';
 
 // Read-only mirror of super-admin/TrainersPage.jsx's list (same GRID_COLS
-// approach, same classes) minus the Actions column — sub_admin has no
-// create/update/delete permission on Trainer (see trainerRoutes.js), and
-// GET / is already campus-scoped server-side via campusScope, so this page
-// needs no campus filter of its own.
+// approach, same classes) — sub_admin still has no create/update/delete
+// permission on the rest of a trainer's fields (see trainerRoutes.js), only
+// a narrow status-only PATCH /:id/status, so the Status column below is the
+// one interactive piece; there's no separate Actions column and no full
+// edit modal. GET / is already campus-scoped server-side via campusScope,
+// so this page needs no campus filter of its own.
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
@@ -55,6 +57,7 @@ export default function TrainersPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -67,6 +70,11 @@ export default function TrainersPage() {
     queryKey: ['sub-admin-trainers', { search, status, page }],
     queryFn: () => fetchTrainers({ search, status, page, limit: 8 }),
     keepPreviousData: true,
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, nextStatus }) => updateTrainerStatus(id, nextStatus),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sub-admin-trainers'] }),
   });
 
   const items = data?.items ?? [];
@@ -137,6 +145,8 @@ export default function TrainersPage() {
           >
             {items.map((t) => {
               const s = STATUS_STYLE[t.status] ?? STATUS_STYLE.active;
+              const isSaving = statusMutation.isPending && statusMutation.variables?.id === t._id;
+              const nextStatus = t.status === 'active' ? 'inactive' : 'active';
               return (
                 <motion.div
                   key={t._id}
@@ -153,7 +163,15 @@ export default function TrainersPage() {
                   <span className="text-body-sm text-neutral-600">{t.employeeId}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{t.course || '—'}</span>
                   <span className="text-body-sm text-neutral-600">{t.city || '—'}</span>
-                  <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={() => statusMutation.mutate({ id: t._id, nextStatus })}
+                    title={`Mark ${nextStatus}`}
+                    className={`text-badge px-2.5 py-1 rounded-pill w-fit cursor-pointer border-none transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${s.className}`}
+                  >
+                    {isSaving ? 'Saving…' : s.label}
+                  </button>
                 </motion.div>
               );
             })}

@@ -43,6 +43,7 @@ const publicDonationRoutes = require('./routes/publicDonationRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
 const donationRoutes = require('./routes/donationRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const feeRoutes = require('./routes/feeRoutes');
 
 const app = express();
 
@@ -89,6 +90,7 @@ app.use('/api/admin/ml', mlRoutes);
 app.use('/api/admin/alerts', alertRoutes);
 app.use('/api/admin/map', mapRoutes);
 app.use('/api/admin/feedback', feedbackRoutes);
+app.use('/api/admin/fees', feeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({

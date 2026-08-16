@@ -16,6 +16,7 @@ const MODULE_LABEL = {
   FEEDBACK: 'Feedback',
   ALERTS: 'Alerts',
   AUDIT: 'Audit Log',
+  FEES: 'Fees',
 };
 
 const ACTION_LABEL = { read: 'View', write: 'Add', update: 'Edit' };

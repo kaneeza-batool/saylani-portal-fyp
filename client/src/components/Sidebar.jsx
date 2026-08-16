@@ -110,6 +110,36 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'attendance-mark-sub',
+    label: 'Mark Attendance',
+    to: '/sub-admin/attendance/mark',
+    roles: ['sub_admin'],
+    permission: { module: 'ATTENDANCE_MARK', action: 'write' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M8 2v4M16 2v4" />
+        <path d="M8 14l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    id: 'attendance-multi-sub',
+    label: 'Multi Attendance',
+    to: '/sub-admin/attendance/multi',
+    roles: ['sub_admin'],
+    permission: { module: 'ATTENDANCE_ADD_MULTI', action: 'write' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="4" width="18" height="17" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M8 2v4M16 2v4" />
+        <path d="M8 14l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
     id: 'attendance-requests-sub',
     label: 'Attendance Requests',
     to: '/sub-admin/attendance-requests',
@@ -147,6 +177,19 @@ export const NAV_ITEMS = [
       <svg {...ICON_PROPS}>
         <path d="M8 10h8M8 14h5" />
         <path d="M21 12c0 4.4-4 8-9 8-1.4 0-2.7-.3-3.9-.8L3 20l1.1-4.4C3.4 14.4 3 13.2 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'fees-sub',
+    label: 'Fees',
+    to: '/sub-admin/fees',
+    roles: ['sub_admin'],
+    permission: { module: 'FEES', action: 'read' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10M9.5 9.5c0-1.4 1.2-2.5 2.5-2.5s2.5.9 2.5 2c0 3-5 1.5-5 4.5 0 1.1 1.2 2 2.5 2s2.5-1.1 2.5-2.5" />
       </svg>
     ),
   },
@@ -324,6 +367,18 @@ export const NAV_ITEMS = [
       { id: 'donorportal-campaigns', label: 'Campaigns', to: '/admin/donorportal/campaigns' },
       { id: 'donorportal-donations', label: 'Donations', to: '/admin/donorportal/donations' },
     ],
+  },
+  {
+    id: 'fees',
+    label: 'Fees',
+    to: '/admin/fees',
+    roles: ['super_admin'],
+    icon: (
+      <svg {...ICON_PROPS}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10M9.5 9.5c0-1.4 1.2-2.5 2.5-2.5s2.5.9 2.5 2c0 3-5 1.5-5 4.5 0 1.1 1.2 2 2.5 2s2.5-1.1 2.5-2.5" />
+      </svg>
+    ),
   },
   {
     id: 'reports',

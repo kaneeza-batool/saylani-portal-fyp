@@ -18,6 +18,7 @@ const PERMISSION_SHAPE = {
   FEEDBACK: ['read'],
   ALERTS: ['read'],
   AUDIT: ['read'],
+  FEES: ['read', 'update'],
 };
 
 // Sub-admins are the only role with a real, per-user, server-enforced

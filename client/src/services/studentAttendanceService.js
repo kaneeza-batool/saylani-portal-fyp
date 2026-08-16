@@ -29,3 +29,13 @@ export async function getAttendanceReports({ startDate, endDate, batch } = {}) {
   const { data } = await api.get('/admin/attendance/reports', { params: { startDate, endDate, batch } });
   return data;
 }
+
+export async function getStudentAttendanceRecords(studentId, { startDate, endDate } = {}) {
+  const { data } = await api.get(`/admin/student-attendance/student/${studentId}`, { params: { startDate, endDate } });
+  return data.records;
+}
+
+export async function updateAttendanceRecord(id, status) {
+  const { data } = await api.patch(`/admin/student-attendance/${id}`, { status });
+  return data.record;
+}

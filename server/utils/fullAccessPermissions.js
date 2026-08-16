@@ -14,6 +14,7 @@ const FULL_ACCESS_PERMISSIONS = {
   FEEDBACK: { read: true },
   ALERTS: { read: true },
   AUDIT: { read: true },
+  FEES: { read: true, update: true },
 };
 
 module.exports = { FULL_ACCESS_PERMISSIONS };
