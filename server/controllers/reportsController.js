@@ -23,7 +23,11 @@ exports.getSummary = async (_req, res) => {
       totalJobs,
       totalSlots,
     ] = await Promise.all([
-      Student.countDocuments(),
+      // Roster convention (excludes pending/rejected) — matches the
+      // super-admin Dashboard's "Total Students" KPI. studentsByStatus below
+      // shows every status including pending/rejected individually, so
+      // nothing is hidden — it's just not folded into this one total.
+      Student.countDocuments({ status: { $nin: ['pending', 'rejected'] } }),
       Student.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
       Trainer.countDocuments(),
       Campus.countDocuments(),

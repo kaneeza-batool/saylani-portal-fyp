@@ -16,6 +16,7 @@ const COURSES = [
 
 const STATUSES = ['enrolled', 'pending', 'completed', 'dropout', 'rejected'];
 const PAYMENT_STATUSES = ['paid', 'pending', 'overdue'];
+const GRADE_OPTIONS = ['A+', 'A', 'B', 'C', 'D'];
 
 const studentSchema = new mongoose.Schema(
   {
@@ -54,6 +55,12 @@ const studentSchema = new mongoose.Schema(
     // which field actually changed.
     dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
     address: { type: String, default: '', trim: true },
+    // Overall course grade, set by a trainer on the Trainer Portal roster
+    // page. No collection anywhere derives or aggregates this automatically
+    // (assignment submissions have their own separate per-submission grade,
+    // see StudentPortalAssignmentSubmission.grade) — this is a distinct,
+    // trainer-entered judgment call, not a computed rollup.
+    overallGrade: { type: String, enum: [...GRADE_OPTIONS, null], default: null },
 
     // ---- Student-portal auth + profile fields (merged in from
     // student-portal's own Student model — see shared-data migration
@@ -133,6 +140,7 @@ const Student = mongoose.model('Student', studentSchema);
 Student.COURSES = COURSES;
 Student.STATUSES = STATUSES;
 Student.PAYMENT_STATUSES = PAYMENT_STATUSES;
+Student.GRADE_OPTIONS = GRADE_OPTIONS;
 Student.formatCnic = formatCnic;
 
 module.exports = Student;

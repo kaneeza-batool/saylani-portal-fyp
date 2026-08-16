@@ -49,3 +49,13 @@ export async function reviewSubmission(id, payload) {
   const { data } = await api.patch(`/trainer/submissions/${id}/review`, payload);
   return data.submission;
 }
+
+export async function getMyStudents(batchId) {
+  const { data } = await api.get('/trainer/students', { params: batchId ? { batch: batchId } : {} });
+  return data.items;
+}
+
+export async function setStudentGrade(studentId, grade) {
+  const { data } = await api.patch(`/trainer/students/${studentId}/grade`, { grade });
+  return data.student;
+}
