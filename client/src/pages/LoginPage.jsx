@@ -86,7 +86,7 @@ export default function LoginPage() {
               className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(201,162,39,0.45)]"
             />
           </motion.div>
-          <div className="text-caption text-navy-300 font-normal mt-1">Super Admin Portal</div>
+          <div className="text-body-sm text-navy-300 font-normal mt-1">Sign in to your account</div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
