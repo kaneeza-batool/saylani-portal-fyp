@@ -12,4 +12,15 @@ const publicWriteLimiter = rateLimit({
   message: { message: 'Too many submissions from this network. Please try again in 15 minutes.' },
 });
 
-module.exports = { publicWriteLimiter };
+// Chat needs a much higher ceiling than a one-off form submission — a
+// single real conversation can easily run 15-20 messages back and forth.
+// Still capped since each request is a real (paid) OpenAI API call.
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many messages from this network. Please try again in 15 minutes.' },
+});
+
+module.exports = { publicWriteLimiter, chatLimiter };

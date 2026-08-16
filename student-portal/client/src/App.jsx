@@ -27,6 +27,7 @@ import ResourceLibraryPage from './pages/ResourceLibraryPage';
 import SkillPassportPage from './pages/SkillPassportPage';
 import DoubtsListPage from './pages/DoubtsListPage';
 import DoubtDetailPage from './pages/DoubtDetailPage';
+import AskTitanPage from './pages/AskTitanPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,7 @@ function App() {
                 <Route path="/skill-passport" element={<SkillPassportPage />} />
                 <Route path="/doubts" element={<DoubtsListPage />} />
                 <Route path="/doubts/:questionId" element={<DoubtDetailPage />} />
+                <Route path="/assistant" element={<AskTitanPage />} />
               </Route>
 
               {/* Quiz-taking runs outside the sidebar shell — distraction-free
