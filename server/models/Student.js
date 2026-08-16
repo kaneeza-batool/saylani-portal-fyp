@@ -17,6 +17,8 @@ const COURSES = [
 const STATUSES = ['enrolled', 'pending', 'completed', 'dropout', 'rejected'];
 const PAYMENT_STATUSES = ['paid', 'pending', 'overdue'];
 const GRADE_OPTIONS = ['A+', 'A', 'B', 'C', 'D'];
+const EMPLOYMENT_STATUSES = ['employed', 'unemployed'];
+const COMPUTER_PROFICIENCY_LEVELS = ['beginner', 'intermediate', 'advanced'];
 
 const studentSchema = new mongoose.Schema(
   {
@@ -76,6 +78,21 @@ const studentSchema = new mongoose.Schema(
     dateOfBirth: { type: Date },
     lastQualification: { type: String, trim: true },
     avatarUrl: { type: String, default: '' },
+
+    // ---- Employment/placement tracking, admin-entered via
+    // StudentFormModal (unlike gender/dateOfBirth/lastQualification above,
+    // which are self-reported on student-portal). All optional — 66
+    // pre-existing students have none of these set. No `updatedBy`/
+    // `lastUpdatedAt` here: AuditLog already records actorName + createdAt
+    // for every 'update' action on resourceType 'Student', so that's
+    // answered there rather than duplicated on the document.
+    employmentStatus: { type: String, enum: [...EMPLOYMENT_STATUSES, null], default: null },
+    salary: { type: Number, min: 0 },
+    companyName: { type: String, trim: true },
+    jobTitle: { type: String, trim: true },
+    employmentStartDate: { type: Date },
+    computerProficiency: { type: String, enum: [...COMPUTER_PROFICIENCY_LEVELS, null], default: null },
+    hasLaptop: { type: Boolean, default: null },
     // Gates student-portal's mandatory "Complete Your Profile" onboarding
     // step — set true the first time an avatar is uploaded, not derived
     // from avatarUrl being non-empty, so clearing an avatar later doesn't
@@ -141,6 +158,8 @@ Student.COURSES = COURSES;
 Student.STATUSES = STATUSES;
 Student.PAYMENT_STATUSES = PAYMENT_STATUSES;
 Student.GRADE_OPTIONS = GRADE_OPTIONS;
+Student.EMPLOYMENT_STATUSES = EMPLOYMENT_STATUSES;
+Student.COMPUTER_PROFICIENCY_LEVELS = COMPUTER_PROFICIENCY_LEVELS;
 Student.formatCnic = formatCnic;
 
 module.exports = Student;

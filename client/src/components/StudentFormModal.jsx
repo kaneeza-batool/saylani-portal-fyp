@@ -27,6 +27,22 @@ const PAYMENT_OPTIONS = [
   { value: 'overdue', label: 'Overdue' },
 ];
 
+const EMPLOYMENT_STATUS_OPTIONS = [
+  { value: 'employed', label: 'Employed' },
+  { value: 'unemployed', label: 'Unemployed' },
+];
+
+const COMPUTER_PROFICIENCY_OPTIONS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
+
+const LAPTOP_OPTIONS = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+];
+
 const EMPTY_FORM = {
   name: '',
   father: '',
@@ -39,7 +55,35 @@ const EMPTY_FORM = {
   status: 'enrolled',
   payment: 'pending',
   address: '',
+  employmentStatus: '',
+  salary: '',
+  companyName: '',
+  jobTitle: '',
+  employmentStartDate: '',
+  computerProficiency: '',
+  hasLaptop: '',
 };
+
+// hasLaptop is a Boolean on the server (true/false/null) but a controlled
+// <select> needs string values — 'yes'/'no'/'' round-trips through both a
+// real boolean and the unset (null/undefined) case existing students have.
+function laptopToForm(value) {
+  if (value === true) return 'yes';
+  if (value === false) return 'no';
+  return '';
+}
+function laptopToPayload(value) {
+  if (value === 'yes') return true;
+  if (value === 'no') return false;
+  return null;
+}
+
+// Dates come back from the API as full ISO timestamps; <input type="date">
+// needs the bare yyyy-mm-dd slice or it renders blank.
+function dateToForm(value) {
+  if (!value) return '';
+  return String(value).slice(0, 10);
+}
 
 const inputClass =
   'border border-neutral-200 rounded px-3 py-[10px] text-body-sm font-sans outline-none focus:border-gold-500 transition-colors';
@@ -57,29 +101,49 @@ function initials(name) {
   );
 }
 
-// Self-reported via the student portal (onboarding/profile edit) — read-only
-// here, not part of the editable form fields above, since an admin
-// overwriting a student's own reported qualification isn't a real workflow.
-// Only lastQualification and the avatar are shown: gender/dateOfBirth are
-// unset for every real student in titan-portal as of this pass (see seed
-// report), so there's nothing honest to display for them yet.
+function SummaryField({ label, value }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className={labelClass}>{label}</span>
+      <span className="text-body-sm text-neutral-900">{value || '—'}</span>
+    </div>
+  );
+}
+
+const EMPLOYMENT_STATUS_LABEL = Object.fromEntries(EMPLOYMENT_STATUS_OPTIONS.map((o) => [o.value, o.label]));
+const COMPUTER_PROFICIENCY_LABEL = Object.fromEntries(COMPUTER_PROFICIENCY_OPTIONS.map((o) => [o.value, o.label]));
+
+// lastQualification is self-reported via the student portal (onboarding/
+// profile edit) — read-only here, not part of the editable form fields
+// below, since an admin overwriting a student's own reported qualification
+// isn't a real workflow. gender/dateOfBirth stay omitted: unset for every
+// real student in titan-portal as of this pass, so there's nothing honest
+// to display for them yet. The employment/computer fields below, by
+// contrast, ARE admin-editable further down this form — shown here too as
+// an at-a-glance snapshot of the record's current state.
 function StudentProfileSummary({ student }) {
   return (
-    <div className="flex items-center gap-3.5 pb-1">
-      {student.avatarUrl ? (
-        <img
-          src={student.avatarUrl}
-          alt={student.name}
-          className="w-16 h-16 rounded-full object-cover shrink-0 border border-gold-500/40"
-        />
-      ) : (
-        <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 flex items-center justify-center font-heading font-bold text-h5 shrink-0 border border-gold-500/40">
-          {initials(student.name)}
-        </div>
-      )}
-      <div className="flex flex-col gap-1">
-        <span className={labelClass}>Last Qualification</span>
-        <span className="text-body-sm text-neutral-900">{student.lastQualification || '—'}</span>
+    <div className="flex flex-col gap-3 pb-1">
+      <div className="flex items-center gap-3.5">
+        {student.avatarUrl ? (
+          <img
+            src={student.avatarUrl}
+            alt={student.name}
+            className="w-16 h-16 rounded-full object-cover shrink-0 border border-gold-500/40"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-navy-800 text-gold-400 flex items-center justify-center font-heading font-bold text-h5 shrink-0 border border-gold-500/40">
+            {initials(student.name)}
+          </div>
+        )}
+        <SummaryField label="Last Qualification" value={student.lastQualification} />
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+        <SummaryField label="Employment" value={EMPLOYMENT_STATUS_LABEL[student.employmentStatus]} />
+        <SummaryField label="Company" value={student.companyName} />
+        <SummaryField label="Job Title" value={student.jobTitle} />
+        <SummaryField label="Computer Proficiency" value={COMPUTER_PROFICIENCY_LABEL[student.computerProficiency]} />
+        <SummaryField label="Laptop" value={student.hasLaptop === true ? 'Yes' : student.hasLaptop === false ? 'No' : ''} />
       </div>
     </div>
   );
@@ -119,7 +183,23 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
     const editBatch = initialValues?.batch?._id ?? initialValues?.batch ?? '';
     setForm(
       initialValues
-        ? { ...EMPTY_FORM, ...initialValues, campus: lockedCampus ?? editCampus, batch: editBatch }
+        ? {
+            ...EMPTY_FORM,
+            ...initialValues,
+            campus: lockedCampus ?? editCampus,
+            batch: editBatch,
+            // Nullable enums/dates come back from the API as `null` for the
+            // 66 pre-existing students that predate these fields — a
+            // controlled <select>/<input> needs '' instead, or React warns
+            // about switching an input from uncontrolled to controlled.
+            employmentStatus: initialValues.employmentStatus ?? '',
+            salary: initialValues.salary ?? '',
+            companyName: initialValues.companyName ?? '',
+            jobTitle: initialValues.jobTitle ?? '',
+            employmentStartDate: dateToForm(initialValues.employmentStartDate),
+            computerProficiency: initialValues.computerProficiency ?? '',
+            hasLaptop: laptopToForm(initialValues.hasLaptop),
+          }
         : { ...EMPTY_FORM, campus: lockedCampus ?? campuses[0]?._id ?? '' }
     );
   }, [open, initialValues, isCampusLocked, user, campuses]);
@@ -153,7 +233,14 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(form);
+    onSubmit({
+      ...form,
+      employmentStatus: form.employmentStatus || null,
+      salary: form.salary === '' ? null : Number(form.salary),
+      employmentStartDate: form.employmentStartDate || null,
+      computerProficiency: form.computerProficiency || null,
+      hasLaptop: laptopToPayload(form.hasLaptop),
+    });
   };
 
   const title = mode === 'add' ? 'Add Student' : 'Edit Student';
@@ -331,6 +418,116 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
               Address
             </label>
             <input id="student-address" type="text" value={form.address} onChange={setField('address')} className={inputClass} />
+          </div>
+
+          <span className="text-overline uppercase text-neutral-400 font-semibold tracking-wide pt-1 border-t border-neutral-100">
+            Employment Info
+          </span>
+
+          <div className="flex flex-col gap-1.5">
+            <label className={labelClass} htmlFor="student-employment-status">
+              Employment status
+            </label>
+            <select
+              id="student-employment-status"
+              value={form.employmentStatus}
+              onChange={setField('employmentStatus')}
+              className={`${inputClass} bg-surface`}
+            >
+              <option value="">Not set</option>
+              {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelClass} htmlFor="student-company">
+                Company name
+              </label>
+              <input
+                id="student-company"
+                type="text"
+                value={form.companyName}
+                onChange={setField('companyName')}
+                className={inputClass}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelClass} htmlFor="student-job-title">
+                Job title
+              </label>
+              <input id="student-job-title" type="text" value={form.jobTitle} onChange={setField('jobTitle')} className={inputClass} />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelClass} htmlFor="student-salary">
+                Salary
+              </label>
+              <input
+                id="student-salary"
+                type="number"
+                min="0"
+                value={form.salary}
+                onChange={setField('salary')}
+                className={inputClass}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelClass} htmlFor="student-employment-start">
+                Employment start date
+              </label>
+              <input
+                id="student-employment-start"
+                type="date"
+                value={form.employmentStartDate}
+                onChange={setField('employmentStartDate')}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <span className="text-overline uppercase text-neutral-400 font-semibold tracking-wide pt-1 border-t border-neutral-100">
+            Other
+          </span>
+
+          <div className="flex gap-3">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelClass} htmlFor="student-computer-proficiency">
+                Computer proficiency
+              </label>
+              <select
+                id="student-computer-proficiency"
+                value={form.computerProficiency}
+                onChange={setField('computerProficiency')}
+                className={`${inputClass} bg-surface`}
+              >
+                <option value="">Not set</option>
+                {COMPUTER_PROFICIENCY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className={labelClass} htmlFor="student-laptop">
+                Laptop
+              </label>
+              <select id="student-laptop" value={form.hasLaptop} onChange={setField('hasLaptop')} className={`${inputClass} bg-surface`}>
+                <option value="">Not set</option>
+                {LAPTOP_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {error && (

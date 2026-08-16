@@ -115,7 +115,25 @@ exports.getStudent = async (req, res) => {
 
 exports.createStudent = async (req, res) => {
   try {
-    const { name, father, cnic, phone, email, course, campus, status, address, batch } = req.body;
+    const {
+      name,
+      father,
+      cnic,
+      phone,
+      email,
+      course,
+      campus,
+      status,
+      address,
+      batch,
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
+    } = req.body;
     if (!name || !father || !cnic || !phone || !email || !course || !campus) {
       return res.status(400).json({
         message: 'name, father, cnic, phone, email, course, and campus are required',
@@ -137,6 +155,13 @@ exports.createStudent = async (req, res) => {
       status: status || 'enrolled',
       address,
       payment: 'pending',
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
     });
 
     logAudit({
@@ -161,7 +186,26 @@ exports.createStudent = async (req, res) => {
 
 exports.updateStudent = async (req, res) => {
   try {
-    const { name, father, cnic, phone, email, course, campus, status, payment, address, batch } = req.body;
+    const {
+      name,
+      father,
+      cnic,
+      phone,
+      email,
+      course,
+      campus,
+      status,
+      payment,
+      address,
+      batch,
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
+    } = req.body;
 
     // Pending/rejected are admissions-applicant states, only reachable
     // through the Admissions Queue's approve/reject flow (admissionController.js)
@@ -186,7 +230,24 @@ exports.updateStudent = async (req, res) => {
     // different campus id — drop it silently rather than let them reassign
     // a student out of their campus, or error on a form just re-submitting
     // the student's existing (unchanged) campus value.
-    const updates = { name, father, cnic, phone, email, course, status, payment, address };
+    const updates = {
+      name,
+      father,
+      cnic,
+      phone,
+      email,
+      course,
+      status,
+      payment,
+      address,
+      employmentStatus,
+      salary,
+      companyName,
+      jobTitle,
+      employmentStartDate,
+      computerProficiency,
+      hasLaptop,
+    };
     if (req.user.role === 'super_admin') {
       updates.campus = campus;
     }
