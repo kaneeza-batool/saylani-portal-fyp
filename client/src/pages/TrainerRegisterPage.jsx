@@ -74,6 +74,14 @@ export default function TrainerRegisterPage() {
           animate={{ x: [0, -50, 0], y: [0, -30, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
         />
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'linear-gradient(#C9A227 1px, transparent 1px), linear-gradient(90deg, #C9A227 1px, transparent 1px)',
+            backgroundSize: '44px 44px',
+          }}
+        />
       </div>
 
       <motion.div
