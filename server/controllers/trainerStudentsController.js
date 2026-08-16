@@ -26,8 +26,13 @@ exports.listMyStudents = async (req, res) => {
     // Applicants (pending/rejected) were never placed in a batch and have no
     // attendance/quiz/assignment history — same exclusion as
     // studentAttendanceController.getAttendanceReports.
+    // course/campus/avatarUrl added for the ID Card action (Students page) —
+    // the roster's own scoping (myBatchesFilter above) already keeps this to
+    // the trainer's own batches, so no extra campus/batch check is needed
+    // just to add fields to an already-scoped query.
     const students = await Student.find({ batch: { $in: batchFilterIds }, status: { $nin: ['pending', 'rejected'] } })
-      .select('name rollNumber overallGrade')
+      .select('name rollNumber overallGrade course campus avatarUrl')
+      .populate('campus', 'name')
       .sort({ name: 1 })
       .lean();
 
@@ -95,6 +100,9 @@ exports.listMyStudents = async (req, res) => {
         quizAttempts: quiz?.attempts ?? 0,
         submission: latestSubmission ? latestSubmission.status : 'not_submitted',
         grade: s.overallGrade || null,
+        course: s.course,
+        campus: s.campus?.name || null,
+        avatarUrl: s.avatarUrl || '',
       };
     });
 

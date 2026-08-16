@@ -6,6 +6,7 @@ import { generateFeeVoucher } from '../../services/feeService';
 import StudentFormModal from '../../components/StudentFormModal';
 import ExportButtons from '../../components/ExportButtons';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import IDCardModal from '../../components/IDCardModal';
 
 // Reuses super-admin/StudentsPage.jsx's table shell (same GRID_COLS
 // approach, same classes, same STATUS_STYLE/PAYMENT_STYLE) but trimmed to
@@ -104,6 +105,7 @@ export default function StudentsPage() {
   const [editTarget, setEditTarget] = useState(null);
   const [formError, setFormError] = useState('');
   const [dropTarget, setDropTarget] = useState(null);
+  const [idCardTarget, setIdCardTarget] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -295,6 +297,19 @@ export default function StudentsPage() {
                     )}
                     <button
                       type="button"
+                      onClick={() => setIdCardTarget(s)}
+                      title="ID Card"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <circle cx="8" cy="11" r="2" />
+                        <path d="M5 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" />
+                        <path d="M14 10h5M14 14h5" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => openEdit(s)}
                       title="Edit"
                       className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
@@ -356,6 +371,28 @@ export default function StudentsPage() {
         onCancel={() => setDropTarget(null)}
         onConfirm={confirmDrop}
         loading={statusMutation.isPending}
+      />
+
+      <IDCardModal
+        open={!!idCardTarget}
+        onClose={() => setIdCardTarget(null)}
+        type="Student"
+        person={
+          idCardTarget
+            ? {
+                name: idCardTarget.name,
+                idNumber: idCardTarget.rollNumber,
+                line1: idCardTarget.course,
+                line2: idCardTarget.campus?.name,
+                // GET /admin/students is already campus-scoped for a
+                // sub_admin (req.campusFilter, see studentController), so
+                // every row here is already their own campus — nothing
+                // extra to enforce for "campus-scoped" beyond reusing this
+                // page's existing data.
+                photo: idCardTarget.avatarUrl ? `${import.meta.env.VITE_STUDENT_PORTAL_URL_BASE}${idCardTarget.avatarUrl}` : undefined,
+              }
+            : null
+        }
       />
     </motion.div>
   );
