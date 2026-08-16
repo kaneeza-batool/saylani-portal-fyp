@@ -1,4 +1,28 @@
 const Slot = require('../models/Slot');
+const Student = require('../models/Student');
+const StudentAttendance = require('../models/StudentAttendance');
+const StudentPortalAssignment = require('../models/StudentPortalAssignment');
+const StudentPortalAssignmentSubmission = require('../models/StudentPortalAssignmentSubmission');
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// present/(present+absent), same convention as dashboardController.js's
+// own attendanceRate — 'leave' excluded from the denominator, null (not 0)
+// when there's no data at all so "no attendance recorded" isn't shown as
+// a real 0%.
+function attendanceRate(rows) {
+  const counts = { present: 0, absent: 0 };
+  for (const r of rows) {
+    if (r._id in counts) counts[r._id] = r.count;
+  }
+  const denom = counts.present + counts.absent;
+  return denom > 0 ? Math.round((counts.present / denom) * 1000) / 10 : null;
+}
 
 // Matches a Slot to the logged-in trainer two ways: the real link
 // (assignedTrainer, set when a slot is created/edited with this trainer's
@@ -40,5 +64,67 @@ exports.getMyBatches = async (req, res) => {
     return res.status(200).json({ batches });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load trainer dashboard', error: err.message });
+  }
+};
+
+// Real per-student stats, not fabricated ones — 30-day attendance rate
+// (same present/(present+absent) convention as the Super Admin dashboard)
+// and assignment completion (submitted-or-decided out of everything this
+// trainer has assigned in this course), computed live from the same
+// collections the rest of the Trainer Portal already writes to.
+exports.listMyStudents = async (req, res) => {
+  try {
+    const { course } = req.query;
+    if (!course) return res.status(400).json({ message: 'course is required.' });
+
+    const [currentlyEnrolled, myAssignments] = await Promise.all([
+      Student.find({ course, status: { $in: ['enrolled', 'completed'] } }, 'name rollNumber').lean(),
+      StudentPortalAssignment.find({ createdByTrainer: req.user._id, course }, '_id').lean(),
+    ]);
+
+    const assignmentIds = myAssignments.map((a) => a._id);
+
+    // Union with anyone who has a real submission here but isn't currently
+    // enrolled (e.g. since dropped out) — same fix as
+    // trainerAssignmentController.getAssignmentRoster, for the same
+    // reason: a student's real activity shouldn't just disappear because
+    // their status changed later.
+    const pastSubmitterIds = assignmentIds.length
+      ? (await StudentPortalAssignmentSubmission.find({ assignment: { $in: assignmentIds } }, 'student').lean()).map((s) =>
+          String(s.student)
+        )
+      : [];
+    const missingIds = [...new Set(pastSubmitterIds)].filter((id) => !currentlyEnrolled.some((s) => String(s._id) === id));
+    const pastSubmitters = missingIds.length ? await Student.find({ _id: { $in: missingIds } }, 'name rollNumber').lean() : [];
+
+    const students = [...currentlyEnrolled, ...pastSubmitters].sort((a, b) => a.name.localeCompare(b.name));
+    const since30d = daysAgo(30);
+
+    const results = await Promise.all(
+      students.map(async (student) => {
+        const [attRows, submissionCount] = await Promise.all([
+          StudentAttendance.aggregate([
+            { $match: { student: student._id, date: { $gte: since30d } } },
+            { $group: { _id: '$status', count: { $sum: 1 } } },
+          ]),
+          assignmentIds.length
+            ? StudentPortalAssignmentSubmission.countDocuments({ student: student._id, assignment: { $in: assignmentIds } })
+            : Promise.resolve(0),
+        ]);
+
+        return {
+          _id: student._id,
+          name: student.name,
+          rollNumber: student.rollNumber,
+          attendancePct: attendanceRate(attRows),
+          assignmentsSubmitted: submissionCount,
+          assignmentsTotal: assignmentIds.length,
+        };
+      })
+    );
+
+    return res.status(200).json({ items: results });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load students', error: err.message });
   }
 };

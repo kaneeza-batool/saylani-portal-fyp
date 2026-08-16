@@ -2,17 +2,29 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { inputClass, labelClass } from './formFieldStyles';
+import AssignmentFormModal from '../../components/AssignmentFormModal';
 import {
   getTrainerCourses,
   getMyQuizzes,
   createQuiz,
   getMyAssignments,
   createAssignment,
-  getPendingSubmissions,
-  getReviewedSubmissions,
+  getAssignmentRoster,
   getPendingReviewCount,
   reviewSubmission,
 } from '../../services/trainerDashboardService';
+
+function initials(name) {
+  return (
+    (name || '')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || '?'
+  );
+}
 
 const fadeInUp = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
@@ -278,277 +290,84 @@ function QuizBuilderTab({ courses }) {
 }
 
 // ---------------------------------------------------------------------------
-// Assignments — create an assignment; students submit through Student
-// Portal's existing (already-built) assignment flow, nothing new needed
-// there. Reference links are a textarea, one URL per line — matches
-// Assignment.referenceLinks being a plain string array, no per-link add/
-// remove UI needed for a v1.
+// Assignments — full lifecycle: create, see a roster-level submission
+// status per assignment, approve. Students submit through Student Portal's
+// existing (already-built, untouched) submission flow.
+//
+// Rosters are scoped by course, not batch — Student has no batch/Slot
+// field anywhere in this schema (see server/models/Student.js and the
+// Slot model's own comments), so "every student assigned this batch" isn't
+// a relationship that actually exists to query. Course is the real
+// equivalent: it's the same field Student Portal itself scopes quizzes and
+// assignments by (see getAssignmentRoster on the server).
 // ---------------------------------------------------------------------------
-function AssignmentsTab({ courses }) {
-  const queryClient = useQueryClient();
-  const { data: myAssignments } = useQuery({ queryKey: ['trainer-assignments'], queryFn: getMyAssignments });
+const SUBMISSION_STATUS_STYLE = {
+  not_submitted: { label: 'Not Submitted', className: 'bg-neutral-100 text-neutral-500' },
+  submitted: { label: 'Submitted', className: 'bg-info-bg text-info-text' },
+  late_submitted: { label: 'Late', className: 'bg-warning-bg text-warning-text' },
+  approved: { label: 'Approved', className: 'bg-success-bg text-success-text' },
+  not_approved: { label: 'Needs Revision', className: 'bg-danger-50 text-danger-600' },
+};
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [course, setCourse] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [isHackathon, setIsHackathon] = useState(false);
-  const [referenceLinksText, setReferenceLinksText] = useState('');
-  const [formError, setFormError] = useState('');
+function fmtDate(d) {
+  return d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+}
 
-  useEffect(() => {
-    if (!course && courses?.length) setCourse(courses[0].name);
-  }, [courses, course]);
-
-  const saveMutation = useMutation({
-    mutationFn: createAssignment,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainer-assignments'] });
-      setTitle('');
-      setDescription('');
-      setDueDate('');
-      setIsHackathon(false);
-      setReferenceLinksText('');
-      setFormError('');
-    },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to save assignment. Please try again.'),
-  });
-
-  const handleSave = () => {
-    setFormError('');
-    if (!title.trim() || !description.trim() || !course || !dueDate) {
-      setFormError('Title, description, course, and due date are all required.');
-      return;
-    }
-    saveMutation.mutate({
-      course,
-      title: title.trim(),
-      description: description.trim(),
-      dueDate: new Date(dueDate).toISOString(),
-      isHackathon,
-      referenceLinks: referenceLinksText.split('\n').map((l) => l.trim()).filter(Boolean),
-    });
-  };
-
+function StatBadge({ label, value, className }) {
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4 items-start">
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4 max-w-[760px]">
-        <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3.5">
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>Assignment Title</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Build a Portfolio Site" className={inputClass} />
-          </div>
+    <span className={`text-badge px-2 py-1 rounded-pill w-fit ${className}`}>
+      {value} {label}
+    </span>
+  );
+}
 
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="What the student needs to do, and how it'll be evaluated"
-              rows={4}
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Course</label>
-              <CourseSelect courses={courses} value={course} onChange={setCourse} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Due Date</label>
-              <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass}>Reference Links (one per line, optional)</label>
-            <textarea
-              value={referenceLinksText}
-              onChange={(e) => setReferenceLinksText(e.target.value)}
-              placeholder="https://..."
-              rows={2}
-              className={`${inputClass} resize-none`}
-            />
-          </div>
-
-          <label className="flex items-center gap-2 text-body-sm text-neutral-700 cursor-pointer w-fit">
-            <input type="checkbox" checked={isHackathon} onChange={(e) => setIsHackathon(e.target.checked)} className="accent-[var(--trainer-blue)]" />
-            This is a hackathon-style assignment
-          </label>
-        </motion.div>
-
-        {formError && <div className="text-caption text-danger-600 bg-danger-50 border border-danger-200 rounded px-3 py-2">{formError}</div>}
-
-        <button
-          type="button"
-          disabled={saveMutation.isPending}
-          onClick={handleSave}
-          className="self-start border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-5 py-[11px] rounded cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saveMutation.isPending ? 'Saving...' : 'Save Assignment'}
-        </button>
-      </motion.div>
-
-      <div className="bg-surface border border-neutral-200 rounded-xl p-5 flex flex-col gap-3.5">
+function AssignmentListView({ assignments, isLoading, onSelect, onNewClick }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
         <div className="font-heading font-bold text-h6 text-neutral-900">Your Assignments</div>
-        {!myAssignments?.length ? (
-          <div className="text-body-sm text-neutral-400">No assignments created yet.</div>
-        ) : (
-          <div className="flex flex-col gap-2.5">
-            {myAssignments.map((a) => (
-              <div key={a._id} className="border border-neutral-100 rounded-lg p-3 flex flex-col gap-0.5">
-                <span className="text-body-sm font-semibold text-neutral-900">{a.title}</span>
-                <span className="text-caption text-neutral-500">{a.course}{a.isHackathon ? ' · Hackathon' : ''}</span>
-                <span className="text-caption text-neutral-400">Due {new Date(a.dueDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Review Submissions — the feature actually asked for: approve/reject a
-// student's assignment submission, with a grade and remarks, which emails
-// the student (see trainerAssignmentController.reviewSubmission).
-// ---------------------------------------------------------------------------
-function ReviewCard({ submission, onReview, isPending }) {
-  const [grade, setGrade] = useState(submission.grade || '');
-  const [remarks, setRemarks] = useState(submission.trainerRemarks || '');
-  const isDecided = submission.status === 'approved' || submission.status === 'not_approved';
-
-  return (
-    <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl p-[18px] flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-body-sm font-semibold text-neutral-900">{submission.student?.name}</span>
-          <span className="text-caption text-neutral-500">{submission.assignment?.title}</span>
-          <span className="text-caption text-neutral-400">
-            Submitted {new Date(submission.submittedAt).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-            {submission.status === 'late_submitted' && <span className="text-warning-text font-semibold"> · Late</span>}
-          </span>
-        </div>
-        {isDecided && (
-          <span
-            className={`text-badge px-2.5 py-1 rounded-pill w-fit ${
-              submission.status === 'approved' ? 'bg-success-bg text-success-text' : 'bg-danger-50 text-danger-600'
-            }`}
-          >
-            {submission.status === 'approved' ? 'Approved' : 'Needs Revision'}
-          </span>
-        )}
-      </div>
-
-      <p className="text-body-sm text-neutral-700 whitespace-pre-line">{submission.submissionText}</p>
-
-      {submission.submissionLink && (
-        <a
-          href={submission.submissionLink}
-          target="_blank"
-          rel="noreferrer"
-          className="text-caption font-semibold text-[var(--trainer-blue)] hover:underline w-fit"
-        >
-          View submission link →
-        </a>
-      )}
-
-      {!isDecided ? (
-        <>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className={labelClass}>Grade (optional)</label>
-              <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="e.g. A, 85/100" className={inputClass} />
-            </div>
-          </div>
-          <textarea
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder="Remarks for the student (sent with the decision email)"
-            rows={2}
-            className={`${inputClass} resize-none`}
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => onReview(submission._id, 'approved', grade, remarks)}
-              className="border-none bg-success-text text-white text-caption font-semibold px-4 py-2 rounded cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              Approve
-            </button>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() => onReview(submission._id, 'not_approved', grade, remarks)}
-              className="border border-danger-200 bg-surface text-danger-600 text-caption font-semibold px-4 py-2 rounded cursor-pointer transition-colors hover:bg-danger-50 disabled:opacity-50"
-            >
-              Needs Revision
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-col gap-1 bg-neutral-50 rounded-lg p-3">
-          {submission.grade && <span className="text-caption text-neutral-700"><b>Grade:</b> {submission.grade}</span>}
-          {submission.trainerRemarks && <span className="text-caption text-neutral-700"><b>Remarks:</b> {submission.trainerRemarks}</span>}
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
-function ReviewSubmissionsTab() {
-  const queryClient = useQueryClient();
-  const [subTab, setSubTab] = useState('pending');
-  const { data: pending } = useQuery({ queryKey: ['trainer-submissions-pending'], queryFn: getPendingSubmissions });
-  const { data: reviewed } = useQuery({ queryKey: ['trainer-submissions-reviewed'], queryFn: getReviewedSubmissions, enabled: subTab === 'reviewed' });
-
-  const reviewMutation = useMutation({
-    mutationFn: ({ id, decision, grade, trainerRemarks }) => reviewSubmission(id, { decision, grade, trainerRemarks }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainer-submissions-pending'] });
-      queryClient.invalidateQueries({ queryKey: ['trainer-submissions-reviewed'] });
-      queryClient.invalidateQueries({ queryKey: ['trainer-pending-review-count'] });
-    },
-  });
-
-  const handleReview = (id, decision, grade, trainerRemarks) => reviewMutation.mutate({ id, decision, grade, trainerRemarks });
-
-  const list = subTab === 'pending' ? pending : reviewed;
-
-  return (
-    <div className="flex flex-col gap-4 max-w-[640px]">
-      <div className="flex gap-2">
         <button
           type="button"
-          onClick={() => setSubTab('pending')}
-          className={`text-caption font-semibold px-3.5 py-2 rounded-pill cursor-pointer transition-colors ${
-            subTab === 'pending' ? 'bg-[var(--trainer-blue)] text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-          }`}
+          onClick={onNewClick}
+          className="border-none bg-[var(--trainer-blue)] text-white text-caption font-semibold px-3.5 py-2 rounded cursor-pointer transition-opacity hover:opacity-90"
         >
-          Pending{pending?.length ? ` (${pending.length})` : ''}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubTab('reviewed')}
-          className={`text-caption font-semibold px-3.5 py-2 rounded-pill cursor-pointer transition-colors ${
-            subTab === 'reviewed' ? 'bg-[var(--trainer-blue)] text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-          }`}
-        >
-          Reviewed
+          + New Assignment
         </button>
       </div>
 
-      {!list?.length ? (
+      {isLoading ? (
+        <div className="flex flex-col gap-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-24 bg-neutral-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : !assignments?.length ? (
         <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] text-center text-body-sm text-neutral-400">
-          {subTab === 'pending' ? 'No submissions waiting for review.' : 'No reviewed submissions yet.'}
+          No assignments created yet — click "+ New Assignment" to create your first one.
         </div>
       ) : (
         <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-3">
-          {list.map((s) => (
-            <ReviewCard key={s._id} submission={s} onReview={handleReview} isPending={reviewMutation.isPending} />
+          {assignments.map((a) => (
+            <motion.button
+              key={a._id}
+              type="button"
+              variants={fadeInUp}
+              onClick={() => onSelect(a._id)}
+              className="text-left bg-surface border border-neutral-200 rounded-xl p-[18px] flex items-center justify-between gap-4 flex-wrap cursor-pointer transition-colors hover:border-[var(--trainer-blue)]"
+            >
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <span className="text-body-sm font-semibold text-neutral-900">{a.title}</span>
+                <span className="text-caption text-neutral-500">
+                  {a.course}
+                  {a.isHackathon ? ' · Hackathon' : ''} · Due {fmtDate(a.dueDate)}
+                </span>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <StatBadge label="Submitted" value={a.stats?.submitted ?? 0} className="bg-info-bg text-info-text" />
+                <StatBadge label="Pending" value={a.stats?.pending ?? 0} className="bg-warning-bg text-warning-text" />
+                <StatBadge label="Approved" value={a.stats?.approved ?? 0} className="bg-success-bg text-success-text" />
+              </div>
+            </motion.button>
           ))}
         </motion.div>
       )}
@@ -556,13 +375,174 @@ function ReviewSubmissionsTab() {
   );
 }
 
+function RosterRow({ row, onReview, isPending }) {
+  const style = SUBMISSION_STATUS_STYLE[row.status] ?? SUBMISSION_STATUS_STYLE.not_submitted;
+  const isDecided = row.status === 'approved' || row.status === 'not_approved';
+  const canReview = row.status === 'submitted' || row.status === 'late_submitted';
+
+  return (
+    <motion.div
+      variants={fadeInUp}
+      className="grid grid-cols-[1.6fr_1fr_1fr_1.4fr] gap-3 px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0"
+    >
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">
+          {initials(row.student?.name)}
+        </div>
+        <span className="text-body-sm font-semibold text-neutral-900 truncate">{row.student?.name}</span>
+      </div>
+
+      <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${style.className}`}>{style.label}</span>
+
+      <span className="text-body-sm text-neutral-600">{row.submittedAt ? fmtDate(row.submittedAt) : '—'}</span>
+
+      <div className="flex items-center gap-2 justify-end">
+        {row.submissionLink && (
+          <a
+            href={row.submissionLink}
+            target="_blank"
+            rel="noreferrer"
+            className="text-caption font-semibold text-[var(--trainer-blue)] hover:underline"
+          >
+            View Submission
+          </a>
+        )}
+        {canReview && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => onReview(row.submissionId, 'approved')}
+            className="border-none bg-success-text text-white text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            Approve
+          </button>
+        )}
+        {isDecided && (
+          <span className={`text-caption font-semibold ${row.status === 'approved' ? 'text-success-text' : 'text-danger-600'}`}>
+            {row.status === 'approved' ? 'Approved ✓' : 'Needs Revision'}
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function AssignmentDetailView({ assignmentId, onBack }) {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ['trainer-assignment-roster', assignmentId],
+    queryFn: () => getAssignmentRoster(assignmentId),
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, decision }) => reviewSubmission(id, { decision }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trainer-assignment-roster', assignmentId] });
+      queryClient.invalidateQueries({ queryKey: ['trainer-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['trainer-pending-review-count'] });
+    },
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <button
+        type="button"
+        onClick={onBack}
+        className="self-start border-none bg-transparent text-caption font-semibold text-[var(--trainer-blue)] cursor-pointer hover:underline"
+      >
+        ← Back to Assignments
+      </button>
+
+      {isLoading || !data ? (
+        <div className="h-40 bg-neutral-100 rounded-xl animate-pulse" />
+      ) : (
+        <>
+          <div className="flex flex-col gap-0.5">
+            <div className="font-heading font-bold text-h5 text-neutral-900">{data.assignment.title}</div>
+            <div className="text-body-sm text-neutral-500">
+              {data.assignment.course} · Due {fmtDate(data.assignment.dueDate)}
+            </div>
+          </div>
+
+          <div className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
+            <div className="grid grid-cols-[1.6fr_1fr_1fr_1.4fr] gap-3 px-[18px] py-3 bg-neutral-50 border-b border-neutral-200 min-w-[600px]">
+              {['Student', 'Status', 'Submitted', 'Action'].map((h) => (
+                <span key={h} className="text-overline uppercase text-neutral-500">
+                  {h}
+                </span>
+              ))}
+            </div>
+            {!data.roster.length ? (
+              <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No students enrolled in this course yet.</div>
+            ) : (
+              <motion.div variants={staggerContainer} initial="hidden" animate="show" className="min-w-[600px]">
+                {data.roster.map((row) => (
+                  <RosterRow
+                    key={row.student._id}
+                    row={row}
+                    onReview={(id, decision) => reviewMutation.mutate({ id, decision })}
+                    isPending={reviewMutation.isPending}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function AssignmentsTab({ courses }) {
+  const queryClient = useQueryClient();
+  const [view, setView] = useState('list');
+  const [selectedId, setSelectedId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const { data: assignments, isLoading } = useQuery({ queryKey: ['trainer-assignments'], queryFn: getMyAssignments });
+
+  const createMutation = useMutation({
+    mutationFn: createAssignment,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trainer-assignments'] });
+      setModalOpen(false);
+    },
+  });
+
+  if (view === 'detail') {
+    return <AssignmentDetailView assignmentId={selectedId} onBack={() => setView('list')} />;
+  }
+
+  return (
+    <>
+      <AssignmentListView
+        assignments={assignments}
+        isLoading={isLoading}
+        onSelect={(id) => {
+          setSelectedId(id);
+          setView('detail');
+        }}
+        onNewClick={() => setModalOpen(true)}
+      />
+      <AssignmentFormModal
+        open={modalOpen}
+        courses={courses}
+        onClose={() => setModalOpen(false)}
+        onSubmit={(payload) => createMutation.mutate(payload)}
+        submitting={createMutation.isPending}
+        error={createMutation.error?.response?.data?.message}
+      />
+    </>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Top-level tab switcher
+// Top-level tab switcher — Quiz Builder (unchanged) and Assignments (full
+// lifecycle: create -> roster -> approve, all in one tab).
 // ---------------------------------------------------------------------------
 const TABS = [
   { id: 'quiz', label: 'Quiz Builder' },
   { id: 'assignments', label: 'Assignments' },
-  { id: 'review', label: 'Review Submissions' },
 ];
 
 export default function QuizzesPage() {
@@ -583,7 +563,7 @@ export default function QuizzesPage() {
             }`}
           >
             {t.label}
-            {t.id === 'review' && !!pendingCount && (
+            {t.id === 'assignments' && !!pendingCount && (
               <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-pill bg-danger-50 text-danger-600 text-[10.5px] font-bold align-middle">
                 {pendingCount}
               </span>
@@ -594,7 +574,6 @@ export default function QuizzesPage() {
 
       {tab === 'quiz' && <QuizBuilderTab courses={courses} />}
       {tab === 'assignments' && <AssignmentsTab courses={courses} />}
-      {tab === 'review' && <ReviewSubmissionsTab />}
     </div>
   );
 }
