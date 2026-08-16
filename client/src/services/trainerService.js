@@ -18,3 +18,8 @@ export async function updateTrainer(id, payload) {
 export async function deleteTrainer(id) {
   await api.delete(`/admin/trainers/${id}`);
 }
+
+export async function updateTrainerStatus(id, status) {
+  const { data } = await api.patch(`/admin/trainers/${id}/status`, { status });
+  return data.trainer;
+}

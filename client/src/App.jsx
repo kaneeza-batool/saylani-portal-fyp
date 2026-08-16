@@ -160,6 +160,11 @@ function App() {
                     <Route path="trainers" element={<SubAdminTrainersPage />} />
                     <Route path="batches" element={<SubAdminBatchesPage />} />
                     <Route path="attendance-reports" element={<SubAdminAttendanceReportsPage />} />
+                    {/* Same components super-admin uses at /admin/attendance/mark|multi —
+                        no sub-admin-specific fork needed, they were already portable
+                        (no role checks); the backend enforces campus scope. */}
+                    <Route path="attendance/mark" element={<MarkAttendance />} />
+                    <Route path="attendance/multi" element={<MultiAttendance />} />
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
                     <Route path="alerts" element={<SubAdminAlertsPage />} />
                     <Route path="audit-log" element={<SubAdminAuditLogPage />} />

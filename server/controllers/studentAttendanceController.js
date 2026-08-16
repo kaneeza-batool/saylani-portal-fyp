@@ -10,7 +10,13 @@ function startOfToday() {
 
 exports.lookupStudent = async (req, res) => {
   try {
-    const student = await Student.findOne({ rollNumber: req.params.rollNumber }).populate('campus', 'name city');
+    // req.campusFilter is {} for super_admin, {campus: ObjectId} for
+    // sub_admin (campusScope) — Student.campus is a real ref, so this is
+    // safe the same way studentController.getStudents already relies on it.
+    // A sub_admin looking up another campus's roll number gets the same 404
+    // as a nonexistent one, not a 403 — no need to leak that the roll
+    // number exists elsewhere.
+    const student = await Student.findOne({ rollNumber: req.params.rollNumber, ...req.campusFilter }).populate('campus', 'name city');
     if (!student) return res.status(404).json({ message: 'No student found with that roll number' });
 
     if (student.status === 'dropout') {
@@ -29,7 +35,9 @@ exports.lookupStudent = async (req, res) => {
 exports.markAttendance = async (req, res) => {
   try {
     const { rollNumber, status } = req.body;
-    const student = await Student.findOne({ rollNumber }).populate('campus', 'name');
+    // Same campus scoping as lookupStudent — a sub_admin can only mark
+    // attendance for a student req.campusFilter actually resolves to.
+    const student = await Student.findOne({ rollNumber, ...req.campusFilter }).populate('campus', 'name');
     if (!student) return res.status(404).json({ message: 'No student found with that roll number' });
     if (student.status === 'dropout') {
       return res.status(409).json({ message: `The student exists, but their status is invalid: '${student.status}'` });
@@ -70,7 +78,11 @@ exports.markMultiple = async (req, res) => {
       return res.status(400).json({ message: 'rollNumbers must be a non-empty array' });
     }
 
-    const students = await Student.find({ rollNumber: { $in: rollNumbers } }).populate('campus', 'name');
+    // Out-of-campus roll numbers simply don't resolve here for a sub_admin
+    // (req.campusFilter), so they fall into the existing `notFound` count
+    // below rather than a separate error path — same "not reachable in this
+    // scope reads as not found" convention as the roster elsewhere.
+    const students = await Student.find({ rollNumber: { $in: rollNumbers }, ...req.campusFilter }).populate('campus', 'name');
     const today = startOfToday();
     const existing = await StudentAttendance.find({ student: { $in: students.map((s) => s._id) }, date: today });
     const alreadyMarked = new Set(existing.map((e) => String(e.student)));
@@ -122,6 +134,11 @@ exports.markMultiple = async (req, res) => {
   }
 };
 
+// StudentAttendance.campus is a cached display-name String, not an ObjectId
+// ref (see model) — req.campusFilter from campusScope is shaped for real
+// refs and would silently match zero records here, not error. Same fix as
+// getAttendanceSummary/getAttendanceReports: resolve the requester's own
+// campus name and match the cached string directly instead.
 exports.getAttendance = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -129,6 +146,10 @@ exports.getAttendance = async (req, res) => {
     const { search, status } = req.query;
 
     const filter = {};
+    if (req.user.role !== 'super_admin') {
+      const campus = await Campus.findById(req.user.campus_id).select('name');
+      filter.campus = campus?.name || '__no_campus__';
+    }
     if (status && status !== 'all') filter.status = status;
     if (search && search.trim()) {
       // campus here is StudentAttendance's own cached-name String (snapshotted
@@ -267,5 +288,89 @@ exports.getAttendanceReports = async (req, res) => {
     return res.status(200).json({ rows, startDate: start, endDate: end });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load attendance reports', error: err.message });
+  }
+};
+
+// Individual day-by-day records for one student in range — the drill-down
+// behind getAttendanceReports' per-student rollup, needed because there's
+// no single "the record" to edit from an aggregated Present/Absent/Leave
+// count alone. Scoped through Student first (a real campus ref), same
+// belt-and-suspenders as getAttendanceReports: the resulting records' own
+// cached campus name is checked too, in case a student was ever reassigned
+// campuses after a record was written under the old one.
+exports.getStudentAttendanceRecords = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const student = await Student.findOne({ _id: studentId, ...req.campusFilter }).select('name campus');
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    const end = req.query.endDate ? new Date(req.query.endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = req.query.startDate ? new Date(req.query.startDate) : new Date(end);
+    if (!req.query.startDate) start.setDate(start.getDate() - 30);
+    start.setHours(0, 0, 0, 0);
+
+    const filter = { student: studentId, date: { $gte: start, $lte: end } };
+    if (req.user.role !== 'super_admin') {
+      const campus = await Campus.findById(req.user.campus_id).select('name');
+      filter.campus = campus?.name || '__no_campus__';
+    }
+
+    const records = await StudentAttendance.find(filter).sort({ date: -1 }).lean();
+    return res.status(200).json({ records });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load attendance records', error: err.message });
+  }
+};
+
+// Corrects an existing record's status — an update, not a create, since
+// StudentAttendance already enforces one record per {student, date}
+// (unique index). E.g. a trainer marked someone absent and the campus
+// manager later sees a leave slip. Every change is audit-logged with the
+// old and new status in the summary, same "describe the change in prose"
+// convention as studentController.updateStudent's drop/re-enroll cascade —
+// AuditLog has no structured before/after fields.
+exports.updateAttendanceRecord = async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['present', 'absent', 'leave'].includes(status)) {
+      return res.status(400).json({ message: 'status must be present, absent, or leave' });
+    }
+
+    const record = await StudentAttendance.findById(req.params.id);
+    if (!record) return res.status(404).json({ message: 'Attendance record not found' });
+
+    // StudentAttendance.campus is a cached name String (see model) — for a
+    // sub_admin, resolve their own campus to a name and compare against the
+    // record's cached string directly, same pattern as getAttendance/
+    // getAttendanceSummary. super_admin skips this and can correct any
+    // record.
+    if (req.user.role !== 'super_admin') {
+      const campus = await Campus.findById(req.user.campus_id).select('name');
+      if (record.campus !== campus?.name) {
+        return res.status(404).json({ message: 'Attendance record not found' });
+      }
+    }
+
+    if (record.status === status) {
+      return res.status(200).json({ record });
+    }
+
+    const oldStatus = record.status;
+    record.status = status;
+    await record.save();
+
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'StudentAttendance',
+      resourceId: record._id,
+      summary: `Changed "${record.studentName}"'s attendance on ${record.date.toDateString()} from ${oldStatus} to ${status}`,
+      resourceCampus: await resolveCampusIdByName(record.campus),
+    });
+
+    return res.status(200).json({ record });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to update attendance record', error: err.message });
   }
 };
