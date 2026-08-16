@@ -89,7 +89,7 @@ export default function LoginPage() {
             className="w-[150px]"
           >
             <img
-              src="/logo.png"
+              src="/logo-auth.png"
               alt="TITAN — Taj Institute of Technology &amp; Applied Networks"
               className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(201,162,39,0.45)]"
             />

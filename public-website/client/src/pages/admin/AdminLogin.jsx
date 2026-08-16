@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import titanLogo from '../../assets/titan-logo.png';
+import titanLogo from '../../assets/titan-logo-auth.png';
 
 /* ============================================================
    TITAN — Admin Login (/admin/login)
