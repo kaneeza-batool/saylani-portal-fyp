@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getTrainerDashboard, getMyStudents, setStudentGrade } from '../../services/trainerDashboardService';
+import IDCardModal from '../../components/IDCardModal';
 
 const GRADE_OPTIONS = ['A+', 'A', 'B', 'C', 'D'];
 
@@ -13,7 +14,7 @@ const SUBMISSION_STYLE = {
   not_approved: { label: 'Needs Revision', className: 'bg-danger-50 text-danger-600' },
 };
 
-const GRID_COLS = 'grid-cols-[1.6fr_0.9fr_0.9fr_1.1fr_1fr]';
+const GRID_COLS = 'grid-cols-[1.6fr_0.9fr_0.9fr_1.1fr_1fr_0.7fr]';
 
 function initials(name) {
   return (
@@ -41,6 +42,7 @@ export default function StudentsPage() {
   const { data: dashboard } = useQuery({ queryKey: ['trainer-dashboard'], queryFn: getTrainerDashboard });
   const batches = dashboard?.batches ?? [];
   const [batchId, setBatchId] = useState('');
+  const [idCardTarget, setIdCardTarget] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function StudentsPage() {
               {h}
             </span>
           ))}
+          <span className="text-overline uppercase text-neutral-500 text-right">ID Card</span>
         </div>
 
         {isLoading ? (
@@ -143,12 +146,48 @@ export default function StudentsPage() {
                       </option>
                     ))}
                   </select>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setIdCardTarget(s)}
+                      title="ID Card"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <circle cx="8" cy="11" r="2" />
+                        <path d="M5 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" />
+                        <path d="M14 10h5M14 14h5" />
+                      </svg>
+                    </button>
+                  </div>
                 </motion.div>
               );
             })}
           </motion.div>
         )}
       </motion.div>
+
+      <IDCardModal
+        open={!!idCardTarget}
+        onClose={() => setIdCardTarget(null)}
+        type="Student"
+        person={
+          idCardTarget
+            ? {
+                name: idCardTarget.name,
+                idNumber: idCardTarget.rollNumber,
+                line1: idCardTarget.course,
+                // getMyStudents is already scoped to the trainer's own
+                // batches (myBatchesFilter, server-side) — nothing extra to
+                // enforce here for "own-batch-only" beyond reusing this
+                // page's existing, already-scoped roster data.
+                line2: idCardTarget.campus,
+                photo: idCardTarget.avatarUrl ? `${import.meta.env.VITE_STUDENT_PORTAL_URL_BASE}${idCardTarget.avatarUrl}` : undefined,
+              }
+            : null
+        }
+      />
     </motion.div>
   );
 }

@@ -14,11 +14,24 @@ const controller = buildCrudController(Trainer, {
   populate: [{ path: 'campus', select: 'name city' }],
 });
 
-// sub_admin can list trainers (campus-scoped via campusScope), same pattern
-// as students — create/update/delete stay super_admin-only.
+// A sub_admin's request body can't be trusted on campus — force it to their
+// own regardless of what the client sends, same lockdown pattern
+// studentController.createStudent applies for students. super_admin is
+// left alone (whatever campus they submit).
+function lockTrainerCampusForSubAdmin(req, res, next) {
+  if (req.user.role === 'sub_admin') req.body.campus = req.user.campus_id;
+  next();
+}
+
+// sub_admin can list trainers (campus-scoped via campusScope) and now also
+// create one (scoped to their own campus via the lock above) — same
+// pattern as students. update/delete stay super_admin-only via the
+// default `roles`.
 const router = buildCrudRouter(controller, {
   listRoles: ['super_admin', 'sub_admin'],
   listMiddleware: [campusScope, checkPermission('TRAINER', 'read')],
+  createRoles: ['super_admin', 'sub_admin'],
+  createMiddleware: [checkPermission('TRAINER', 'write'), lockTrainerCampusForSubAdmin],
 });
 
 // Status-only, sub_admin-reachable — deliberately separate from the

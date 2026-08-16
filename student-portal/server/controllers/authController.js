@@ -32,6 +32,14 @@ function normalizeCnic(cnic) {
   return String(cnic || '').replace(/\D/g, '');
 }
 
+// Same "compare digits only" reasoning as normalizeCnic — a student re-typing
+// their own phone number from memory shouldn't fail this check over a
+// dash/space/country-code formatting difference from however staff originally
+// entered it.
+function normalizePhone(phone) {
+  return String(phone || '').replace(/\D/g, '');
+}
+
 function signAccessToken(student) {
   return jwt.sign({ id: student._id }, process.env.JWT_SECRET, { expiresIn: ACCESS_TOKEN_TTL });
 }
@@ -171,7 +179,9 @@ exports.refresh = async (req, res) => {
 };
 
 // Step 1 of "Create Password": confirm the CNIC belongs to a student
-// record staff already created, and whether it still needs a password.
+// record staff already created, and whether it still needs a password (a
+// first-time setup) or already has one (a recreation, which setPassword
+// below additionally requires the phone on file for — see its comment).
 exports.verifyCnic = async (req, res) => {
   try {
     const { cnic } = req.body;
@@ -188,11 +198,23 @@ exports.verifyCnic = async (req, res) => {
   }
 };
 
-// Step 2 of "Create Password": only allowed while the account has no
-// password yet, so this can't be used to hijack an already-active account.
+// Step 2 of "Create Password". Two paths:
+//  - No password yet (first-time setup): CNIC alone is enough, unchanged
+//    from before.
+//  - A password already exists (recreation — the student forgot it and
+//    doesn't want to depend on email-based Forgot Password): CNIC alone is
+//    deliberately NOT enough here, and never should be — a CNIC is exactly
+//    the kind of semi-public identifier (shown on admission forms, known to
+//    family/staff) that must never be sufficient on its own to take over an
+//    account. Instead, `phone` is required as a second identifying field and
+//    checked against the phone already on file; only a match is allowed to
+//    proceed.
+// Either way this updates the SAME student document in place (never
+// creates a new one), so attendance/fees/quiz history are untouched by
+// construction.
 exports.setPassword = async (req, res) => {
   try {
-    const { cnic, password } = req.body;
+    const { cnic, phone, password } = req.body;
     if (!cnic || !password) {
       return res.status(400).json({ message: 'CNIC and password are required' });
     }
@@ -204,7 +226,15 @@ exports.setPassword = async (req, res) => {
       return res.status(404).json({ message: 'No student found with this CNIC. Please contact your campus.' });
     }
     if (student.password) {
-      return res.status(409).json({ message: 'Password already set for this account. Please log in instead.' });
+      if (!phone) {
+        return res.status(400).json({
+          message: 'This account already has a password. Enter the phone number on file to create a new one.',
+          requiresPhone: true,
+        });
+      }
+      if (normalizePhone(phone) !== normalizePhone(student.phone)) {
+        return res.status(401).json({ message: "That phone number doesn't match our records." });
+      }
     }
 
     student.password = password;

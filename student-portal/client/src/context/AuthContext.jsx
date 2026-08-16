@@ -26,8 +26,8 @@ export function AuthProvider({ children }) {
     return result;
   }, []);
 
-  const completeSetPassword = useCallback(async (cnic, password) => {
-    const result = await authService.setPassword(cnic, password);
+  const completeSetPassword = useCallback(async (cnic, password, phone) => {
+    const result = await authService.setPassword(cnic, password, phone);
     setStudent(result.student);
     return result;
   }, []);

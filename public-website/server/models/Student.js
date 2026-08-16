@@ -40,6 +40,13 @@ const studentSchema = new mongoose.Schema(
     batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot', index: true },
     status: { type: String, enum: STATUSES, default: 'enrolled' },
     payment: { type: String, enum: PAYMENT_STATUSES, default: 'pending' },
+    // Never set by this app (why a dropout happened, or an admin-entered
+    // course grade), but declared anyway — without it, any future read of a
+    // Student through this model silently drops whatever the main app
+    // already wrote there, same class of bug the canonical schema's own
+    // drift-check script exists to catch.
+    dropReason: { type: String, enum: ['payment', 'attendance', 'manual', null], default: null },
+    overallGrade: { type: String, enum: ['A+', 'A', 'B', 'C', 'D', null], default: null },
     address: { type: String, default: '', trim: true },
 
     password: { type: String, minlength: 8, select: false },
@@ -51,13 +58,18 @@ const studentSchema = new mongoose.Schema(
     lastQualification: { type: String, trim: true },
     avatarUrl: { type: String, default: '' },
     hasCompletedOnboarding: { type: Boolean, default: false },
-    // Only field from the canonical schema's employment/background block
-    // this app needs — it's the one question the public apply form actually
-    // asks (EnrollNow.jsx's "Do you have a laptop?" step). Without declaring
-    // it here, Student.create() below silently drops it (Mongoose strict
-    // mode default on an undeclared path) even though applicationController
-    // passes it through.
+    // hasLaptop is the one employment/background field the public apply
+    // form actually asks (EnrollNow.jsx's "Do you have a laptop?" step),
+    // and the only one this app ever writes. The rest below are never set
+    // here either, declared for the same silent-drop reason as
+    // dropReason/overallGrade above.
     hasLaptop: { type: Boolean, default: null },
+    employmentStatus: { type: String, enum: ['employed', 'unemployed', null], default: null },
+    salary: { type: Number, min: 0 },
+    companyName: { type: String, trim: true },
+    jobTitle: { type: String, trim: true },
+    employmentStartDate: { type: Date },
+    computerProficiency: { type: String, enum: ['beginner', 'intermediate', 'advanced', null], default: null },
   },
   { timestamps: true }
 );

@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { fetchTrainers, updateTrainerStatus, resetTrainerPassword } from '../../services/trainerService';
+import { createTrainer, fetchTrainers, updateTrainerStatus, resetTrainerPassword } from '../../services/trainerService';
+import TrainerFormModal from '../../components/TrainerFormModal';
 import ExportButtons from '../../components/ExportButtons';
 import ResetPasswordResultModal from '../../components/ResetPasswordResultModal';
 
-// Read-only mirror of super-admin/TrainersPage.jsx's list (same GRID_COLS
-// approach, same classes) — sub_admin still has no create/update/delete
-// permission on the rest of a trainer's fields (see trainerRoutes.js), only
-// a narrow status-only PATCH /:id/status plus PATCH /:id/reset-password, so
-// the Status column and the Actions column below are the only interactive
-// pieces; there's no full edit modal. GET / is already campus-scoped
-// server-side via campusScope, so this page needs no campus filter of its
-// own.
+// Mostly a read-only mirror of super-admin/TrainersPage.jsx's list (same
+// GRID_COLS approach, same classes) — sub_admin still has no update/delete
+// permission on a trainer's full fields (see trainerRoutes.js), just three
+// narrow write paths: status toggle (PATCH /:id/status), password reset
+// (PATCH /:id/reset-password), and create (campus-locked server-side in
+// trainerRoutes.js's lockTrainerCampusForSubAdmin — this page doesn't need
+// to enforce that itself, TrainerFormModal already locks the Campus field
+// client-side for a sub_admin same as StudentFormModal does). No edit
+// modal. GET / is already campus-scoped server-side via campusScope, so
+// this page needs no campus filter of its own.
 
 const STATUS_STYLE = {
   active: { label: 'Active', className: 'bg-success-bg text-success-text' },
@@ -59,6 +62,8 @@ export default function TrainersPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+  const [addOpen, setAddOpen] = useState(false);
+  const [formError, setFormError] = useState('');
   const [resetResult, setResetResult] = useState(null);
   const [resetError, setResetError] = useState(null);
   const queryClient = useQueryClient();
@@ -80,6 +85,21 @@ export default function TrainersPage() {
     mutationFn: ({ id, nextStatus }) => updateTrainerStatus(id, nextStatus),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sub-admin-trainers'] }),
   });
+
+  const createMutation = useMutation({
+    mutationFn: createTrainer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-admin-trainers'] });
+      setAddOpen(false);
+      setFormError('');
+    },
+    onError: (err) => setFormError(err.response?.data?.message || 'Failed to add trainer.'),
+  });
+
+  const openAdd = () => {
+    setFormError('');
+    setAddOpen(true);
+  };
 
   const resetPasswordMutation = useMutation({
     mutationFn: resetTrainerPassword,
@@ -135,7 +155,19 @@ export default function TrainersPage() {
           </select>
         </div>
 
-        <ExportButtons title="Trainers" filenameBase="titan-subadmin-trainers" columns={EXPORT_COLUMNS} rows={items} />
+        <div className="flex items-center gap-2.5">
+          <ExportButtons title="Trainers" filenameBase="titan-subadmin-trainers" columns={EXPORT_COLUMNS} rows={items} />
+          <button
+            type="button"
+            onClick={openAdd}
+            className="border-none bg-gold-500 text-white text-body font-semibold px-4 py-[10px] rounded cursor-pointer flex items-center gap-2 transition-colors hover:bg-gold-600"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add Trainer
+          </button>
+        </div>
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
@@ -243,11 +275,16 @@ export default function TrainersPage() {
         </div>
       )}
 
-      <ResetPasswordResultModal
-        open={!!resetResult}
-        result={resetResult}
-        onClose={() => setResetResult(null)}
+      <TrainerFormModal
+        open={addOpen}
+        mode="add"
+        initialValues={null}
+        onClose={() => setAddOpen(false)}
+        onSubmit={(values) => createMutation.mutate(values)}
+        submitting={createMutation.isPending}
+        error={formError}
       />
+      <ResetPasswordResultModal open={!!resetResult} result={resetResult} onClose={() => setResetResult(null)} />
     </motion.div>
   );
 }
