@@ -67,11 +67,6 @@ export async function registerTrainer(payload) {
   return data.user;
 }
 
-export async function registerEmployer(payload) {
-  const { data } = await api.post('/auth/register-employer', payload);
-  return data.user;
-}
-
 export async function fetchPublicCampuses() {
   const { data } = await api.get('/public/campuses');
   return data.items;

@@ -6,7 +6,6 @@ const ROLE_HOME_ROUTES = {
   super_admin: '/admin/dashboard',
   sub_admin: '/sub-admin/dashboard',
   trainer: '/trainer/dashboard',
-  employer: '/employer/dashboard',
 };
 
 export function getRoleHome(role) {
@@ -23,6 +22,6 @@ export function getRoleHome(role) {
 // land the sub_admin back on a page they didn't navigate to themselves.
 export function isRouteAllowedForRole(pathname, role) {
   if (!pathname) return false;
-  const prefix = role === 'sub_admin' ? '/sub-admin' : role === 'trainer' ? '/trainer' : role === 'employer' ? '/employer' : '/admin';
+  const prefix = role === 'sub_admin' ? '/sub-admin' : role === 'trainer' ? '/trainer' : '/admin';
   return pathname.startsWith(prefix);
 }
