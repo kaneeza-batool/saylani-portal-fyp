@@ -78,10 +78,10 @@ function ModuleRowSkeleton() {
   );
 }
 
-function CertificateBanner({ courseId }) {
+function CertificateBanner() {
   return (
     <Link
-      to={`/certificate/${courseId}`}
+      to="/certificate"
       data-testid="certificate-banner"
       className="flex items-center justify-between gap-3 rounded-lg shadow-card px-5 py-4 bg-primary-900 border border-accent-500/40 text-white hover:bg-primary-800 transition-colors"
     >
@@ -111,7 +111,7 @@ export default function ProgressPage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      {!isLoading && !isError && data.overallPercentage === 100 && data.courseId && <CertificateBanner courseId={data.courseId} />}
+      {!isLoading && !isError && data.overallPercentage === 100 && <CertificateBanner />}
 
       <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-5 sm:p-6 flex items-center gap-5">
         {isLoading ? (

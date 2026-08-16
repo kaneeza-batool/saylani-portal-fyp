@@ -87,3 +87,18 @@ exports.getMyAttendance = async (req, res) => {
     return res.status(500).json({ message: 'Failed to load attendance', error: err.message });
   }
 };
+
+// Phone/employeeId/course/city for the Profile page — none of these live on
+// the User auth model, only on the standalone Trainer CRUD record, joined
+// by email same as getMyAttendance above. Returns null (not a 404) when no
+// Trainer record is linked (e.g. an admin created the User login directly
+// without a matching Trainer profile) so the page can show an honest empty
+// state instead of erroring.
+exports.getMyTrainerProfile = async (req, res) => {
+  try {
+    const trainerProfile = await Trainer.findOne({ email: req.user.email }).select('phone employeeId course city');
+    return res.status(200).json({ profile: trainerProfile });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load trainer profile', error: err.message });
+  }
+};

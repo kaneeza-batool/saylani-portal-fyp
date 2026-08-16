@@ -1,4 +1,5 @@
 const StudentPortalQuiz = require('../models/StudentPortalQuiz');
+const { logAudit } = require('../utils/auditLogger');
 
 // Fixed course list, verbatim from the canonical Student.COURSES (main
 // app's server/models/Student.js) — a quiz's `course` has to be one of
@@ -74,6 +75,14 @@ exports.createQuiz = async (req, res) => {
         explanation: q.explanation.trim(),
       })),
       createdByTrainer: req.user._id,
+    });
+
+    logAudit({
+      actor: req.user,
+      action: 'create',
+      resourceType: 'StudentPortalQuiz',
+      resourceId: quiz._id,
+      summary: `Created quiz "${quiz.title}" for ${quiz.course}`,
     });
 
     return res.status(201).json({ quiz });

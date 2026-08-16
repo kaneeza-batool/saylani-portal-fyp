@@ -148,8 +148,8 @@ export default function CardPaymentForm({ amount, campaignTitle, contact, onBack
         </button>
 
         <p className="text-micro text-neutral-400 leading-relaxed">
-          No real payment gateway is connected — this is a simulated charge for demo purposes. Card details are validated locally and never sent
-          to or stored on our servers.
+          No real payment gateway is connected yet. Your card details are validated locally and never sent to or stored on our servers — we'll
+          confirm your donation by hand shortly, the same way a bank transfer is confirmed.
         </p>
       </form>
 

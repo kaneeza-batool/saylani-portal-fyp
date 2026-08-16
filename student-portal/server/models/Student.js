@@ -46,6 +46,12 @@ const studentSchema = new mongoose.Schema(
     dateOfBirth: { type: Date },
     lastQualification: { type: String, trim: true },
     avatarUrl: { type: String, default: '' },
+    // Mirrored read-only from the shared document — set at admission time
+    // by the public application form's optional photo/CNIC-scan upload
+    // step (see server/models/Student.js and public-website/server/
+    // controllers/applicationController.js), never written from this app.
+    applicationPhotoUrl: { type: String, default: '' },
+    applicationCnicScanUrl: { type: String, default: '' },
     // Set true the first time an avatar is ever uploaded (see
     // studentController.uploadAvatar) — the mandatory "Complete Your
     // Profile" onboarding step (ProtectedRoute) gates on THIS flag, not on

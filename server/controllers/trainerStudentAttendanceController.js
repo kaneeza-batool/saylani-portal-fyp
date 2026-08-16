@@ -6,6 +6,7 @@ const Slot = require('../models/Slot');
 const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
 const { myBatchesFilter } = require('./trainerDashboardController');
+const { logAudit } = require('../utils/auditLogger');
 
 // Backs the Attendance page's course dropdown — the trainer's own courses
 // only, derived from their own batches (same ownership pattern as
@@ -125,6 +126,15 @@ exports.markAttendance = async (req, res) => {
 
     if (ops.length) await StudentAttendance.bulkWrite(ops);
 
+    if (ops.length) {
+      logAudit({
+        actor: req.user,
+        action: 'update',
+        resourceType: 'StudentAttendance',
+        summary: `Marked attendance for ${ops.length} student${ops.length === 1 ? '' : 's'} in ${course} (${dayStart.toDateString()})`,
+      });
+    }
+
     return res.status(200).json({ marked: ops.length });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
@@ -174,6 +184,14 @@ exports.markByRollNumber = async (req, res) => {
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'StudentAttendance',
+      resourceId: record._id,
+      summary: `Marked "${student.name}" present in ${course} via roll-number scan`,
+    });
 
     return res.status(200).json({ student: { _id: student._id, name: student.name, rollNumber: student.rollNumber }, record });
   } catch (err) {

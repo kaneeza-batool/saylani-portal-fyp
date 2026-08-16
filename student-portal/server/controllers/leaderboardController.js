@@ -1,20 +1,19 @@
-const Enrollment = require('../models/Enrollment');
 const { computeCourseLeaderboard } = require('../utils/courseStats');
 
 // LIVE ONLY — this must always query live, never cache or hardcode student
-// count or ranking. computeCourseLeaderboard re-ranks every enrolled student
-// from real Attendance/QuizAttempt records on every call, so adding,
+// count or ranking. computeCourseLeaderboard re-ranks every peer student
+// from real StudentAttendance/QuizAttempt records on every call, so adding,
 // removing, or updating any student's records changes this list on the very
-// next request — nothing here is precomputed or stored.
+// next request — nothing here is precomputed or stored. One course per
+// student now (see Student.js), so this is scoped by the logged-in
+// student's own course string, not a URL courseId.
 exports.getFullLeaderboard = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const course = req.student.course;
     const studentId = req.student._id;
+    if (!course) return res.status(200).json({ batchSize: 0, students: [], you: studentId.toString() });
 
-    const enrollment = await Enrollment.findOne({ student: studentId, course: courseId });
-    if (!enrollment) return res.status(404).json({ message: 'Not enrolled in this course' });
-
-    const students = await computeCourseLeaderboard(courseId);
+    const students = await computeCourseLeaderboard(course);
 
     return res.status(200).json({
       batchSize: students.length,

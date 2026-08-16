@@ -5,6 +5,7 @@ const StudentPortalQuizAttempt = require('../models/StudentPortalQuizAttempt');
 const StudentPortalAssignment = require('../models/StudentPortalAssignment');
 const StudentPortalAssignmentSubmission = require('../models/StudentPortalAssignmentSubmission');
 const { myBatchesFilter } = require('./trainerDashboardController');
+const { logAudit } = require('../utils/auditLogger');
 
 // Students in the logged-in trainer's own batches, with the same four
 // metrics the roster table shows: attendance %, quiz average, latest
@@ -131,6 +132,14 @@ exports.setStudentGrade = async (req, res) => {
       { new: true }
     ).select('name overallGrade');
     if (!student) return res.status(404).json({ message: 'Student not found in your batches' });
+
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'Student',
+      resourceId: student._id,
+      summary: `Set grade "${grade}" for "${student.name}"`,
+    });
 
     return res.status(200).json({ student });
   } catch (err) {

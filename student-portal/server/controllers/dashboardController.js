@@ -1,13 +1,11 @@
 const StudentAttendance = require('../models/StudentAttendance');
 require('../models/Slot'); // registers 'Slot' so .populate('batch') resolves it
-const Enrollment = require('../models/Enrollment');
-require('../models/Course'); // registers the 'Course' model so .populate('course') resolves it
 const FeeVoucher = require('../models/FeeVoucher');
 const Assignment = require('../models/Assignment');
 const AssignmentSubmission = require('../models/AssignmentSubmission');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
-const { computeProgressStat, computeBatchProgressAverage, computeCourseLeaderboard } = require('../utils/courseStats');
+const { computeOverallProgress } = require('../utils/courseStats');
 
 // One course per student now (see Student.js) — course, batch, payment,
 // campus, and rollNumber all live directly on the shared Student document.
@@ -34,6 +32,11 @@ exports.getDashboard = async (req, res) => {
       percentage: denominator > 0 ? Math.round((present / denominator) * 1000) / 10 : 0,
     };
 
+    // Was hardcoded to 0 — the Certificate Ready banner on this page checks
+    // this field and could never show. Same blend the Progress page itself
+    // uses (module topics + quiz attempts + assignment submissions).
+    const overallProgress = student.course ? await computeOverallProgress(student._id, student.course) : null;
+
     const activeCourse = student.course
       ? {
           name: student.course,
@@ -41,7 +44,7 @@ exports.getDashboard = async (req, res) => {
           rollNumber: student.rollNumber || null,
           campus: student.campus?.name || null,
           city: student.campus?.city || null,
-          progressPercent: 0,
+          progressPercent: overallProgress?.percentage ?? 0,
         }
       : null;
 
@@ -103,78 +106,5 @@ exports.getDashboard = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load dashboard', error: err.message });
-  }
-};
-
-// LIVE ONLY — this must always query live, never cache or hardcode student
-// count or a batch average. computeBatchProgressAverage re-reads every
-// enrolled student's real CourseModule records on every call; there is no
-// stored/precomputed batch number anywhere for this endpoint to fall back on.
-exports.getProgressInsight = async (req, res) => {
-  try {
-    const { courseId } = req.params;
-    const studentId = req.student._id;
-
-    const enrollment = await Enrollment.findOne({ student: studentId, course: courseId });
-    if (!enrollment) return res.status(404).json({ message: 'Not enrolled in this course' });
-
-    const [progress, batch] = await Promise.all([
-      computeProgressStat(studentId, courseId),
-      computeBatchProgressAverage(courseId),
-    ]);
-
-    const diff = progress.percentage - batch.average;
-
-    let message;
-    let tone;
-    if (diff >= 0) {
-      tone = 'ahead';
-      message =
-        diff === 0
-          ? `🎯 You're right at your batch average of ${batch.average}%.`
-          : `🎯 You're ${diff}% ahead of your batch average.`;
-    } else {
-      tone = 'behind';
-      const targetCompleted = Math.ceil((batch.average / 100) * progress.totalTopics);
-      const topicsNeeded = Math.max(1, targetCompleted - progress.completedTopics);
-      message = `📈 Complete ${topicsNeeded} more topic${topicsNeeded === 1 ? '' : 's'} to reach ${batch.average}%.`;
-    }
-
-    return res.status(200).json({
-      studentProgress: progress.percentage,
-      batchAvgProgress: batch.average,
-      batchSize: batch.batchSize,
-      diff,
-      tone,
-      message,
-    });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to load progress insight', error: err.message });
-  }
-};
-
-// LIVE ONLY — this must always query live, never cache or hardcode student
-// count or ranking. computeCourseLeaderboard re-ranks every enrolled
-// student from real Attendance/QuizAttempt records on every call — this is
-// the compact Dashboard-card view (top 5 + the caller's own row); the full
-// ranked list lives at GET /api/leaderboard/:courseId (leaderboardController).
-exports.getLeaderboardPosition = async (req, res) => {
-  try {
-    const { courseId } = req.params;
-    const studentId = req.student._id;
-
-    const enrollment = await Enrollment.findOne({ student: studentId, course: courseId });
-    if (!enrollment) return res.status(404).json({ message: 'Not enrolled in this course' });
-
-    const leaderboard = await computeCourseLeaderboard(courseId);
-    const you = leaderboard.find((row) => row.studentId === studentId.toString()) || null;
-
-    return res.status(200).json({
-      batchSize: leaderboard.length,
-      top: leaderboard.slice(0, 5),
-      you,
-    });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to load leaderboard position', error: err.message });
   }
 };

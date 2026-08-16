@@ -2,8 +2,8 @@ const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
 const {
   getEligibleCertificates,
-  getCertificateForCourse,
   getCertificate,
+  getCertificateById,
   verifyCertificate,
 } = require('../controllers/certificateController');
 
@@ -17,7 +17,7 @@ router.get('/verify/:certificateId', verifyCertificate);
 router.use(protect);
 
 router.get('/eligible', getEligibleCertificates);
-router.get('/course/:courseId', getCertificateForCourse);
-router.get('/:certificateId', getCertificate);
+router.get('/mine', getCertificate);
+router.get('/:certificateId', getCertificateById);
 
 module.exports = router;

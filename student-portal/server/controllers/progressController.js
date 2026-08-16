@@ -76,12 +76,6 @@ exports.getProgress = async (req, res) => {
       completedTopics,
       quizzes: { completed: attemptedQuizIds.length, total: totalQuizzes },
       assignments: { completed: submittedAssignmentIds.length, total: totalAssignments },
-      // Each CourseModule doc still carries its own courseId (see the
-      // model) even though the query above no longer filters on it — kept
-      // here so the Certificate Ready banner still has something to link
-      // to. Every module belongs to the student's one course, so the first
-      // one's id is as good as any.
-      courseId: modules[0]?.courseId ?? null,
     });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load progress', error: err.message });

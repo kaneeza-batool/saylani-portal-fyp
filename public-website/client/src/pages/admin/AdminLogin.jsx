@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../context/AdminAuthContext';
-import titanLogo from '../../assets/titan-logo.png';
+import titanLogo from '../../assets/titan-logo-auth.png';
 
 /* ============================================================
    TITAN — Admin Login (/admin/login)
@@ -79,14 +79,10 @@ const AdminLogin = () => {
 
       <div className="relative w-full max-w-[380px] my-auto bg-white/[0.03] backdrop-blur-xl border border-accent-500/20 rounded-xl px-7 py-6 flex flex-col gap-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)] animate-admin-card-in">
         <div className="flex flex-col items-center gap-1.5">
-          <div className="w-[92px] animate-admin-field-in transition-transform hover:scale-105" style={{ animationDelay: '60ms' }}>
-            <img src={titanLogo} alt="TITAN" className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(206,164,92,0.45)]" />
+          <div className="w-[150px] animate-admin-field-in transition-transform hover:scale-105" style={{ animationDelay: '60ms' }}>
+            <img src={titanLogo} alt="TITAN — Taj Institute of Technology &amp; Applied Networks" className="w-full h-auto object-contain drop-shadow-[0_6px_18px_rgba(206,164,92,0.45)]" />
           </div>
-          <div className="text-center mt-1 animate-admin-field-in" style={{ animationDelay: '110ms' }}>
-            <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-accent-400">Taj Institute of Technology</div>
-            <div className="text-[11px] font-bold tracking-[0.14em] uppercase text-accent-400">&amp; Applied Networks</div>
-          </div>
-          <div className="text-sm text-primary-300 font-normal mt-1.5 animate-admin-field-in" style={{ animationDelay: '160ms' }}>
+          <div className="text-sm text-primary-300 font-normal mt-1 animate-admin-field-in" style={{ animationDelay: '160ms' }}>
             Sign in to your account
           </div>
         </div>

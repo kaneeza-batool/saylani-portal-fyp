@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.use(protect);
 
-router.get('/:courseId', getFullLeaderboard);
+router.get('/', getFullLeaderboard);
 
 module.exports = router;

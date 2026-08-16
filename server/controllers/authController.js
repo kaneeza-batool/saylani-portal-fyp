@@ -155,6 +155,71 @@ exports.registerTrainer = async (req, res) => {
   }
 };
 
+// Public self-service signup for employers — same shape as registerTrainer
+// above (hardcodes role: 'employer' server-side, never trusts a
+// client-supplied role) and the same two-document pattern: a login-capable
+// User{role:'employer'} plus a linked Employer company-profile doc, joined
+// by email. Employer starts status:'pending' — a super-admin verifies it
+// via the existing EmployersPage.jsx before any job this employer posts can
+// go public (see employerPortalController.createMyJob).
+exports.registerEmployer = async (req, res) => {
+  try {
+    const { companyName, contactEmail, contactPhone, city, password } = req.body;
+    if (!companyName || !contactEmail || !password) {
+      return res.status(400).json({ message: 'Company name, contact email, and password are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    const existingUser = await User.findOne({ email: contactEmail.toLowerCase().trim() });
+    if (existingUser) return res.status(409).json({ message: 'An account with this email already exists' });
+
+    const Employer = require('../models/Employer');
+    const existingEmployer = await Employer.findOne({ companyName: companyName.trim() });
+    if (existingEmployer) return res.status(409).json({ message: 'A company with this name is already registered' });
+
+    const user = await User.create({
+      name: companyName,
+      email: contactEmail,
+      password,
+      role: 'employer',
+      status: 'active',
+    });
+
+    let employer;
+    try {
+      employer = await Employer.create({
+        companyName: companyName.trim(),
+        contactEmail: contactEmail.toLowerCase().trim(),
+        contactPhone: contactPhone || '',
+        city: city || '',
+        status: 'pending',
+      });
+    } catch (err) {
+      // Partial-state note: same tradeoff registerTrainer already accepts —
+      // no cross-document transaction, so a User could exist without its
+      // Employer if this second create fails. Surfaced as a 500, not
+      // swallowed, and safe to retry (both uniqueness checks above already ran).
+      return res.status(500).json({ message: 'Registration failed', error: err.message });
+    }
+
+    logAudit({
+      actor: user,
+      action: 'create',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Employer "${employer.companyName}" self-registered`,
+    });
+
+    setAuthCookies(res, user);
+    return res.status(201).json({ user: await toSafeUser(user) });
+  } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ message: 'An account with this email already exists' });
+    return res.status(500).json({ message: 'Registration failed', error: err.message });
+  }
+};
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -174,6 +239,30 @@ exports.login = async (req, res) => {
     return res.status(200).json({ user: await toSafeUser(user) });
   } catch (err) {
     return res.status(500).json({ message: 'Login failed', error: err.message });
+  }
+};
+
+// Silently renews the access token from the (still-valid) refresh token —
+// mirrors student-portal's authController.refresh exactly. Without this,
+// the access token's 15-minute expiry looked like a full logout on any
+// request gap longer than that, even though the 7-day refresh token was
+// still valid and being minted at login all along.
+exports.refresh = async (req, res) => {
+  try {
+    const token = req.cookies?.refreshToken;
+    if (!token) return res.status(401).json({ message: 'Not authenticated' });
+
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(401).json({ message: 'Not authenticated' });
+
+    // Only the access token is reissued — the refresh token keeps its
+    // original 7-day expiry rather than being rotated on every silent
+    // refresh (same reasoning as student-portal's version).
+    res.cookie('accessToken', signAccessToken(user), { ...cookieOptions, maxAge: ACCESS_TOKEN_MAX_AGE_MS });
+    return res.status(200).json({ user: await toSafeUser(user) });
+  } catch {
+    return res.status(401).json({ message: 'Not authenticated' });
   }
 };
 

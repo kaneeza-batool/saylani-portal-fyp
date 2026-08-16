@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const { FULL_ACCESS_PERMISSIONS } = require('../utils/fullAccessPermissions');
+const { logAudit } = require('../utils/auditLogger');
 
 // The exact module/action shape User.permissions is built from (see
 // models/User.js) — kept here too so this controller can validate an
@@ -65,6 +66,15 @@ exports.updateSubAdminPermissions = async (req, res) => {
     ).select('name email campus_id status permissions');
     if (!user) return res.status(404).json({ message: 'Sub-admin not found' });
 
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Updated permission grants for sub-admin "${user.name}"`,
+      resourceCampus: user.campus_id,
+    });
+
     return res.status(200).json({ item: user });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to update permissions', error: err.message });
@@ -82,6 +92,15 @@ exports.grantFullAccess = async (req, res) => {
       { new: true, runValidators: true, context: 'query' }
     ).select('name email campus_id status permissions');
     if (!user) return res.status(404).json({ message: 'Sub-admin not found' });
+
+    logAudit({
+      actor: req.user,
+      action: 'update',
+      resourceType: 'User',
+      resourceId: user._id,
+      summary: `Granted full permission access to sub-admin "${user.name}"`,
+      resourceCampus: user.campus_id,
+    });
 
     return res.status(200).json({ item: user });
   } catch (err) {
