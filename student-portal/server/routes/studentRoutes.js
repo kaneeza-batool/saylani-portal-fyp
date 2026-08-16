@@ -1,6 +1,6 @@
 const express = require('express');
 const { protectAny } = require('../middleware/authMiddleware');
-const { getProfile, updateProfile, uploadAvatar, skipOnboarding } = require('../controllers/studentController');
+const { getProfile, updateProfile, uploadAvatar, skipOnboarding, getMyTrainer } = require('../controllers/studentController');
 
 const router = express.Router();
 
@@ -13,5 +13,6 @@ router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 router.post('/avatar', uploadAvatar);
 router.post('/onboarding/skip', skipOnboarding);
+router.get('/my-trainer', getMyTrainer);
 
 module.exports = router;

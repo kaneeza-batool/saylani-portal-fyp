@@ -19,3 +19,8 @@ export async function skipOnboarding() {
   const { data } = await api.post('/student/onboarding/skip');
   return data.student;
 }
+
+export async function getMyTrainer() {
+  const { data } = await api.get('/student/my-trainer');
+  return data.trainer;
+}
