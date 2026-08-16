@@ -54,7 +54,7 @@ api.interceptors.response.use(
 
 export async function login(cnic, password) {
   const { data } = await api.post('/auth/login', { cnic, password });
-  return data.student;
+  return data;
 }
 
 export async function logout() {

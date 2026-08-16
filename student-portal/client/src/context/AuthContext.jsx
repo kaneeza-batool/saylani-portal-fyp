@@ -15,21 +15,20 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // A student whose admission is still pending/rejected/dropped still gets
+  // a real session now (see authController.login) — student.portalAccess
+  // tells the caller (LoginPage) whether to route to the full app or to
+  // the pending-approval holding page; it's a UI hint, not the security
+  // boundary (every portal route still enforces its own allowlist).
   const login = useCallback(async (cnic, password) => {
-    const loggedInStudent = await authService.login(cnic, password);
-    setStudent(loggedInStudent);
-    return loggedInStudent;
+    const result = await authService.login(cnic, password);
+    setStudent(result.student);
+    return result;
   }, []);
 
-  // portalAccess is false for a student whose admission is still pending/
-  // rejected/dropped — the password really was set, but no session cookie
-  // was issued (see authController.setPassword), so `student` state stays
-  // null here rather than looking logged in on a session that doesn't
-  // actually exist. The caller (LoginPage's CreatePasswordForm) checks the
-  // returned portalAccess/message instead of assuming success means login.
   const completeSetPassword = useCallback(async (cnic, password) => {
     const result = await authService.setPassword(cnic, password);
-    if (result.portalAccess) setStudent(result.student);
+    setStudent(result.student);
     return result;
   }, []);
 

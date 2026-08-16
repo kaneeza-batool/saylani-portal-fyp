@@ -59,6 +59,9 @@ function LoginForm() {
     setError('');
     setSubmitting(true);
     try {
+      // Always /courses — ProtectedRoute redirects from there to whichever
+      // of onboarding/pending-approval/courses actually applies, so this
+      // page doesn't need to duplicate that branching.
       await login(cnic, password);
       navigate('/courses');
     } catch (err) {
@@ -166,17 +169,11 @@ function CreatePasswordForm() {
     }
     setSubmitting(true);
     try {
-      const result = await completeSetPassword(cnic, password);
-      if (result.portalAccess) {
-        navigate('/courses');
-      } else {
-        // Password really was saved — just no active session yet, since
-        // this account isn't approved for portal access. Tell them that
-        // plainly instead of dropping them into the app on a session that
-        // doesn't exist (see authController.setPassword).
-        setVerified(false);
-        setInfo(result.message || 'Password set. You will be able to log in once your account has portal access.');
-      }
+      // Real session either way now (see authController.setPassword) —
+      // ProtectedRoute sends them to onboarding first, then to
+      // pending-approval or courses depending on portalAccess.
+      await completeSetPassword(cnic, password);
+      navigate('/courses');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set password.');
     } finally {
