@@ -48,7 +48,7 @@ export default function ToastStack() {
                   e.stopPropagation();
                   dismissToast(t.id);
                 }}
-                className="text-neutral-300 hover:text-neutral-600 transition-colors shrink-0 border-none bg-transparent cursor-pointer p-0"
+                className="w-6 h-6 flex items-center justify-center text-neutral-300 hover:text-neutral-600 transition-colors shrink-0 border-none bg-transparent cursor-pointer"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M18 6L6 18M6 6l12 12" />
