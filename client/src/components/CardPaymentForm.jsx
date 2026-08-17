@@ -161,7 +161,7 @@ export default function CardPaymentForm({ amount, campaignTitle, contact, onBack
             <div className="flex justify-between"><span className="text-neutral-500">Email</span><span className="text-neutral-900 font-medium">{contact.email}</span></div>
             <div className="flex justify-between"><span className="text-neutral-500">Mobile</span><span className="text-neutral-900 font-medium">{contact.phone}</span></div>
           </div>
-          <button type="button" onClick={onBack} className="text-caption font-semibold text-gold-600 hover:underline mt-2 cursor-pointer bg-transparent border-none p-0">
+          <button type="button" onClick={onBack} className="text-caption font-semibold text-gold-600 hover:underline mt-2 cursor-pointer bg-transparent border-none px-1.5 py-1 -mx-1.5">
             Not you? Go back and edit
           </button>
         </div>

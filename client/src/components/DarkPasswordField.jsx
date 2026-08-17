@@ -24,7 +24,7 @@ export default function DarkPasswordField({ id, value, onChange, placeholder, au
         onClick={() => setVisible((v) => !v)}
         tabIndex={-1}
         aria-label={visible ? 'Hide password' : 'Show password'}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-300 hover:text-gold-400 transition-colors"
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center text-navy-300 hover:text-gold-400 transition-colors"
       >
         {visible ? (
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

@@ -16,9 +16,9 @@ function RankBadge({ rank }) {
   return (
     <span className={`w-8 h-8 shrink-0 rounded-pill flex items-center justify-center text-sm font-bold ${tierBg} ${tierText}`}>
       {rank === 1 ? (
-        <CrownIcon className="w-4.5 h-4.5" />
+        <CrownIcon className="w-[18px] h-[18px]" />
       ) : rank <= 3 ? (
-        <MedalIcon className="w-4.5 h-4.5" />
+        <MedalIcon className="w-[18px] h-[18px]" />
       ) : (
         rank
       )}

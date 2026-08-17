@@ -18,7 +18,6 @@ import {
   AssignmentIcon,
   QuizIcon,
   BookOpenIcon,
-  MessageCircleIcon,
   BriefcaseIcon,
   ChevronUpDownIcon,
   FlameIcon,
@@ -60,7 +59,6 @@ export const NAV_ITEMS = [
   { label: 'Assignment', base: '/assignment', icon: AssignmentIcon, courseless: true },
   { label: 'Quiz', base: '/quiz', icon: QuizIcon, courseless: true },
   { label: 'Resources', base: '/resources', icon: BookOpenIcon, courseless: true },
-  { label: 'Ask a Doubt', base: '/doubts', icon: MessageCircleIcon, courseless: true },
   { label: 'TITAN Assistant', base: '/assistant', icon: BotIcon, courseless: true },
 ];
 
@@ -166,7 +164,8 @@ export default function Sidebar({ open, onClose, onMilestone }) {
         </button>
       </div>
 
-      <nav className="flex-1 min-h-0 overflow-y-auto px-3 flex flex-col gap-1">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+      <nav className="px-3 flex flex-col gap-1">
         {/* "Home base" — always visible, always goes to /courses, regardless
             of which course (if any) is currently active. */}
         <MotionNavLink
@@ -220,9 +219,6 @@ export default function Sidebar({ open, onClose, onMilestone }) {
           const to = courseless ? base : `${base}/${courseId}`;
           // isActive judged from the real pathname (not NavLink's own
           // matching) so exactly one item lights up once a course is active.
-          // Ask a Doubt is courseless but still has a `/doubts/:questionId`
-          // detail route inside the sidebar shell, so an exact match alone
-          // would leave the nav item dark on that page.
           const isActive = courseless ? pathname === base || pathname.startsWith(`${base}/`) : pathname.startsWith(`${base}/`);
           return (
             <MotionNavLink
@@ -316,6 +312,7 @@ export default function Sidebar({ open, onClose, onMilestone }) {
             </>
           }
         />
+      </div>
       </div>
       </aside>
     </>

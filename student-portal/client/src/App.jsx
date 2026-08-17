@@ -25,8 +25,6 @@ import PendingApprovalPage from './pages/PendingApprovalPage';
 import AgendaPage from './pages/AgendaPage';
 import ResourceLibraryPage from './pages/ResourceLibraryPage';
 import SkillPassportPage from './pages/SkillPassportPage';
-import DoubtsListPage from './pages/DoubtsListPage';
-import DoubtDetailPage from './pages/DoubtDetailPage';
 import AskTitanPage from './pages/AskTitanPage';
 
 const queryClient = new QueryClient({
@@ -79,8 +77,6 @@ function App() {
                 <Route path="/agenda" element={<AgendaPage />} />
                 <Route path="/resources" element={<ResourceLibraryPage />} />
                 <Route path="/skill-passport" element={<SkillPassportPage />} />
-                <Route path="/doubts" element={<DoubtsListPage />} />
-                <Route path="/doubts/:questionId" element={<DoubtDetailPage />} />
                 <Route path="/assistant" element={<AskTitanPage />} />
               </Route>
 

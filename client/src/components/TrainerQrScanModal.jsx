@@ -131,7 +131,7 @@ export default function TrainerQrScanModal({ open, onClose, course, date, onMark
           >
             <div className="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
               <div className="font-heading font-bold text-body text-neutral-900">Mark Attendance by ID</div>
-              <button type="button" onClick={handleClose} className="text-neutral-400 hover:text-neutral-700 text-lg leading-none">
+              <button type="button" onClick={handleClose} className="w-6 h-6 flex items-center justify-center text-neutral-400 hover:text-neutral-700 text-lg leading-none">
                 ×
               </button>
             </div>
