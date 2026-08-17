@@ -19,6 +19,7 @@ const applicationSchema = new mongoose.Schema(
     selectedProgram: { type: String, required: true, trim: true },
     preferredBatch: { type: String, trim: true, default: '' },
     hasLaptop: { type: Boolean, default: false },
+    computerProficiency: { type: String, enum: ['beginner', 'intermediate', 'advanced'] },
     // Optional — the application form doesn't require these, so most
     // applications won't have any set. Relative paths served from
     // /uploads/applications (see middleware/upload.js's applicationUpload).

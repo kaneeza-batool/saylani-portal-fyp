@@ -7,6 +7,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CNIC_RE = /^\d{13}$/;
 const PHONE_RE = /^[\d+\-\s]{7,15}$/;
 const GENDERS = ['male', 'female', 'other'];
+const COMPUTER_PROFICIENCIES = ['beginner', 'intermediate', 'advanced'];
 
 function generateReferenceNumber() {
   const year = new Date().getFullYear();
@@ -19,7 +20,7 @@ exports.submitApplication = async (req, res) => {
     const {
       fullName, fatherName, cnic, phone, email, address,
       dateOfBirth, gender, lastQualification, selectedProgram,
-      preferredBatch, hasLaptop, course, campusId,
+      preferredBatch, hasLaptop, computerProficiency, course, campusId,
     } = req.body;
 
     // Stored as 13 bare digits — same normalization as Student.js's own
@@ -36,6 +37,7 @@ exports.submitApplication = async (req, res) => {
     if (!dateOfBirth) return res.status(400).json({ message: 'Date of birth is required' });
     if (!GENDERS.includes(gender)) return res.status(400).json({ message: 'Gender is required' });
     if (!lastQualification?.trim()) return res.status(400).json({ message: 'Last qualification is required' });
+    if (!COMPUTER_PROFICIENCIES.includes(computerProficiency)) return res.status(400).json({ message: 'Please select your computer proficiency' });
     if (!selectedProgram?.trim()) return res.status(400).json({ message: 'Please select a program' });
     if (!Student.COURSES.includes(course)) return res.status(400).json({ message: 'Please select a valid course' });
     if (!campusId) return res.status(400).json({ message: 'Please select a campus' });
@@ -73,6 +75,7 @@ exports.submitApplication = async (req, res) => {
       status: 'pending',
       hasCompletedOnboarding: false,
       hasLaptop: !!hasLaptop,
+      computerProficiency,
       applicationPhotoUrl: photoUrl,
       applicationCnicFrontUrl: cnicFrontUrl,
       applicationCnicBackUrl: cnicBackUrl,
@@ -99,6 +102,7 @@ exports.submitApplication = async (req, res) => {
             selectedProgram: selectedProgram.trim(),
             preferredBatch: preferredBatch?.trim() || '',
             hasLaptop: !!hasLaptop,
+            computerProficiency,
             photoUrl,
             cnicFrontUrl,
             cnicBackUrl,
