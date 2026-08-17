@@ -60,11 +60,6 @@ export async function getAttendanceRoster(course, date) {
   return data.roster;
 }
 
-export async function markAttendance(payload) {
-  const { data } = await api.post('/trainer/attendance', payload);
-  return data;
-}
-
 export async function reviewSubmission(id, payload) {
   const { data } = await api.patch(`/trainer/submissions/${id}/review`, payload);
   return data.submission;
@@ -88,11 +83,6 @@ export async function getMyAttendance() {
 export async function getMyTrainerProfile() {
   const { data } = await api.get('/trainer/profile');
   return data.profile;
-}
-
-export async function markAttendanceByRollNumber(payload) {
-  const { data } = await api.post('/trainer/attendance/scan', payload);
-  return data;
 }
 
 export async function getMyResources() {

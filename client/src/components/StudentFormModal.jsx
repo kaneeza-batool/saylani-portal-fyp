@@ -139,6 +139,7 @@ function StudentProfileSummary({ student }) {
         <SummaryField label="Last Qualification" value={student.lastQualification} />
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
+        <SummaryField label="Roll No." value={student.rollNumber} />
         {student.status === 'completed' && (
           <>
             <SummaryField label="Employment" value={EMPLOYMENT_STATUS_LABEL[student.employmentStatus]} />

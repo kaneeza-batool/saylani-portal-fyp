@@ -10,6 +10,7 @@
     "seed:campus-subadmin": "node utils/seedCampusAndSubAdmin.js",
     "train:ml": "node ml/trainDropoutModel.js",
     "check:schema-drift": "node scripts/checkStudentSchemaDrift.js",
+    "migrate:roll-numbers": "node scripts/regenerateRollNumbers.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

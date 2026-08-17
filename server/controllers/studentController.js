@@ -66,7 +66,7 @@ exports.getStudents = async (req, res) => {
     const [students, total] = await Promise.all([
       Student.find(filter)
         .populate('campus', 'name city')
-        .populate('batch', 'schedule course')
+        .populate('batch', 'schedule course trainer')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
@@ -128,7 +128,7 @@ exports.getStudents = async (req, res) => {
 
 exports.getStudent = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id).populate('campus', 'name city').populate('batch', 'schedule course');
+    const student = await Student.findById(req.params.id).populate('campus', 'name city').populate('batch', 'schedule course trainer');
     if (!student) return res.status(404).json({ message: 'Student not found' });
     return res.status(200).json({ student });
   } catch (err) {
@@ -166,26 +166,41 @@ exports.createStudent = async (req, res) => {
     const batchResult = await resolveBatchAssignment(req.user, campus, batch);
     if (!batchResult.ok) return res.status(batchResult.status).json({ message: batchResult.message });
 
-    const student = await Student.create({
-      name,
-      father,
-      cnic,
-      phone,
-      email,
-      course,
-      campus,
-      batch: batchResult.batch,
-      status: status || 'enrolled',
-      address,
-      payment: 'pending',
-      employmentStatus,
-      salary,
-      companyName,
-      jobTitle,
-      employmentStartDate,
-      computerProficiency,
-      hasLaptop,
-    });
+    // rollNumber is auto-assigned by Student.js's pre-validate hook from the
+    // current max for this course's prefix — two near-simultaneous creates
+    // for the same course can compute the same "next" value, caught by the
+    // unique index. Retry a few times rather than fail the whole request;
+    // each attempt recomputes fresh since rollNumber is unset again on a new
+    // document.
+    let student;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        student = await Student.create({
+          name,
+          father,
+          cnic,
+          phone,
+          email,
+          course,
+          campus,
+          batch: batchResult.batch,
+          status: status || 'enrolled',
+          address,
+          payment: 'pending',
+          employmentStatus,
+          salary,
+          companyName,
+          jobTitle,
+          employmentStartDate,
+          computerProficiency,
+          hasLaptop,
+        });
+        break;
+      } catch (err) {
+        if (err.code === 11000 && err.keyPattern?.rollNumber && attempt < 4) continue;
+        throw err;
+      }
+    }
 
     logAudit({
       actor: req.user,
@@ -198,7 +213,9 @@ exports.createStudent = async (req, res) => {
     return res.status(201).json({ student });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(409).json({ message: 'A student with this CNIC already exists' });
+      if (err.keyPattern?.cnic) return res.status(409).json({ message: 'A student with this CNIC already exists' });
+      if (err.keyPattern?.rollNumber) return res.status(409).json({ message: 'Could not generate a unique roll number, please try again' });
+      return res.status(409).json({ message: 'A record with this value already exists' });
     }
     if (err.name === 'ValidationError') {
       return res.status(400).json({ message: err.message });
@@ -275,6 +292,18 @@ exports.updateStudent = async (req, res) => {
       updates.campus = campus;
     }
 
+    // Roll number carries a course prefix (see Student.js's
+    // COURSE_ROLL_PREFIXES) — findOneAndUpdate is query middleware, so the
+    // creation-time pre('validate') hook never runs here, meaning a course
+    // change needs its own explicit regeneration or the prefix would go
+    // stale (e.g. a GD-014 student switched to Web Development staying
+    // "GD-014" forever). Only fires on an actual change, not just the
+    // field being present in the payload — StudentFormModal's edit form
+    // always submits the current course.
+    if (course !== undefined && course !== existing.course) {
+      updates.rollNumber = await Student.generateRollNumber(course);
+    }
+
     // Enrolled/dropout cascade — two independent triggers, `status` always
     // wins when both are present in the same request:
     //  - An ACTUAL status change (status !== existing.status, not just
@@ -319,11 +348,28 @@ exports.updateStudent = async (req, res) => {
       updates.batch = batchResult.batch;
     }
 
-    const student = await Student.findOneAndUpdate(
-      { _id: req.params.id, ...req.campusFilter },
-      updates,
-      { new: true, runValidators: true, context: 'query' }
-    );
+    // Retry alongside the same rollNumber-collision reasoning as
+    // createStudent — only regenerates and retries when the collision is
+    // actually on rollNumber from this request's own course-change branch
+    // above; any other 11000 (e.g. cnic) falls straight through to the
+    // catch block below.
+    let student;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        student = await Student.findOneAndUpdate(
+          { _id: req.params.id, ...req.campusFilter },
+          updates,
+          { new: true, runValidators: true, context: 'query' }
+        );
+        break;
+      } catch (err) {
+        if (err.code === 11000 && err.keyPattern?.rollNumber && updates.rollNumber && attempt < 4) {
+          updates.rollNumber = await Student.generateRollNumber(course);
+          continue;
+        }
+        throw err;
+      }
+    }
 
     if (!student) return res.status(404).json({ message: 'Student not found' });
 
@@ -349,7 +395,9 @@ exports.updateStudent = async (req, res) => {
     return res.status(200).json({ student });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(409).json({ message: 'A student with this CNIC already exists' });
+      if (err.keyPattern?.cnic) return res.status(409).json({ message: 'A student with this CNIC already exists' });
+      if (err.keyPattern?.rollNumber) return res.status(409).json({ message: 'Could not generate a unique roll number, please try again' });
+      return res.status(409).json({ message: 'A record with this value already exists' });
     }
     if (err.name === 'ValidationError') {
       return res.status(400).json({ message: err.message });

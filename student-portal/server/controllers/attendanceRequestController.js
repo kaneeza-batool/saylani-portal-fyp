@@ -5,50 +5,13 @@ function startOfToday() {
   return new Date(new Date().toDateString());
 }
 
-// Direct self-service: a student marks themselves present for today,
-// no admin involved — the "scan your own QR/ID" flow's happy path. Only
-// works for today, and only once: if a record already exists (trainer
-// already marked the class, or the student already self-marked), this
-// deliberately refuses rather than silently overwriting it — a wrong or
-// disputed record goes through createRequest instead, same as any other
-// correction.
-exports.selfMarkPresent = async (req, res) => {
-  try {
-    const today = startOfToday();
-    const existing = await StudentAttendance.findOne({ student: req.student._id, date: today });
-    if (existing) {
-      return res.status(409).json({
-        message: 'Today\'s attendance is already marked. Use Request Attendance if it needs to be corrected.',
-        record: existing,
-      });
-    }
-
-    const record = await StudentAttendance.create({
-      student: req.student._id,
-      studentName: req.student.name,
-      rollNumber: req.student.rollNumber,
-      course: req.student.course,
-      campus: req.student.campus?.name || '',
-      date: today,
-      status: 'present',
-    });
-
-    return res.status(201).json({ record });
-  } catch (err) {
-    // Unique index race (student+date) — someone/something else marked it
-    // in the moment between the findOne check and this create.
-    if (err.code === 11000) {
-      return res.status(409).json({ message: "Today's attendance is already marked." });
-    }
-    return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
-  }
-};
-
-// Self-service fallback for when direct marking isn't available (QR/ID
-// didn't scan, or the student didn't have it on them at the time) —
-// same request-and-wait-for-approval flow as disputing an existing record,
-// just without one to point at yet. Writes straight into the shared
-// collection Super Admin/Sub-Admin read from.
+// The only way a student's attendance gets marked now is Super Admin/
+// Sub-Admin scanning their ID card QR (see server/controllers/
+// attendanceScanController.js in the main app) — this app no longer has a
+// direct self-mark path. What's left here is purely the request/dispute
+// flow: a student can ask for their attendance to be corrected or created,
+// for whenever the scanner wasn't available or something went wrong; an
+// admin still has to approve it.
 exports.createRequest = async (req, res) => {
   try {
     const { attendanceRecordId, date, requestedStatus, reason } = req.body;

@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMyAttendanceCourses, getAttendanceRoster, markAttendance } from '../../services/trainerDashboardService';
-import TrainerQrScanModal from '../../components/TrainerQrScanModal';
+import { useQuery } from '@tanstack/react-query';
+import { getMyAttendanceCourses, getAttendanceRoster } from '../../services/trainerDashboardService';
 
-// Real now — writes into the same StudentAttendance collection Super Admin
-// and Sub-Admin already read from (see trainerStudentAttendanceController
-// .js on the server), so marking attendance here shows up there
-// immediately, same cross-portal proof point as the quiz/assignment work.
-// Course-scoped rather than batch-scoped for the same reason as the
-// Assignments tab: Student has no batch/Slot field to query a roster by.
+// Read-only — attendance is now marked entirely by Super Admin/Sub-Admin
+// scanning a student's ID card QR (see server/controllers/
+// attendanceScanController.js), not by the trainer. This page still reads
+// from the same StudentAttendance collection (via trainerStudentAttendanceController
+// .getRosterForDate, unchanged) so a trainer can see their class's status at
+// a glance; there's no way to change it from here anymore. A student who
+// thinks a record is wrong requests a correction from their own portal.
 const STATUS_STYLE = {
   present: { label: 'Present', className: 'bg-success-bg text-success-text' },
   absent: { label: 'Absent', className: 'bg-danger-50 text-danger-600' },
@@ -35,7 +35,18 @@ function initials(name) {
   );
 }
 
-function StudentRow({ row, onSetStatus }) {
+// Anyone with no record yet for the selected date reads as "Not marked" —
+// distinct from Present/Absent/Leave, not folded into either, since it's
+// not yet a real attendance decision.
+function StatusPill({ status, alreadyMarked }) {
+  if (!alreadyMarked) {
+    return <span className="text-badge px-2.5 py-1 rounded-pill w-fit bg-neutral-100 text-neutral-500">Not marked</span>;
+  }
+  const s = STATUS_STYLE[status] ?? STATUS_STYLE.present;
+  return <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>;
+}
+
+function StudentRow({ row }) {
   return (
     <motion.div variants={fadeInUp} className="flex items-center justify-between px-[18px] py-[13px] border-b border-neutral-100 last:border-b-0">
       <div className="flex items-center gap-3">
@@ -47,34 +58,15 @@ function StudentRow({ row, onSetStatus }) {
           <div className="text-[11.5px] text-neutral-400">Roll #{row.student.rollNumber}</div>
         </div>
       </div>
-
-      <div className="flex border border-neutral-200 rounded overflow-hidden">
-        {STATUS_ORDER.map((key, i) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onSetStatus(row.student._id, key)}
-            className={[
-              'px-3.5 py-[7px] text-[12px] font-bold cursor-pointer transition-colors',
-              i > 0 ? 'border-l border-neutral-200' : '',
-              row.status === key ? STATUS_STYLE[key].className : 'bg-surface text-neutral-400 hover:bg-neutral-100',
-            ].join(' ')}
-          >
-            {STATUS_STYLE[key].label}
-          </button>
-        ))}
-      </div>
+      <StatusPill status={row.status} alreadyMarked={row.alreadyMarked} />
     </motion.div>
   );
 }
 
 export default function AttendancePage() {
-  const queryClient = useQueryClient();
   const { data: courses } = useQuery({ queryKey: ['trainer-attendance-courses'], queryFn: getMyAttendanceCourses });
   const [course, setCourse] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [overrides, setOverrides] = useState({});
-  const [scanOpen, setScanOpen] = useState(false);
 
   useEffect(() => {
     if (!course && courses?.length) setCourse(courses[0].name);
@@ -86,35 +78,13 @@ export default function AttendancePage() {
     enabled: !!course && !!date,
   });
 
-  // Overrides reset whenever the roster for a new course/date loads, so
-  // toggling a status doesn't leak across a batch/date switch.
-  useEffect(() => setOverrides({}), [course, date]);
-
-  const effectiveRoster = useMemo(
-    () => (roster ?? []).map((row) => ({ ...row, status: overrides[row.student._id] ?? row.status })),
-    [roster, overrides]
-  );
+  const effectiveRoster = roster ?? [];
 
   const counts = useMemo(
-    () => effectiveRoster.reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }), {}),
+    () => effectiveRoster.filter((r) => r.alreadyMarked).reduce((acc, r) => ({ ...acc, [r.status]: (acc[r.status] ?? 0) + 1 }), {}),
     [effectiveRoster]
   );
-
-  const setStatus = (studentId, status) => setOverrides((prev) => ({ ...prev, [studentId]: status }));
-  const markAllPresent = () => setOverrides(Object.fromEntries(effectiveRoster.map((r) => [r.student._id, 'present'])));
-
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      markAttendance({
-        course,
-        date,
-        records: effectiveRoster.map((r) => ({ studentId: r.student._id, status: r.status })),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['trainer-attendance-roster', course, date] });
-      setOverrides({});
-    },
-  });
+  const notMarkedCount = effectiveRoster.filter((r) => !r.alreadyMarked).length;
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
@@ -139,38 +109,22 @@ export default function AttendancePage() {
             className="border border-neutral-200 rounded px-3 py-[9px] text-body-sm text-neutral-600 font-sans bg-surface outline-none focus:border-[var(--trainer-blue)] transition-colors"
           />
         </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            disabled={!course}
-            onClick={() => setScanOpen(true)}
-            className="inline-flex items-center gap-1.5 border border-[var(--trainer-blue)] bg-surface text-[var(--trainer-blue)] text-body-sm font-semibold px-3.5 py-[9px] rounded cursor-pointer transition-colors hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
-            </svg>
-            Scan Student ID
-          </button>
-          <button
-            type="button"
-            onClick={markAllPresent}
-            className="border border-success-bg bg-success-bg text-success-text text-body-sm font-semibold px-3.5 py-[9px] rounded cursor-pointer transition-colors hover:brightness-95"
-          >
-            Mark All Present
-          </button>
-        </div>
+        <p className="text-caption text-neutral-400 max-w-[260px] text-right">
+          Marked by your campus's QR scanner — view only.
+        </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {STATUS_ORDER.map((key) => (
           <div key={key} className={`${SUMMARY_BG[key]} border border-neutral-200 rounded-xl px-[18px] py-4 text-center`}>
             <div className={`font-heading font-extrabold text-[24px] ${SUMMARY_TEXT_COLOR[key]}`}>{counts[key] ?? 0}</div>
             <div className="text-[12px] font-semibold text-neutral-400 mt-0.5">{STATUS_STYLE[key].label}</div>
           </div>
         ))}
+        <div className="bg-neutral-50 border border-neutral-200 rounded-xl px-[18px] py-4 text-center">
+          <div className="font-heading font-extrabold text-[24px] text-neutral-500">{notMarkedCount}</div>
+          <div className="text-[12px] font-semibold text-neutral-400 mt-0.5">Not Marked</div>
+        </div>
       </div>
 
       <div className="bg-surface border border-neutral-200 rounded-xl overflow-hidden">
@@ -183,31 +137,9 @@ export default function AttendancePage() {
         ) : !effectiveRoster.length ? (
           <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No students enrolled in this course yet.</div>
         ) : (
-          effectiveRoster.map((row) => <StudentRow key={row.student._id} row={row} onSetStatus={setStatus} />)
+          effectiveRoster.map((row) => <StudentRow key={row.student._id} row={row} />)
         )}
       </div>
-
-      <div className="bg-surface border border-neutral-200 rounded-xl px-[18px] py-3.5 flex justify-end">
-        <button
-          type="button"
-          disabled={saveMutation.isPending || !effectiveRoster.length}
-          onClick={() => saveMutation.mutate()}
-          className="border-none bg-[var(--trainer-blue)] text-white text-body-sm font-semibold px-6 py-[11px] rounded cursor-pointer transition-colors hover:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saveMutation.isPending ? 'Saving...' : saveMutation.isSuccess ? 'Saved ✓' : 'Save Attendance'}
-        </button>
-      </div>
-
-      <TrainerQrScanModal
-        open={scanOpen}
-        onClose={() => setScanOpen(false)}
-        course={course}
-        date={date}
-        onMarked={(student) => {
-          setOverrides((prev) => ({ ...prev, [student._id]: 'present' }));
-          queryClient.invalidateQueries({ queryKey: ['trainer-attendance-roster', course, date] });
-        }}
-      />
     </motion.div>
   );
 }

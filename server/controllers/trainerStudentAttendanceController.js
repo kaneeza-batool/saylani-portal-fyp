@@ -1,13 +1,14 @@
-// Attendance a trainer marks FOR their students — distinct from
+// Read-only view of attendance a trainer's students have — the trainer no
+// longer MARKS it here (that moved entirely to Super Admin/Sub-Admin's QR
+// scanner, see attendanceScanController.js); this file now only backs
+// AttendancePage.jsx's day/course roster view. Distinct from
 // trainerAttendanceController.js, which tracks a trainer's own check-in/
 // check-out (a completely different feature; same "trainer" word, wrong
 // file to touch, hence the more specific name here).
 const Slot = require('../models/Slot');
 const Student = require('../models/Student');
 const StudentAttendance = require('../models/StudentAttendance');
-const StudentPortalNotification = require('../models/StudentPortalNotification');
 const { myBatchesFilter } = require('./trainerDashboardController');
-const { logAudit } = require('../utils/auditLogger');
 
 // Backs the Attendance page's course dropdown — the trainer's own courses
 // only, derived from their own batches (same ownership pattern as
@@ -72,153 +73,5 @@ exports.getRosterForDate = async (req, res) => {
     return res.status(200).json({ roster });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to load roster', error: err.message });
-  }
-};
-
-// Bulk upsert — one StudentAttendance document per student per day (schema
-// already enforces this with a unique {student, date} index), campus
-// cached from each student's real campus the same way the admin-side
-// markMultiple does, not left blank.
-exports.markAttendance = async (req, res) => {
-  try {
-    const { course, date, records } = req.body;
-    if (!course || !date || !Array.isArray(records) || records.length === 0) {
-      return res.status(400).json({ message: 'course, date, and records are required.' });
-    }
-
-    const batchIds = await myBatchIdsForCourse(req.user, course);
-    if (batchIds.length === 0) {
-      return res.status(403).json({ message: 'You can only take attendance for your own batches.' });
-    }
-
-    const dayStart = new Date(new Date(date).toDateString());
-    const studentIds = records.map((r) => r.studentId);
-    // Scoped to the trainer's own batch(es) for this course — a studentId
-    // in the payload that isn't actually in one of those batches is
-    // silently dropped below, same as an unrecognized id always was, not
-    // trusted just because the course name matched.
-    const students = await Student.find({ _id: { $in: studentIds }, batch: { $in: batchIds } })
-      .populate('campus', 'name')
-      .lean();
-    const studentById = new Map(students.map((s) => [String(s._id), s]));
-
-    const ops = records
-      .filter((r) => studentById.has(r.studentId))
-      .map((r) => {
-        const student = studentById.get(r.studentId);
-        return {
-          updateOne: {
-            filter: { student: student._id, date: dayStart },
-            update: {
-              $set: {
-                student: student._id,
-                studentName: student.name,
-                rollNumber: student.rollNumber,
-                course,
-                campus: student.campus?.name || '',
-                date: dayStart,
-                status: r.status,
-              },
-            },
-            upsert: true,
-          },
-        };
-      });
-
-    if (ops.length) await StudentAttendance.bulkWrite(ops);
-
-    // Only 'absent' is actually worth a ping — a present-mark is just the
-    // routine default (see getRosterForDate's opt-out UX above), and
-    // notifying on every single day's attendance would drown out anything
-    // else in the student's notification list. Own try/catch so a
-    // notification failure never turns an already-saved attendance mark
-    // into a reported failure.
-    const absentStudentIds = records.filter((r) => r.status === 'absent' && studentById.has(r.studentId)).map((r) => r.studentId);
-    if (absentStudentIds.length) {
-      try {
-        await StudentPortalNotification.insertMany(
-          absentStudentIds.map((studentId) => ({
-            student: studentId,
-            icon: '📅',
-            title: 'Marked Absent',
-            message: `You were marked absent for ${course} on ${dayStart.toDateString()}.`,
-            link: '/attendance',
-          }))
-        );
-      } catch (notifyErr) {
-        console.error('Failed to create absence notifications:', notifyErr.message);
-      }
-    }
-
-    if (ops.length) {
-      logAudit({
-        actor: req.user,
-        action: 'update',
-        resourceType: 'StudentAttendance',
-        summary: `Marked attendance for ${ops.length} student${ops.length === 1 ? '' : 's'} in ${course} (${dayStart.toDateString()})`,
-      });
-    }
-
-    return res.status(200).json({ marked: ops.length });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
-  }
-};
-
-// Quick single-student mark — the trainer scans a student's own ID card QR
-// (same payload StudentIdCardModal/QrCheckInModal already use:
-// {org:'TITAN', type:'Student', id: rollNumber, name}) or types their roll
-// number in by hand, and that one student is marked present immediately.
-// Same ownership boundary as the bulk path: the roll number must belong to
-// a student in one of the trainer's own batches for this course, or it's
-// rejected rather than silently marking someone outside their roster.
-exports.markByRollNumber = async (req, res) => {
-  try {
-    const { course, date, rollNumber } = req.body;
-    if (!course || !date || !rollNumber) {
-      return res.status(400).json({ message: 'course, date, and rollNumber are required.' });
-    }
-
-    const batchIds = await myBatchIdsForCourse(req.user, course);
-    if (batchIds.length === 0) {
-      return res.status(403).json({ message: 'You can only take attendance for your own batches.' });
-    }
-
-    const student = await Student.findOne({ rollNumber: Number(rollNumber), batch: { $in: batchIds } }).populate(
-      'campus',
-      'name'
-    );
-    if (!student) {
-      return res.status(404).json({ message: `No student with roll number ${rollNumber} in this batch.` });
-    }
-
-    const dayStart = new Date(new Date(date).toDateString());
-    const record = await StudentAttendance.findOneAndUpdate(
-      { student: student._id, date: dayStart },
-      {
-        $set: {
-          student: student._id,
-          studentName: student.name,
-          rollNumber: student.rollNumber,
-          course,
-          campus: student.campus?.name || '',
-          date: dayStart,
-          status: 'present',
-        },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-
-    logAudit({
-      actor: req.user,
-      action: 'update',
-      resourceType: 'StudentAttendance',
-      resourceId: record._id,
-      summary: `Marked "${student.name}" present in ${course} via roll-number scan`,
-    });
-
-    return res.status(200).json({ student: { _id: student._id, name: student.name, rollNumber: student.rollNumber }, record });
-  } catch (err) {
-    return res.status(500).json({ message: 'Failed to mark attendance', error: err.message });
   }
 };

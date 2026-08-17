@@ -11,10 +11,12 @@ import IDCardModal from '../../components/IDCardModal';
 
 const EXPORT_COLUMNS = [
   { header: 'Name', accessor: (s) => s.name },
+  { header: 'Roll No.', accessor: (s) => s.rollNumber },
   { header: 'CNIC', accessor: (s) => s.cnic },
   { header: 'Phone', accessor: (s) => s.phone },
   { header: 'Course', accessor: (s) => s.course },
   { header: 'Campus', accessor: (s) => s.campus },
+  { header: 'Trainer', accessor: (s) => s.batch?.trainer },
   { header: 'Progress', accessor: (s) => (s.progress != null ? `${s.progress}%` : '') },
   { header: 'Status', accessor: (s) => s.status },
   { header: 'Payment Status', accessor: (s) => (s.feeStatus ? PAYMENT_STYLE[s.feeStatus.status]?.label ?? s.feeStatus.status : '—') },
@@ -80,11 +82,11 @@ const staggerContainer = {
   show: { transition: { staggerChildren: 0.03 } },
 };
 
-const GRID_COLS = 'grid-cols-[1.5fr_1.1fr_1.3fr_1.1fr_0.8fr_1fr_1fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.4fr_0.8fr_1fr_1.2fr_1fr_1fr_0.7fr_0.9fr_1fr_0.8fr]';
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+    <div className={`grid ${GRID_COLS} min-w-[980px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded bg-neutral-100 animate-pulse shrink-0" />
         <div className="flex flex-col gap-1.5 w-full">
@@ -92,7 +94,7 @@ function RowSkeleton() {
           <div className="h-2.5 w-1/2 bg-neutral-100 rounded animate-pulse" />
         </div>
       </div>
-      {[0, 1, 2, 3, 4, 5].map((i) => (
+      {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
@@ -264,8 +266,8 @@ export default function StudentsPage() {
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
-        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
-          {['Student', 'Phone', 'Course', 'Campus', 'Progress', 'Status', 'Payment Status'].map((h) => (
+        <div className={`grid ${GRID_COLS} min-w-[980px] gap-[18px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+          {['Student', 'Roll No.', 'Phone', 'Course', 'Campus', 'Trainer', 'Progress', 'Status', 'Payment Status'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
@@ -288,7 +290,7 @@ export default function StudentsPage() {
                 <motion.div
                   key={s._id}
                   variants={fadeInUp}
-                  className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                  className={`grid ${GRID_COLS} min-w-[980px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">
@@ -299,9 +301,11 @@ export default function StudentsPage() {
                       <div className="text-badge text-neutral-400 font-normal">{s.cnic}</div>
                     </div>
                   </div>
+                  <span className="text-body-sm font-semibold text-neutral-700 truncate">{s.rollNumber || '—'}</span>
                   <span className="text-body-sm text-neutral-600">{s.phone}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.campus?.name}</span>
+                  <span className="text-body-sm text-neutral-600 truncate">{s.batch?.trainer || '—'}</span>
                   <span className="text-body-sm text-neutral-600">{s.progress != null ? `${s.progress}%` : '—'}</span>
                   <span
                     className={`text-badge px-2.5 py-1 rounded-pill w-fit ${statusStyle.className}`}

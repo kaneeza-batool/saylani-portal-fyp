@@ -110,6 +110,7 @@ const EnrollNow = () => {
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [serverError, setServerError] = useState('');
   const [application, setApplication] = useState(null);
+  const [enrolledStudent, setEnrolledStudent] = useState(null);
 
   const [campuses, setCampuses] = useState([]);
   const [courseOptions, setCourseOptions] = useState([]);
@@ -196,6 +197,7 @@ const EnrollNow = () => {
 
       const res = await axios.post(`${API_URL}/api/applications`, payload);
       setApplication(res.data.application);
+      setEnrolledStudent(res.data.student);
       setStatus('success');
     } catch (err) {
       setStatus('error');
@@ -212,11 +214,11 @@ const EnrollNow = () => {
           Thanks, {application.fullName.split(' ')[0]}. We've received your application for{' '}
           <span className="font-semibold text-neutral-900">{application.selectedProgram}</span>. A confirmation email has been sent to {application.email}.
         </p>
-        {application.referenceNumber && (
+        {enrolledStudent?.rollNumber && (
           <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200" style={{ borderRadius: 'var(--radius-standard)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Your Reference Number</p>
-            <p className="mt-1 text-xl font-black te-mono text-primary-800">{application.referenceNumber}</p>
-            <p className="mt-2 text-xs text-neutral-500">Keep this number to check your application status later.</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Your Roll Number</p>
+            <p className="mt-1 text-xl font-black te-mono text-primary-800">{enrolledStudent.rollNumber}</p>
+            <p className="mt-2 text-xs text-neutral-500">Keep this roll number for your records — it stays with you through admission.</p>
           </div>
         )}
         <p className="mt-6 text-sm text-neutral-600">We'll review your application and get back to you within 48 hours.</p>

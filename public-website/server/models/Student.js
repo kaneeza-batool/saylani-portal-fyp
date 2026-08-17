@@ -21,9 +21,31 @@ const COURSES = [
 const STATUSES = ['enrolled', 'pending', 'completed', 'dropout', 'rejected'];
 const PAYMENT_STATUSES = ['paid', 'pending', 'overdue'];
 
+// Course-prefixed roll number (e.g. "GD-014") — kept in sync by hand with
+// server/models/Student.js's own copy, same tradeoff as the rest of this file.
+const COURSE_ROLL_PREFIXES = {
+  'Web Development': 'WD',
+  'AI & Data Science': 'AI',
+  'Graphic Designing': 'GD',
+  'Mobile App Development (Flutter)': 'MA',
+  'Digital Marketing': 'DM',
+  'UI/UX Design': 'UX',
+  'Cybersecurity Fundamentals': 'CS',
+};
+
+async function nextRollNumberFor(Model, course) {
+  const prefix = COURSE_ROLL_PREFIXES[course] || 'ST';
+  const existing = await Model.find({ rollNumber: { $regex: `^${prefix}-\\d+$` } }, 'rollNumber').lean();
+  const max = existing.reduce((m, doc) => {
+    const n = parseInt(String(doc.rollNumber).slice(prefix.length + 1), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+}
+
 const studentSchema = new mongoose.Schema(
   {
-    rollNumber: { type: Number, unique: true, index: true },
+    rollNumber: { type: String, unique: true, index: true },
     name: { type: String, required: true, trim: true },
     father: { type: String, required: true, trim: true },
     cnic: {
@@ -82,9 +104,9 @@ const studentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-studentSchema.pre('validate', function assignRollNumber() {
-  if (this.isNew && !this.rollNumber) {
-    this.rollNumber = 100000 + Math.floor(Math.random() * 900000);
+studentSchema.pre('validate', async function assignRollNumber() {
+  if (this.isNew && !this.rollNumber && this.course) {
+    this.rollNumber = await nextRollNumberFor(this.constructor, this.course);
   }
 });
 
@@ -107,5 +129,7 @@ const Student = mongoose.model('Student', studentSchema);
 Student.COURSES = COURSES;
 Student.STATUSES = STATUSES;
 Student.PAYMENT_STATUSES = PAYMENT_STATUSES;
+Student.COURSE_ROLL_PREFIXES = COURSE_ROLL_PREFIXES;
+Student.generateRollNumber = (course) => nextRollNumberFor(Student, course);
 
 module.exports = Student;
