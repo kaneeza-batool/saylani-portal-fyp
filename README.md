@@ -72,7 +72,7 @@ Frontend at `http://localhost:5173`, API at `http://localhost:5000`.
 ## Portals
 
 ### Super Admin
-Full system oversight across every campus. Students, trainers, batches, courses, campuses, jobs, employers, quizzes. Includes a campus map, AI insights dashboard, dropout risk predictions, real-time alerts, dark mode, a command palette, and CSV/PDF export.
+Full system oversight across every campus. Students, trainers, batches, courses, campuses, the Job Portal, the Donor Portal, employers, quizzes. Includes a campus map, AI insights dashboard, dropout risk predictions, real-time alerts, dark mode, a command palette, CSV/PDF export, and QR-scan attendance (see Architecture).
 
 ### Campus Manager (Sub-Admin)
 Scoped to exactly one campus. Every query, socket event, and audit entry is filtered to that campus server-side.
@@ -93,12 +93,13 @@ Scoped to exactly one campus. Every query, socket event, and audit entry is filt
 Course-scoped dashboard, quizzes with integrity mode, leaderboard, verifiable certificates, notifications, resource library, skill passport, and Ask-a-Doubt. Lives as a standalone app under `student-portal/` (see below), not inside `client/`.
 
 ### Trainer
-Self-service registration (`/trainer/register`) creates a linked `User{role:'trainer'}` + `Trainer` doc — no seed script provisions trainer accounts. Once logged in: Dashboard (batches from `Slot.trainer` name-matched against the trainer), Batches, Attendance (check-in/out), Quizzes, Assignments (create + review submissions, via `trainerDashboardRoutes.js` → `trainerAssignmentController.js`), Students, Profile.
+Self-service registration (`/trainer/register`) creates a linked `User{role:'trainer'}` + `Trainer` doc — no seed script provisions trainer accounts. Once logged in: Dashboard (batches from `Slot.trainer` name-matched against the trainer), Batches, Attendance (read-only roster view — attendance itself is marked by Super Admin/Sub-Admin scanning a Student or Trainer ID card, see Architecture), Quizzes, Assignments (create + review submissions, via `trainerDashboardRoutes.js` → `trainerAssignmentController.js`), Students (real roster with per-student grading), Profile.
 
-**Known bug:** `client/src/portals/trainer/StudentsPage.jsx` renders a hardcoded mock roster — it never fetches real students, so newly enrolled students never appear there regardless of batch assignment (see Known debt).
+### Job Portal
+Public careers page (`/careers`) lists published, open roles with an optional application deadline, enforced both client- and server-side (a 410 with a clear message, not a silent failure or a 500). Applicants apply per job (resume + optional photo upload); `server/utils/matchScore.js` scores each application 0–100 by keyword overlap between the job's requirements/description and the applicant's skills/experience/education. Super Admin's Applications page shows that score per applicant alongside inline Shortlist/Reject actions (in addition to the fuller status set: pending, reviewed, shortlisted, hired, rejected) — every status change is audit-logged and triggers a status-update email via `server/utils/mailer.js`. Applicants can look up all of their own applications by email at `/careers/status`.
 
-### Jobs
-In development.
+### Donor Portal
+Public giving flow (`/donate`) against admin-managed campaigns, with a donor wall and per-campaign progress tracking (confirmed donations only). Card payments are simulated, not connected to a real payment processor — flagged deliberately rather than presented as live.
 
 ### Sibling standalone apps
 Two more TITAN apps live in this repo as siblings to `client/`/`server/`, each with their own client, server, database connection, and `.env` — not merged into the main app's routing or auth:
@@ -154,6 +155,10 @@ Retrain with `npm run train:ml` in `server/`. The trained weights live in `serve
 ### Alert engine
 
 A cron job runs every two minutes, flagging students with three consecutive absences (critical) or overdue payments (warning). Alerts auto-resolve when the underlying condition clears. Each alert emits to its campus room and to super admins, and notifies both the super admin and the relevant campus manager by email.
+
+### QR attendance scanning
+
+Every Student and Trainer ID card (`IDCardModal.jsx` / `StudentIdCardModal.jsx`) encodes a `{org, type, id, name}` QR payload. Super Admin/Sub-Admin scan it at one entry point — `server/controllers/attendanceScanController.js` auto-detects Student vs. Trainer from the payload and marks attendance (check-in/check-out for trainers) accordingly, permission-checked per type and idempotent by design, so a rapid-fire scan line never errors on an accidental repeat scan. Neither the Trainer portal nor the Student portal can mark attendance directly anymore — both are read-only views onto the same records, with a "request a correction" flow as the fallback for a disputed entry.
 
 ---
 
@@ -211,6 +216,8 @@ Branch from `dev`, merge back into `dev` via pull request.
 | Kaneeza Batool | Campus Manager portal, campus scoping architecture, socket authentication, audit system |
 | Rabbia Sachana | Student portal |
 | Areeba | Trainer portal |
+| Asifa Soomro | Design — UI/visual design |
+| Seerat | Design — UI/visual design |
 
 ---
 
@@ -220,6 +227,5 @@ Branch from `dev`, merge back into `dev` via pull request.
 - `Slot.trainer` is free text, not a reference to `Trainer` — renaming a trainer requires updating both records, and a campus/course combo with no matching `Slot` has no trainer to assign
 - The dropout model is trained on synthetic data
 - `authController.register` exists but is not wired to a route
-- Campus manager profile still routes under the super admin URL namespace
-- Trainer Portal's Students page renders hardcoded mock data instead of fetching real students — no "students in my batches" endpoint exists yet
-- Sub-Admin's own Students page still borrows the Super Admin's `StudentsPage` component as a testing shortcut, rather than having its own
+- The Job Portal's application emails (submission confirmation, status updates) send through `server/utils/mailer.js`, which falls back to a console-logged Ethereal test inbox when no real `SMTP_HOST` is configured — real delivery needs real SMTP credentials in `server/.env`
+- Donor Portal card payments are simulated, not connected to a real payment processor
