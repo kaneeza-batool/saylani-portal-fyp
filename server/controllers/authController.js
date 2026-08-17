@@ -148,7 +148,7 @@ exports.registerTrainer = async (req, res) => {
     // supports but nothing ever actually wrote to before this.
     if (course) {
       const Slot = require('../models/Slot');
-      await Slot.create({
+      const slot = await Slot.create({
         schedule: 'Schedule to be announced',
         trainer: name,
         assignedTrainer: user._id,
@@ -157,6 +157,37 @@ exports.registerTrainer = async (req, res) => {
         seatsTotal: 30,
         status: 'active',
       });
+
+      // The Slot above starts empty — nothing places a student into it.
+      // A student already sitting in a different Slot stays put (an admin
+      // put them there on purpose; this isn't a reason to move them), but
+      // a student in this course/campus with NO batch at all — orphaned by
+      // there being no trainer to assign them to until now — has nothing
+      // to lose by landing here, so this closes the gap the registration
+      // flow above would otherwise leave: a trainer with an existing but
+      // unassigned course roster would still see an empty dashboard until
+      // an admin manually assigned every one of them one at a time.
+      const StudentModel = require('../models/Student');
+      const unassigned = await StudentModel.find(
+        { campus: campus._id, course, status: 'enrolled', batch: null },
+        '_id'
+      ).limit(slot.seatsTotal);
+
+      if (unassigned.length > 0) {
+        await StudentModel.updateMany(
+          { _id: { $in: unassigned.map((s) => s._id) } },
+          { $set: { batch: slot._id } }
+        );
+
+        logAudit({
+          actor: user,
+          action: 'update',
+          resourceType: 'Student',
+          resourceId: slot._id,
+          summary: `Assigned ${unassigned.length} previously unassigned "${course}" student(s) to "${user.name}"'s new batch at self-registration`,
+          resourceCampus: user.campus_id,
+        });
+      }
     }
 
     logAudit({
