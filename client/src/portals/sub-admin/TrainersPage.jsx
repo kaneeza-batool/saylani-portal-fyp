@@ -5,6 +5,7 @@ import { createTrainer, fetchTrainers, updateTrainerStatus, resetTrainerPassword
 import TrainerFormModal from '../../components/TrainerFormModal';
 import ExportButtons from '../../components/ExportButtons';
 import ResetPasswordResultModal from '../../components/ResetPasswordResultModal';
+import IDCardModal from '../../components/IDCardModal';
 
 // Mostly a read-only mirror of super-admin/TrainersPage.jsx's list (same
 // GRID_COLS approach, same classes) — sub_admin still has no update/delete
@@ -66,6 +67,7 @@ export default function TrainersPage() {
   const [formError, setFormError] = useState('');
   const [resetResult, setResetResult] = useState(null);
   const [resetError, setResetError] = useState(null);
+  const [idCardTarget, setIdCardTarget] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -212,7 +214,7 @@ export default function TrainersPage() {
                   className={`grid ${GRID_COLS} min-w-[720px] gap-[18px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded bg-neutral-100 text-primary-600 flex items-center justify-center font-heading font-bold text-caption shrink-0">
+                    <div className="w-8 h-8 rounded bg-navy-50 text-navy-700 flex items-center justify-center font-heading font-bold text-caption shrink-0">
                       {initials(t.name)}
                     </div>
                     <span className="text-body-sm font-semibold text-neutral-900 truncate">{t.name}</span>
@@ -230,18 +232,33 @@ export default function TrainersPage() {
                   >
                     {isSaving ? 'Saving…' : s.label}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => resetPasswordMutation.mutate(t._id)}
-                    disabled={resetPasswordMutation.isPending}
-                    title="Reset Password"
-                    className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="10" rx="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                  </button>
+                  <div className="flex gap-1.5 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setIdCardTarget(t)}
+                      title="ID Card"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <circle cx="8" cy="11" r="2" />
+                        <path d="M5 16c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" />
+                        <path d="M14 10h5M14 14h5" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => resetPasswordMutation.mutate(t._id)}
+                      disabled={resetPasswordMutation.isPending}
+                      title="Reset Password"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="10" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </button>
+                  </div>
                 </motion.div>
               );
             })}
@@ -285,6 +302,16 @@ export default function TrainersPage() {
         error={formError}
       />
       <ResetPasswordResultModal open={!!resetResult} result={resetResult} onClose={() => setResetResult(null)} />
+      <IDCardModal
+        open={!!idCardTarget}
+        onClose={() => setIdCardTarget(null)}
+        type="Trainer"
+        person={
+          idCardTarget
+            ? { name: idCardTarget.name, idNumber: idCardTarget.employeeId, line1: idCardTarget.course, line2: idCardTarget.city }
+            : null
+        }
+      />
     </motion.div>
   );
 }

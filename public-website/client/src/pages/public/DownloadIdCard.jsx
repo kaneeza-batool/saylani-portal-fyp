@@ -84,7 +84,7 @@ const DownloadIdCard = () => {
     setDownloading(true);
     try {
       // Without this, html2canvas can capture the card before the custom
-      // Sora font finishes loading, silently substituting wrong glyphs
+      // Manrope font finishes loading, silently substituting wrong glyphs
       // (garbled name text) instead of throwing an error.
       await document.fonts.ready;
       const canvas = await html2canvas(cardRef.current, {

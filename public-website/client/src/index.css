@@ -57,19 +57,30 @@
   --color-text-secondary: #667085; /* Muted Slate */
   --color-positive: #71806A; /* Sage — success/verified/positive states only */
 
-  /* ---- Semantic status — {bg, text} pairs, muted so they don't fight the palette ---- */
-  --color-success-bg: #EDF0EC;
-  --color-success-text: #4F7A5A;
-  --color-warning-bg: #FBF1E4;
-  --color-warning-text: #B78335;
-  --color-danger-bg: #FBEBEA;
-  --color-danger-text: #B84A4A;
-  --color-info-bg: #E8EEF3;
-  --color-info-text: #416A8A;
+  /* ---- Semantic status — {bg, text} pairs, matched to
+     client/tailwind.config.js (the shared source of truth across all three
+     TITAN properties) rather than this app's earlier muted set ---- */
+  --color-success-bg: #E4F2EA;
+  --color-success-text: #14532D;
+  --color-warning-bg: #FBF1DD;
+  --color-warning-text: #9A6B10;
+  --color-danger-bg: #FBE9E7;
+  --color-danger-text: #C0392B;
+  --color-info-bg: #E7F0FB;
+  --color-info-text: #2557A6;
 
   /* ---- Fonts ---- */
-  --font-heading: 'Sora', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- Border radius — sm/md/lg/xl matched to client/tailwind.config.js's
+     scale (the shared source of truth); rounded-2xl/rounded-full usages
+     are left at Tailwind's stock values since client's scale has no
+     equivalent step to match them to ---- */
+  --radius-sm: 8px;
+  --radius-md: 9px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 /* Admin login (src/pages/admin/AdminLogin.jsx) — this app has no

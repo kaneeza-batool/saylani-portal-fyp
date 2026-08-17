@@ -1,6 +1,8 @@
 :root {
   /* Structural Standards (colors now live in the Tailwind v4 @theme
      block in index.css — see the color-primary, color-accent, etc. tokens) */
-  --radius-standard: 12px;
+  /* Used by .titan-card-premium — matched to client/tailwind.config.js's
+     xl (16px), its card/panel radius step */
+  --radius-standard: 16px;
   --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }

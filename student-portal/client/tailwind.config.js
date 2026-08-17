@@ -86,11 +86,13 @@ export default {
         // checkmark glyph), not as a status background.
         'accent-positive': '#71806A',
 
-        // ---- Semantic status — muted, not bright — {bg, text} pairs ----
-        success: { bg: '#EDF0EC', text: '#4F7A5A' },
-        warning: { bg: '#FBF1E4', text: '#B78335' },
-        danger: { bg: '#FBEBEA', text: '#B84A4A' },
-        info: { bg: '#E8EEF3', text: '#416A8A' },
+        // ---- Semantic status — {bg, text} pairs, matched to
+        // client/tailwind.config.js (the shared source of truth across all
+        // three TITAN properties) rather than this app's earlier muted set ----
+        success: { bg: '#E4F2EA', text: '#14532D' },
+        warning: { bg: '#FBF1DD', text: '#9A6B10' },
+        danger: { bg: '#FBE9E7', text: '#C0392B' },
+        info: { bg: '#E7F0FB', text: '#2557A6' },
       },
 
       fontFamily: {
@@ -101,21 +103,28 @@ export default {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
 
+      // Matched to client/tailwind.config.js's sm/DEFAULT/md/lg/xl/pill steps
+      // (the shared source of truth) — 2xl has no client equivalent, kept
+      // as-is for this app's full-bleed hero/banner sections.
       borderRadius: {
         sm: '8px', // inputs, badges, small chips
-        md: '10px', // buttons, table cells
-        lg: '14px', // standard cards
-        xl: '20px', // hero banners, celebratory cards (certificate, streak)
+        DEFAULT: '9px',
+        md: '9px', // buttons, table cells
+        lg: '12px', // standard cards
+        xl: '16px', // hero banners, celebratory cards (certificate, streak)
         '2xl': '28px', // full-bleed hero/banner sections
         pill: '9999px', // badges, avatars, streak/progress pills
       },
 
+      // Tint matched to client/tailwind.config.js's navy-800 rgba(19,35,69,*)
+      // (was primary-900's rgba(15,25,48,*)) — same navy family, now the
+      // exact same tint as the shared source of truth.
       boxShadow: {
-        sm: '0 1px 2px rgba(15,25,48,0.06)', // resting cards, row hover
-        card: '0 8px 24px -6px rgba(15,25,48,0.12)', // default card
-        'card-hover': '0 16px 32px -8px rgba(15,25,48,0.18)', // hover lift
-        modal: '0 24px 64px -12px rgba(15,25,48,0.28)', // centered modals
-        panel: '-12px 0 32px rgba(15,25,48,0.16)', // slide-over panels
+        sm: '0 1px 2px rgba(19,35,69,0.06)', // resting cards, row hover
+        card: '0 8px 24px -6px rgba(19,35,69,0.12)', // default card
+        'card-hover': '0 16px 32px -8px rgba(19,35,69,0.18)', // hover lift
+        modal: '0 24px 64px -12px rgba(19,35,69,0.28)', // centered modals
+        panel: '-12px 0 32px rgba(19,35,69,0.16)', // slide-over panels
         // celebratory gold glow — streak counters, certificate/achievement cards
         glow: '0 0 0 6px rgba(206,164,92,0.18), 0 8px 20px -4px rgba(206,164,92,0.35)',
       },

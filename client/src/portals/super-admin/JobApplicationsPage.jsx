@@ -213,6 +213,35 @@ export default function JobApplicationsPage() {
                   <MatchBadge score={a.matchScore} shortlistThreshold={thresholdByJobId.get(String(a.job))} />
                   <span className={`text-badge px-2.5 py-1 rounded-pill w-fit ${s.className}`}>{s.label}</span>
                   <div className="flex gap-1.5 justify-end">
+                    {(() => {
+                      const rowUpdating = statusMutation.isPending && statusMutation.variables?.id === a._id;
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => statusMutation.mutate({ id: a._id, status: 'shortlisted' })}
+                            disabled={a.status === 'shortlisted' || rowUpdating}
+                            title="Shortlist"
+                            className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-success-bg hover:border-success-text disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:border-neutral-200"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1B6B45" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => statusMutation.mutate({ id: a._id, status: 'rejected' })}
+                            disabled={a.status === 'rejected' || rowUpdating}
+                            title="Reject"
+                            className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-danger-50 hover:border-danger-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface disabled:hover:border-neutral-200"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </>
+                      );
+                    })()}
                     <button
                       type="button"
                       onClick={() => setViewTarget(a)}
