@@ -15,6 +15,11 @@ const CNIC_SCAN_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/p
 
 const QUALIFICATIONS = ['Matric', 'Intermediate', "Bachelor's", "Master's", 'Other'];
 const BATCH_OPTIONS = ['Morning', 'Evening', 'Weekend', 'Online-Only'];
+const COMPUTER_PROFICIENCY_OPTIONS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 
 function initialForm() {
   return {
@@ -28,6 +33,7 @@ function initialForm() {
     address: '',
     lastQualification: '',
     hasLaptop: '',
+    computerProficiency: '',
     course: '',
     campusId: '',
     preferredBatch: '',
@@ -52,6 +58,7 @@ function validateStep(step, form) {
   } else if (step === 1) {
     if (!form.lastQualification) errors.lastQualification = 'Please select your last qualification.';
     if (form.hasLaptop === '') errors.hasLaptop = 'Please let us know if you have a laptop.';
+    if (!form.computerProficiency) errors.computerProficiency = 'Please select your computer proficiency.';
   } else if (step === 2) {
     if (!form.course) errors.course = 'Please select a course.';
     if (!form.campusId) errors.campusId = 'Please select a campus.';
@@ -182,6 +189,7 @@ const EnrollNow = () => {
       payload.append('campusId', form.campusId);
       payload.append('preferredBatch', form.preferredBatch);
       payload.append('hasLaptop', form.hasLaptop === 'yes');
+      payload.append('computerProficiency', form.computerProficiency);
       if (form.photo) payload.append('photo', form.photo);
       if (form.cnicFront) payload.append('cnicFront', form.cnicFront);
       if (form.cnicBack) payload.append('cnicBack', form.cnicBack);
@@ -312,6 +320,16 @@ const EnrollNow = () => {
                 ))}
               </div>
               {errors.hasLaptop && <p className={errorClass}>{errors.hasLaptop}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Computer Proficiency</label>
+              <select value={form.computerProficiency} onChange={updateField('computerProficiency')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
+                <option value="">Select...</option>
+                {COMPUTER_PROFICIENCY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              {errors.computerProficiency && <p className={errorClass}>{errors.computerProficiency}</p>}
             </div>
           </div>
         )}
@@ -448,6 +466,10 @@ const EnrollNow = () => {
               <div className="flex justify-between border-b border-neutral-100 pb-2">
                 <span className="text-neutral-500">Has Laptop</span>
                 <span className="font-semibold text-neutral-900">{form.hasLaptop === 'yes' ? 'Yes' : 'No'}</span>
+              </div>
+              <div className="flex justify-between border-b border-neutral-100 pb-2">
+                <span className="text-neutral-500">Computer Proficiency</span>
+                <span className="font-semibold text-neutral-900 capitalize">{form.computerProficiency}</span>
               </div>
               <div className="flex justify-between border-b border-neutral-100 pb-2">
                 <span className="text-neutral-500">Course</span>

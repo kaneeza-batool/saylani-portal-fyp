@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { createStudent, deleteStudent, fetchStudents, updateStudent } from '../../services/studentService';
@@ -100,6 +101,7 @@ function RowSkeleton() {
 
 export default function StudentsPage() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -353,6 +355,18 @@ export default function StudentsPage() {
                         </svg>
                       </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/admin/fees?studentId=${s._id}&studentName=${encodeURIComponent(s.name)}`)}
+                      title="View fees / change due date"
+                      className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="16" rx="2" />
+                        <path d="M3 9h18" />
+                        <path d="M8 14h2M13 14h3" />
+                      </svg>
+                    </button>
                     <button
                       type="button"
                       onClick={() => setIdCardTarget(s)}
