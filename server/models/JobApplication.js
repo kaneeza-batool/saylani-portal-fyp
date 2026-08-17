@@ -13,7 +13,11 @@ const jobApplicationSchema = new mongoose.Schema(
     skills: { type: String, default: '', trim: true },
     resumeUrl: { type: String, required: true },
     photoUrl: { type: String, default: '' },
-    status: { type: String, enum: ['pending', 'reviewed', 'shortlisted', 'hired', 'rejected'], default: 'pending' },
+    status: {
+      type: String,
+      enum: ['pending', 'reviewed', 'shortlisted', 'interview_scheduled', 'hired', 'rejected'],
+      default: 'pending',
+    },
     // Keyword-overlap score (0-100) against the job's requirements/description,
     // computed once at submission time. Null when the job had no requirements
     // text to compare against.
