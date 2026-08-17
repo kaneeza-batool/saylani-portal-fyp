@@ -601,7 +601,7 @@ function NavGroup({ item, depth, openGroups, onToggle, onNavigate }) {
         type="button"
         onClick={() => onToggle(item.id)}
         className={[
-          'w-full flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
+          'w-full flex items-center gap-[11px] rounded py-[9px] pr-3 text-body font-medium cursor-pointer transition-colors duration-150',
           DEPTH_PADDING[depth] ?? DEPTH_PADDING[2],
           open
             ? 'bg-titan-sidebar-hover text-titan-sidebar-text-hover'
@@ -634,7 +634,7 @@ function NavLeaf({ item, depth, onNavigate }) {
       onClick={onNavigate}
       className={({ isActive }) =>
         [
-          'flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
+          'flex items-center gap-[11px] rounded py-[9px] pr-3 text-body font-medium cursor-pointer transition-colors duration-150',
           DEPTH_PADDING[depth] ?? DEPTH_PADDING[2],
           isActive
             ? 'bg-titan-sidebar-active text-titan-sidebar-text-active font-semibold shadow-[0_2px_10px_rgba(201,162,39,0.35)]'
