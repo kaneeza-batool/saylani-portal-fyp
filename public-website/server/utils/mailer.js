@@ -77,14 +77,13 @@ async function sendApplicationConfirmation(toEmail, name, referenceNumber, progr
   return send({
     to: toEmail,
     subject: `Application received — reference ${referenceNumber}`,
-    text: `Hi ${name},\n\nThanks for applying to TITAN's ${programTitle} program. Your application has been received.\n\nReference number: ${referenceNumber}\nKeep this reference number to check your application status later.\n\nOur admissions team will review your application and get back to you within 48 hours.`,
+    text: `Hi ${name},\n\nThanks for applying to TITAN's ${programTitle} program. Your application has been received.\n\nReference number: ${referenceNumber}\n\nOur admissions team will review your application and get back to you within 48 hours.`,
     html: `
       <div style="font-family: sans-serif; max-width: 480px;">
         <h2 style="color: #162346;">Application received, ${name}</h2>
         <p>Thanks for applying to TITAN's <strong>${programTitle}</strong> program.</p>
         <p style="margin:16px 0;padding:12px 16px;background:#F5F0E6;border-radius:8px;">
-          Reference number: <strong style="color:#162346;">${referenceNumber}</strong><br/>
-          <span style="color:#888;font-size:12px;">Keep this to check your application status later.</span>
+          Reference number: <strong style="color:#162346;">${referenceNumber}</strong>
         </p>
         <p>Our admissions team will review your application and get back to you within 48 hours.</p>
       </div>
