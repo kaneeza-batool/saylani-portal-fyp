@@ -33,6 +33,7 @@ import CoursesPage from './portals/super-admin/CoursesPage';
 import MarkAttendance from './portals/super-admin/attendance/MarkAttendance';
 import ViewAttendance from './portals/super-admin/attendance/ViewAttendance';
 import MultiAttendance from './portals/super-admin/attendance/MultiAttendance';
+import ScanAttendance from './portals/super-admin/attendance/ScanAttendance';
 import SlotsPage from './portals/super-admin/administration/SlotsPage';
 import QuizzesPage from './portals/super-admin/QuizzesPage';
 import EmployersPage from './portals/super-admin/EmployersPage';
@@ -131,6 +132,7 @@ function App() {
                     <Route path="attendance/mark" element={<MarkAttendance />} />
                     <Route path="attendance/view" element={<ViewAttendance />} />
                     <Route path="attendance/multi" element={<MultiAttendance />} />
+                    <Route path="attendance/scan" element={<ScanAttendance />} />
                     <Route path="administration/slots" element={<SlotsPage />} />
                     <Route path="quiz" element={<QuizzesPage />} />
                     <Route path="employers" element={<EmployersPage />} />
@@ -176,6 +178,7 @@ function App() {
                         (no role checks); the backend enforces campus scope. */}
                     <Route path="attendance/mark" element={<MarkAttendance />} />
                     <Route path="attendance/multi" element={<MultiAttendance />} />
+                    <Route path="attendance/scan" element={<ScanAttendance />} />
                     <Route path="feedback" element={<SubAdminFeedbackPage />} />
                     <Route path="fees" element={<FeesPage />} />
                     <Route path="alerts" element={<SubAdminAlertsPage />} />

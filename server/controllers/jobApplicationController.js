@@ -47,7 +47,7 @@ exports.getApplication = async (req, res) => {
 exports.updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    if (!['pending', 'reviewed', 'shortlisted', 'hired', 'rejected'].includes(status)) {
+    if (!['pending', 'reviewed', 'shortlisted', 'interview_scheduled', 'hired', 'rejected'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
     const update = { status, hiredAt: status === 'hired' ? new Date() : null };
@@ -66,6 +66,7 @@ exports.updateApplicationStatus = async (req, res) => {
       pending: { label: 'Pending', tone: '#B7791F', line: 'Your application is in our queue awaiting review.' },
       reviewed: { label: 'Reviewed', tone: '#2B6CB0', line: 'Our team has reviewed your application.' },
       shortlisted: { label: 'Shortlisted', tone: '#1B6B45', line: "Congratulations — you've been shortlisted! We'll be in touch about next steps." },
+      interview_scheduled: { label: 'Interview Scheduled', tone: '#1B6B45', line: "Congratulations — you've been selected for an interview! Our team will reach out shortly with the date, time, and details." },
       hired: { label: 'Hired', tone: '#1B6B45', line: "Congratulations — you've been hired! Our team will reach out shortly with onboarding details." },
       rejected: { label: 'Not Selected', tone: '#C0392B', line: "We've decided to move forward with other candidates for this role. Thank you for your interest in TITAN." },
     };

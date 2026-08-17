@@ -140,6 +140,21 @@ export const NAV_ITEMS = [
     ),
   },
   {
+    id: 'attendance-scan-sub',
+    label: 'Scan Attendance',
+    to: '/sub-admin/attendance/scan',
+    roles: ['sub_admin'],
+    permission: { module: 'ATTENDANCE_MARK', action: 'write' },
+    icon: (
+      <svg {...ICON_PROPS}>
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <path d="M14 14h3v3M20 14v3h-3M14 20h3M20 17v3" />
+      </svg>
+    ),
+  },
+  {
     id: 'attendance-requests-sub',
     label: 'Attendance Requests',
     to: '/sub-admin/attendance-requests',
@@ -298,6 +313,7 @@ export const NAV_ITEMS = [
       { id: 'attendance-mark', label: 'Mark Attendance', to: '/admin/attendance/mark' },
       { id: 'attendance-view', label: 'View Attendance', to: '/admin/attendance/view' },
       { id: 'attendance-multi', label: 'Multi Attendance', to: '/admin/attendance/multi' },
+      { id: 'attendance-scan', label: 'Scan Attendance', to: '/admin/attendance/scan' },
     ],
   },
   {
@@ -601,7 +617,7 @@ function NavGroup({ item, depth, openGroups, onToggle, onNavigate }) {
         type="button"
         onClick={() => onToggle(item.id)}
         className={[
-          'w-full flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
+          'w-full flex items-center gap-[11px] rounded py-[9px] pr-3 text-body font-medium cursor-pointer transition-colors duration-150',
           DEPTH_PADDING[depth] ?? DEPTH_PADDING[2],
           open
             ? 'bg-titan-sidebar-hover text-titan-sidebar-text-hover'
@@ -634,7 +650,7 @@ function NavLeaf({ item, depth, onNavigate }) {
       onClick={onNavigate}
       className={({ isActive }) =>
         [
-          'flex items-center gap-[11px] rounded py-[9px] text-body font-medium cursor-pointer transition-colors duration-150',
+          'flex items-center gap-[11px] rounded py-[9px] pr-3 text-body font-medium cursor-pointer transition-colors duration-150',
           DEPTH_PADDING[depth] ?? DEPTH_PADDING[2],
           isActive
             ? 'bg-titan-sidebar-active text-titan-sidebar-text-active font-semibold shadow-[0_2px_10px_rgba(201,162,39,0.35)]'

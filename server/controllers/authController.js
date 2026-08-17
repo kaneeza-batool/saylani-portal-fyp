@@ -138,6 +138,27 @@ exports.registerTrainer = async (req, res) => {
       status: 'active',
     });
 
+    // Without this, a self-registered trainer had NO Slot at all until an
+    // admin separately created one and happened to type their name to
+    // match exactly (myBatchesFilter's fallback) — every trainer-side
+    // batch-scoped view (Dashboard, Attendance, Resources, Students) was
+    // silently empty until then, which is exactly the "course dropdown
+    // has nothing in it" symptom reported. assignedTrainer is set to the
+    // real User._id here — the precise match path myBatchesFilter already
+    // supports but nothing ever actually wrote to before this.
+    if (course) {
+      const Slot = require('../models/Slot');
+      await Slot.create({
+        schedule: 'Schedule to be announced',
+        trainer: name,
+        assignedTrainer: user._id,
+        course,
+        campus: campus._id,
+        seatsTotal: 30,
+        status: 'active',
+      });
+    }
+
     logAudit({
       actor: user,
       action: 'create',

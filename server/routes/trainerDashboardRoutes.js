@@ -11,12 +11,7 @@ const {
   getPendingReviewCount,
 } = require('../controllers/trainerAssignmentController');
 const { listMyStudents, setStudentGrade } = require('../controllers/trainerStudentsController');
-const {
-  listMyAttendanceCourses,
-  getRosterForDate,
-  markAttendance,
-  markByRollNumber,
-} = require('../controllers/trainerStudentAttendanceController');
+const { listMyAttendanceCourses, getRosterForDate } = require('../controllers/trainerStudentAttendanceController');
 const { uploadResource, listMyResources, deleteResource } = require('../controllers/trainerResourceController');
 const { protect } = require('../middleware/authMiddleware');
 const { restrictTo } = require('../middleware/roleMiddleware');
@@ -43,8 +38,6 @@ router.patch('/submissions/:id/review', reviewSubmission);
 router.patch('/students/:studentId/grade', setStudentGrade);
 router.get('/attendance/courses', listMyAttendanceCourses);
 router.get('/attendance', getRosterForDate);
-router.post('/attendance', markAttendance);
-router.post('/attendance/scan', markByRollNumber);
 router.get('/resources', listMyResources);
 router.post('/resources', resourceUpload.single('file'), uploadResource);
 router.delete('/resources/:id', deleteResource);

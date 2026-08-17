@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchFees, updateFeeVoucher, bulkGenerateFeeVouchers } from '../../services/feeService';
@@ -114,13 +115,29 @@ export default function FeesPage() {
   const [month, setMonth] = useState('all');
   const [bulkResult, setBulkResult] = useState(null);
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Arrived here via the "View fees" action on a Students row (see
+  // StudentsPage.jsx) — studentId/studentName narrow the table to just that
+  // student so their due date can be found and changed without scanning the
+  // whole campus list. Client-side filter, same as `batch` on the server
+  // filters the table but not the summary cards.
+  const studentId = searchParams.get('studentId');
+  const studentName = searchParams.get('studentName');
+  const clearStudentFilter = () => setSearchParams((prev) => {
+    const next = new URLSearchParams(prev);
+    next.delete('studentId');
+    next.delete('studentName');
+    return next;
+  });
 
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['fees', { status, month }],
     queryFn: () => fetchFees({ status, month: month === 'all' ? undefined : month }),
   });
 
-  const vouchers = data?.vouchers ?? [];
+  const allVouchers = data?.vouchers ?? [];
+  const vouchers = studentId ? allVouchers.filter((v) => String(v.student?._id) === studentId) : allVouchers;
   const months = data?.months ?? [];
   const summary = data?.summary ?? { totalCollected: 0, totalPending: 0, overdueCount: 0 };
 
@@ -146,6 +163,21 @@ export default function FeesPage() {
         <SummaryCard label="Total Pending" value={formatAmount(summary.totalPending)} tone="text-warning-text" />
         <SummaryCard label="Overdue Vouchers" value={summary.overdueCount} tone="text-danger-600" />
       </motion.div>
+
+      {studentId && (
+        <div className="flex items-center justify-between gap-3 bg-gold-50 border border-gold-300 rounded-lg px-3.5 py-2.5">
+          <span className="text-body-sm text-neutral-700">
+            Showing fees for <span className="font-semibold text-neutral-900">{studentName || 'selected student'}</span>
+          </span>
+          <button
+            type="button"
+            onClick={clearStudentFilter}
+            className="border-none bg-transparent text-caption font-semibold text-gold-600 cursor-pointer hover:underline"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
@@ -224,7 +256,11 @@ export default function FeesPage() {
             </button>
           </div>
         ) : vouchers.length === 0 ? (
-          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">No fee vouchers match this filter.</div>
+          <div className="py-14 px-5 text-center text-neutral-400 text-body-sm">
+            {studentId
+              ? 'No fee vouchers for this student yet — generate one from the Students page first.'
+              : 'No fee vouchers match this filter.'}
+          </div>
         ) : (
           <motion.div
             variants={staggerContainer}

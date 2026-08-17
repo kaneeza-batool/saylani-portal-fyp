@@ -75,7 +75,7 @@ function QuestionCard({ question, index, onChangeMarks, onChangeText, onChangeEx
             <button
               type="button"
               onClick={() => onRemove(question.id)}
-              className="border-none bg-transparent text-danger-600 text-[12px] font-semibold cursor-pointer hover:underline"
+              className="border-none bg-transparent text-danger-600 text-[12px] font-semibold cursor-pointer hover:underline px-1.5 py-1"
             >
               Remove
             </button>
@@ -448,7 +448,7 @@ function AssignmentDetailView({ assignmentId, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="self-start border-none bg-transparent text-caption font-semibold text-[var(--trainer-blue)] cursor-pointer hover:underline"
+        className="self-start border-none bg-transparent text-caption font-semibold text-[var(--trainer-blue)] cursor-pointer hover:underline px-1.5 py-1 -mx-1.5"
       >
         ← Back to Assignments
       </button>

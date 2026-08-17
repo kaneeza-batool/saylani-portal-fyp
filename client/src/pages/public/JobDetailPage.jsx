@@ -87,7 +87,7 @@ export default function JobDetailPage() {
           <div className="flex flex-col gap-1.5 mt-1">
             <div className="font-heading font-bold text-body text-neutral-900">Requirements</div>
             <ul className="flex flex-col gap-1.5">
-              {job.requirements.map((req, i) => (
+              {[...new Set(job.requirements)].map((req, i) => (
                 <li key={i} className="flex items-start gap-2 text-body-sm text-neutral-600">
                   <span className="w-[6px] h-[6px] rounded-full bg-gold-500 mt-2 shrink-0" />
                   {req}

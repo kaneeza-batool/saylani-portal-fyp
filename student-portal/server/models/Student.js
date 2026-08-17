@@ -74,7 +74,10 @@ const studentSchema = new mongoose.Schema(
     course: { type: String, trim: true },
     batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Slot' },
     payment: { type: String, trim: true },
-    rollNumber: { type: Number },
+    // Course-prefixed string (e.g. "GD-014") as of the main app's Student.js
+    // — was a bare Number before that format existed; this app never writes
+    // it, purely read-only mirrored for display.
+    rollNumber: { type: String },
     // Admission/approval state from the shared document (main app's
     // Student.status — see server/models/Student.js and
     // admissionController.js, which is the only place this ever changes).

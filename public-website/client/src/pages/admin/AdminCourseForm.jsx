@@ -62,7 +62,7 @@ const TextListField = ({ label, items, onChange, placeholder }) => {
             <button
               type="button"
               onClick={() => removeItem(idx)}
-              className="shrink-0 px-3 text-danger-text font-bold text-sm border border-neutral-200 rounded-lg hover:bg-danger-bg transition-colors cursor-pointer"
+              className="shrink-0 px-3 py-2.5 text-danger-text font-bold text-sm border border-neutral-200 rounded-lg hover:bg-danger-bg transition-colors cursor-pointer"
             >
               ×
             </button>
@@ -72,7 +72,7 @@ const TextListField = ({ label, items, onChange, placeholder }) => {
       <button
         type="button"
         onClick={addItem}
-        className="mt-2 text-xs font-bold text-primary-800 hover:text-primary-900 cursor-pointer bg-transparent border-none p-0"
+        className="mt-2 text-xs font-bold text-primary-800 hover:text-primary-900 cursor-pointer bg-transparent border-none px-1.5 py-1"
       >
         + Add {label.replace(/s$/, '')}
       </button>
@@ -132,7 +132,7 @@ const MonthlyOutlineField = ({ months, onChange }) => {
       <button
         type="button"
         onClick={addMonth}
-        className="mt-3 text-xs font-bold text-primary-800 hover:text-primary-900 cursor-pointer bg-transparent border-none p-0"
+        className="mt-3 text-xs font-bold text-primary-800 hover:text-primary-900 cursor-pointer bg-transparent border-none px-1.5 py-1"
       >
         + Add Month
       </button>

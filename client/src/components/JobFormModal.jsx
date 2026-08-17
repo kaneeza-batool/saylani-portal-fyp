@@ -49,10 +49,14 @@ export default function JobFormModal({ open, mode = 'add', initialValues, onClos
     const { requirementsText, applicationDeadline, minMatchScoreForShortlist, ...rest } = form;
     onSubmit({
       ...rest,
-      requirements: requirementsText
-        .split('\n')
-        .map((r) => r.trim())
-        .filter(Boolean),
+      requirements: [
+        ...new Set(
+          requirementsText
+            .split('\n')
+            .map((r) => r.trim())
+            .filter(Boolean)
+        ),
+      ],
       applicationDeadline: applicationDeadline || null,
       minMatchScoreForShortlist: minMatchScoreForShortlist === '' ? null : Number(minMatchScoreForShortlist),
     });

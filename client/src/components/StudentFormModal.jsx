@@ -139,9 +139,14 @@ function StudentProfileSummary({ student }) {
         <SummaryField label="Last Qualification" value={student.lastQualification} />
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2.5">
-        <SummaryField label="Employment" value={EMPLOYMENT_STATUS_LABEL[student.employmentStatus]} />
-        <SummaryField label="Company" value={student.companyName} />
-        <SummaryField label="Job Title" value={student.jobTitle} />
+        <SummaryField label="Roll No." value={student.rollNumber} />
+        {student.status === 'completed' && (
+          <>
+            <SummaryField label="Employment" value={EMPLOYMENT_STATUS_LABEL[student.employmentStatus]} />
+            <SummaryField label="Company" value={student.companyName} />
+            <SummaryField label="Job Title" value={student.jobTitle} />
+          </>
+        )}
         <SummaryField label="Computer Proficiency" value={COMPUTER_PROFICIENCY_LABEL[student.computerProficiency]} />
         <SummaryField label="Laptop" value={student.hasLaptop === true ? 'Yes' : student.hasLaptop === false ? 'No' : ''} />
       </div>
@@ -420,77 +425,81 @@ export default function StudentFormModal({ open, mode = 'add', initialValues, on
             <input id="student-address" type="text" value={form.address} onChange={setField('address')} className={inputClass} />
           </div>
 
-          <span className="text-overline uppercase text-neutral-400 font-semibold tracking-wide pt-1 border-t border-neutral-100">
-            Employment Info
-          </span>
+          {form.status === 'completed' && (
+            <>
+              <span className="text-overline uppercase text-neutral-400 font-semibold tracking-wide pt-1 border-t border-neutral-100">
+                Employment Info
+              </span>
 
-          <div className="flex flex-col gap-1.5">
-            <label className={labelClass} htmlFor="student-employment-status">
-              Employment status
-            </label>
-            <select
-              id="student-employment-status"
-              value={form.employmentStatus}
-              onChange={setField('employmentStatus')}
-              className={`${inputClass} bg-surface`}
-            >
-              <option value="">Not set</option>
-              {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="flex flex-col gap-1.5">
+                <label className={labelClass} htmlFor="student-employment-status">
+                  Employment status
+                </label>
+                <select
+                  id="student-employment-status"
+                  value={form.employmentStatus}
+                  onChange={setField('employmentStatus')}
+                  className={`${inputClass} bg-surface`}
+                >
+                  <option value="">Not set</option>
+                  {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="flex gap-3">
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className={labelClass} htmlFor="student-company">
-                Company name
-              </label>
-              <input
-                id="student-company"
-                type="text"
-                value={form.companyName}
-                onChange={setField('companyName')}
-                className={inputClass}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className={labelClass} htmlFor="student-job-title">
-                Job title
-              </label>
-              <input id="student-job-title" type="text" value={form.jobTitle} onChange={setField('jobTitle')} className={inputClass} />
-            </div>
-          </div>
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className={labelClass} htmlFor="student-company">
+                    Company name
+                  </label>
+                  <input
+                    id="student-company"
+                    type="text"
+                    value={form.companyName}
+                    onChange={setField('companyName')}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className={labelClass} htmlFor="student-job-title">
+                    Job title
+                  </label>
+                  <input id="student-job-title" type="text" value={form.jobTitle} onChange={setField('jobTitle')} className={inputClass} />
+                </div>
+              </div>
 
-          <div className="flex gap-3">
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className={labelClass} htmlFor="student-salary">
-                Salary
-              </label>
-              <input
-                id="student-salary"
-                type="number"
-                min="0"
-                value={form.salary}
-                onChange={setField('salary')}
-                className={inputClass}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className={labelClass} htmlFor="student-employment-start">
-                Employment start date
-              </label>
-              <input
-                id="student-employment-start"
-                type="date"
-                value={form.employmentStartDate}
-                onChange={setField('employmentStartDate')}
-                className={inputClass}
-              />
-            </div>
-          </div>
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className={labelClass} htmlFor="student-salary">
+                    Salary
+                  </label>
+                  <input
+                    id="student-salary"
+                    type="number"
+                    min="0"
+                    value={form.salary}
+                    onChange={setField('salary')}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className={labelClass} htmlFor="student-employment-start">
+                    Employment start date
+                  </label>
+                  <input
+                    id="student-employment-start"
+                    type="date"
+                    value={form.employmentStartDate}
+                    onChange={setField('employmentStartDate')}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <span className="text-overline uppercase text-neutral-400 font-semibold tracking-wide pt-1 border-t border-neutral-100">
             Other

@@ -32,7 +32,7 @@ function roleLabel(role) {
 export default function TopBar({ onMenuClick = () => {} }) {
   const title = useViewTitle();
   const { user, logout } = useAuth();
-  const { connected, liveAlerts, unreadAlertCount, clearUnread } = useSocketData();
+  const { liveAlerts, unreadAlertCount, clearUnread } = useSocketData();
   const { theme, toggleTheme } = useTheme();
   const { openPalette } = useCommandPalette();
   const navigate = useNavigate();
@@ -226,20 +226,6 @@ export default function TopBar({ onMenuClick = () => {} }) {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        <div className="hidden md:flex items-center gap-1.5" title={connected ? 'Live — connected' : 'Offline'}>
-          <span className="relative w-[7px] h-[7px]">
-            <span className={`absolute inset-0 rounded-full ${connected ? 'bg-success-text' : 'bg-neutral-300'}`} />
-            {connected && (
-              <motion.span
-                className="absolute inset-0 rounded-full bg-success-text"
-                animate={{ scale: [1, 2.6], opacity: [0.7, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-              />
-            )}
-          </span>
-          <span className="text-badge text-neutral-400 font-normal">{connected ? 'Live' : 'Offline'}</span>
         </div>
 
         <div className="w-px h-[26px] bg-neutral-200" />

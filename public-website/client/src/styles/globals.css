@@ -9,7 +9,7 @@ body {
   padding: 0;
 }
 
-/* Display/mono/body type utilities (Sora / JetBrains Mono / Inter,
+/* Display/mono/body type utilities (Manrope / JetBrains Mono / Inter,
    loaded once via <link> in index.html) */
 .te-display { font-family: var(--font-heading), sans-serif; }
 .te-mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
@@ -26,7 +26,10 @@ body {
 .titan-card-premium:hover {
   transform: translateY(-2px);
   border-color: var(--color-primary-800);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  /* Navy-tinted (rgba(19,35,69,*) = client/tailwind.config.js's navy-800),
+     matching .titan-card-enhanced below and client's shadow tint convention
+     instead of a plain black shadow. */
+  box-shadow: 0 10px 25px -5px rgba(19, 35, 69, 0.05);
 } @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-10px) rotate(2deg); }

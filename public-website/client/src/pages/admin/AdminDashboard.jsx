@@ -77,7 +77,7 @@ const AdminDashboard = () => {
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="text-success-text/60 hover:text-success-text bg-transparent border-none cursor-pointer text-lg leading-none p-0"
+              className="text-success-text/60 hover:text-success-text bg-transparent border-none cursor-pointer text-lg leading-none px-1.5 py-1"
               aria-label="Dismiss"
             >
               ×
@@ -150,7 +150,7 @@ const AdminDashboard = () => {
                       type="button"
                       onClick={() => handleDeactivate(course)}
                       disabled={!course.isActive}
-                      className="text-danger-text font-bold text-xs hover:underline disabled:text-neutral-300 disabled:no-underline disabled:cursor-not-allowed bg-transparent border-none p-0 cursor-pointer"
+                      className="text-danger-text font-bold text-xs hover:underline disabled:text-neutral-300 disabled:no-underline disabled:cursor-not-allowed bg-transparent border-none px-1.5 py-1 cursor-pointer"
                     >
                       {course.isActive ? 'Deactivate' : 'Deactivated'}
                     </button>

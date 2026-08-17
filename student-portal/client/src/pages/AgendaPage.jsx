@@ -46,7 +46,7 @@ function AgendaRow({ item }) {
         className="flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-neutral-50 transition-colors"
       >
         <span className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${tone}`}>
-          <Icon className="w-4.5 h-4.5" />
+          <Icon className="w-[18px] h-[18px]" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-neutral-900 truncate">{item.title}</p>

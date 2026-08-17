@@ -4,7 +4,7 @@ const studentAttendanceSchema = new mongoose.Schema(
   {
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
     studentName: { type: String, required: true }, // cached for display
-    rollNumber: { type: Number, required: true },
+    rollNumber: { type: String, required: true },
     course: { type: String, default: '' },
     campus: { type: String, default: '' },
     date: { type: Date, required: true, default: () => new Date(new Date().toDateString()) },

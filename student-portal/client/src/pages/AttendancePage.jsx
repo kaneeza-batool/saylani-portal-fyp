@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getAttendanceSummary, getAttendanceByMonth } from '../services/attendanceService';
 import { getProgress } from '../services/progressService';
-import { fetchMyAttendanceRequests, selfMarkAttendance } from '../services/attendanceRequestService';
+import { fetchMyAttendanceRequests } from '../services/attendanceRequestService';
 import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { staggerContainer } from '../lib/motionVariants';
 import { CertificateIcon } from '../components/icons';
@@ -87,79 +87,37 @@ function RowSkeleton() {
   );
 }
 
-// Self-service check-in for today — a plain one-tap check-in, no QR
-// scanning (trainers are the source of truth for marking a class; this is
-// only for a student to flag themselves present when the trainer hasn't
-// marked yet). Request Instead is the fallback if that's wrong. If a
-// record already exists (trainer marked the class, or you already checked
-// in), this doesn't silently overwrite it — that's what Request Attendance
-// is for.
-function SelfMarkCard({ onOpenRequest }) {
-  const queryClient = useQueryClient();
-  const [result, setResult] = useState(null); // { type: 'success' | 'already' | 'error', message }
-
-  const mutation = useMutation({
-    mutationFn: selfMarkAttendance,
-    onSuccess: () => {
-      setResult({ type: 'success' });
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
-    },
-    onError: (err) => {
-      if (err.response?.status === 409) {
-        setResult({ type: 'already', status: err.response.data?.record?.status, message: err.response.data?.message });
-      } else {
-        setResult({ type: 'error', message: err.response?.data?.message || 'Something went wrong. Please try again.' });
-      }
-    },
-  });
-
-  const canAct = !result || result.type === 'error';
-
+// Attendance is now marked entirely by Super Admin/Sub-Admin scanning a
+// student's ID card QR — there's no self-mark action here anymore. This
+// card is just the entry point into the request flow (RequestAttendanceModal,
+// unchanged) for a day that has no record at all yet, e.g. the scanner
+// wasn't available. Requesting a correction to an EXISTING record is still
+// handled separately, per-row, by CorrectionControl in the Class History
+// table below.
+function RequestAttendanceCard({ onOpenRequest }) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4 sm:p-5 flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-lg bg-primary-50 text-primary-800 flex items-center justify-center shrink-0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8 14l2 2 4-4" />
-            <rect x="3" y="4" width="18" height="17" rx="2" />
-            <path d="M3 9h18" />
-            <path d="M8 2v4M16 2v4" />
-          </svg>
-        </div>
-        <div>
-          <p className="text-sm font-bold text-neutral-900">Mark My Attendance</p>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            {result?.type === 'success'
-              ? "You're marked present for today ✓"
-              : result?.type === 'already'
-                ? result.message
-                : "Check in if your trainer hasn't marked today's class yet."}
-          </p>
-        </div>
+    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4 sm:p-5 flex items-center gap-3">
+      <div className="w-11 h-11 rounded-lg bg-primary-50 text-primary-800 flex items-center justify-center shrink-0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="17" rx="2" />
+          <path d="M3 9h18" />
+          <path d="M8 2v4M16 2v4" />
+          <path d="M12 13v4M10 15h4" />
+        </svg>
       </div>
-
-      {canAct && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate()}
-            className="rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {mutation.isPending ? 'Checking in...' : 'Check In'}
-          </button>
-        </div>
-      )}
-
-      {result?.type !== 'success' && (
-        <button
-          type="button"
-          onClick={onOpenRequest}
-          className="self-start text-xs font-semibold text-primary-800 hover:text-primary-900 hover:underline"
-        >
-          Something wrong? Request attendance instead
-        </button>
-      )}
+      <div className="flex-1">
+        <p className="text-sm font-bold text-neutral-900">Attendance missing for a day?</p>
+        <p className="text-xs text-neutral-500 mt-0.5">
+          Your campus marks attendance by scanning your ID card. If a day's record is missing, you can request it.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onOpenRequest}
+        className="shrink-0 rounded-md px-4 py-2.5 text-sm font-semibold bg-primary-800 text-white hover:bg-primary-900 transition-colors"
+      >
+        Request Attendance
+      </button>
     </div>
   );
 }
@@ -203,7 +161,7 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
-      <SelfMarkCard onOpenRequest={() => setRequestModalOpen(true)} />
+      <RequestAttendanceCard onOpenRequest={() => setRequestModalOpen(true)} />
 
       <motion.div
         variants={staggerContainer}

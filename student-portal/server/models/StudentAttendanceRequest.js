@@ -16,7 +16,7 @@ const studentAttendanceRequestSchema = new mongoose.Schema(
     attendanceRecord: { type: mongoose.Schema.Types.ObjectId, ref: 'StudentAttendance', default: null },
     student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
     studentName: { type: String, required: true },
-    rollNumber: { type: Number, required: true },
+    rollNumber: { type: String, required: true },
     course: { type: String, default: '' },
     campus: { type: String, default: '' },
     date: { type: Date, required: true },

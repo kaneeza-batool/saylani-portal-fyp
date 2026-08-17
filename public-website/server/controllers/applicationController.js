@@ -7,6 +7,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CNIC_RE = /^\d{13}$/;
 const PHONE_RE = /^[\d+\-\s]{7,15}$/;
 const GENDERS = ['male', 'female', 'other'];
+const COMPUTER_PROFICIENCIES = ['beginner', 'intermediate', 'advanced'];
 
 function generateReferenceNumber() {
   const year = new Date().getFullYear();
@@ -19,7 +20,7 @@ exports.submitApplication = async (req, res) => {
     const {
       fullName, fatherName, cnic, phone, email, address,
       dateOfBirth, gender, lastQualification, selectedProgram,
-      preferredBatch, hasLaptop, course, campusId,
+      preferredBatch, hasLaptop, computerProficiency, course, campusId,
     } = req.body;
 
     // Stored as 13 bare digits — same normalization as Student.js's own
@@ -36,6 +37,7 @@ exports.submitApplication = async (req, res) => {
     if (!dateOfBirth) return res.status(400).json({ message: 'Date of birth is required' });
     if (!GENDERS.includes(gender)) return res.status(400).json({ message: 'Gender is required' });
     if (!lastQualification?.trim()) return res.status(400).json({ message: 'Last qualification is required' });
+    if (!COMPUTER_PROFICIENCIES.includes(computerProficiency)) return res.status(400).json({ message: 'Please select your computer proficiency' });
     if (!selectedProgram?.trim()) return res.status(400).json({ message: 'Please select a program' });
     if (!Student.COURSES.includes(course)) return res.status(400).json({ message: 'Please select a valid course' });
     if (!campusId) return res.status(400).json({ message: 'Please select a campus' });
@@ -58,25 +60,46 @@ exports.submitApplication = async (req, res) => {
     // The Student record is what the Admissions Queue actually reads —
     // status: 'pending' lands it there directly. No password/onboarding
     // yet; the applicant sets one later via Create Password.
-    const student = await Student.create({
-      name: fullName.trim(),
-      father: fatherName.trim(),
-      cnic: normalizedCnic,
-      phone: phone.trim(),
-      email: email.trim().toLowerCase(),
-      address: address.trim(),
-      dateOfBirth,
-      gender,
-      lastQualification: lastQualification.trim(),
-      course,
-      campus: campusId,
-      status: 'pending',
-      hasCompletedOnboarding: false,
-      hasLaptop: !!hasLaptop,
-      applicationPhotoUrl: photoUrl,
-      applicationCnicFrontUrl: cnicFrontUrl,
-      applicationCnicBackUrl: cnicBackUrl,
-    });
+    //
+    // rollNumber is auto-assigned by Student.js's pre-validate hook from the
+    // current max for this course's prefix (e.g. "GD-014") — two applicants
+    // for the same course submitting at nearly the same moment can compute
+    // the same "next" value, caught by the unique index. Retry a few times
+    // rather than fail the whole application; each attempt recomputes fresh
+    // since rollNumber is unset again on a new document.
+    let student;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        student = await Student.create({
+          name: fullName.trim(),
+          father: fatherName.trim(),
+          cnic: normalizedCnic,
+          phone: phone.trim(),
+          email: email.trim().toLowerCase(),
+          address: address.trim(),
+          dateOfBirth,
+          gender,
+          lastQualification: lastQualification.trim(),
+          course,
+          campus: campusId,
+          status: 'pending',
+          hasCompletedOnboarding: false,
+          // req.body comes from multipart/form-data (see EnrollNow.jsx's
+          // FormData.append), so every field including this one arrives as
+          // a string — `!!hasLaptop` was always true because the string
+          // "false" is truthy. Compare against the literal string instead.
+          hasLaptop: hasLaptop === 'true',
+          computerProficiency,
+          applicationPhotoUrl: photoUrl,
+          applicationCnicFrontUrl: cnicFrontUrl,
+          applicationCnicBackUrl: cnicBackUrl,
+        });
+        break;
+      } catch (err) {
+        if (err.code === 11000 && err.keyPattern?.rollNumber && attempt < 4) continue;
+        throw err;
+      }
+    }
 
     // referenceNumber is random + unique-indexed; retry on the (rare)
     // collision rather than failing the whole application. Kept alongside
@@ -98,7 +121,8 @@ exports.submitApplication = async (req, res) => {
             lastQualification: lastQualification.trim(),
             selectedProgram: selectedProgram.trim(),
             preferredBatch: preferredBatch?.trim() || '',
-            hasLaptop: !!hasLaptop,
+            hasLaptop: hasLaptop === 'true',
+            computerProficiency,
             photoUrl,
             cnicFrontUrl,
             cnicBackUrl,
@@ -126,6 +150,11 @@ exports.submitApplication = async (req, res) => {
 
     return res.status(201).json({ application: responseApplication, student });
   } catch (err) {
+    if (err.code === 11000) {
+      if (err.keyPattern?.cnic) return res.status(409).json({ message: 'An application with this CNIC already exists.' });
+      if (err.keyPattern?.rollNumber) return res.status(409).json({ message: 'Could not generate a unique roll number, please try again.' });
+      return res.status(409).json({ message: 'A record with this value already exists.' });
+    }
     if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
     return res.status(500).json({ message: 'Failed to submit application', error: err.message });
   }

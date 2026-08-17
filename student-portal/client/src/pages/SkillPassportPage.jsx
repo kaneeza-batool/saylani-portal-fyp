@@ -16,7 +16,7 @@ function CourseRow({ course }) {
           course.completed ? 'bg-success-bg text-success-text' : 'bg-neutral-100 text-neutral-400'
         }`}
       >
-        {course.completed ? <CheckBadgeIcon className="w-4.5 h-4.5" /> : <ClockIcon className="w-4.5 h-4.5" />}
+        {course.completed ? <CheckBadgeIcon className="w-[18px] h-[18px]" /> : <ClockIcon className="w-[18px] h-[18px]" />}
       </span>
 
       <div className="min-w-0 flex-1">

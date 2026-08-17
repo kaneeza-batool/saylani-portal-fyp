@@ -20,9 +20,40 @@ const GRADE_OPTIONS = ['A+', 'A', 'B', 'C', 'D'];
 const EMPLOYMENT_STATUSES = ['employed', 'unemployed'];
 const COMPUTER_PROFICIENCY_LEVELS = ['beginner', 'intermediate', 'advanced'];
 
+// Course-prefixed roll number (e.g. "GD-014" for Graphic Designing) — the
+// prefix is purely cosmetic/derived from `course`, not a foreign key, so
+// renaming a course here doesn't retag any already-issued roll number.
+const COURSE_ROLL_PREFIXES = {
+  'Web Development': 'WD',
+  'AI & Data Science': 'AI',
+  'Graphic Designing': 'GD',
+  'Mobile App Development (Flutter)': 'MA',
+  'Digital Marketing': 'DM',
+  'UI/UX Design': 'UX',
+  'Cybersecurity Fundamentals': 'CS',
+};
+
+// Sequence is computed from the current max suffix among roll numbers
+// already carrying this prefix, not a stored counter — simple enough at
+// this scale, and self-healing if a document is ever deleted (no gap
+// tracking to keep in sync). Collisions from two concurrent creates
+// computing the same "next" value are caught by the unique index below;
+// callers (studentController.createStudent, applicationController.
+// submitApplication) retry on that specific 11000 rather than failing the
+// whole request.
+async function nextRollNumberFor(Model, course) {
+  const prefix = COURSE_ROLL_PREFIXES[course] || 'ST';
+  const existing = await Model.find({ rollNumber: { $regex: `^${prefix}-\\d+$` } }, 'rollNumber').lean();
+  const max = existing.reduce((m, doc) => {
+    const n = parseInt(String(doc.rollNumber).slice(prefix.length + 1), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+}
+
 const studentSchema = new mongoose.Schema(
   {
-    rollNumber: { type: Number, unique: true, index: true },
+    rollNumber: { type: String, unique: true, index: true },
     name: { type: String, required: true, trim: true },
     father: { type: String, required: true, trim: true },
     // Stored as 13 bare digits (no dashes) — normalized on write by the
@@ -111,12 +142,14 @@ const studentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Auto-assign a 6-digit roll number on creation (matches the format shown
-// in the design reference, e.g. 844226) — collisions are vanishingly
-// unlikely at this scale, and the unique index catches the rare case.
-studentSchema.pre('validate', function assignRollNumber() {
-  if (this.isNew && !this.rollNumber) {
-    this.rollNumber = 100000 + Math.floor(Math.random() * 900000);
+// Auto-assign a course-prefixed roll number on creation (e.g. "GD-014" for
+// Graphic Designing) — set once at registration and never touched again by
+// this hook (findOneAndUpdate-based edits don't run it anyway, see
+// studentController.updateStudent, which regenerates it explicitly only
+// when `course` actually changes).
+studentSchema.pre('validate', async function assignRollNumber() {
+  if (this.isNew && !this.rollNumber && this.course) {
+    this.rollNumber = await nextRollNumberFor(this.constructor, this.course);
   }
 });
 
@@ -169,6 +202,8 @@ Student.PAYMENT_STATUSES = PAYMENT_STATUSES;
 Student.GRADE_OPTIONS = GRADE_OPTIONS;
 Student.EMPLOYMENT_STATUSES = EMPLOYMENT_STATUSES;
 Student.COMPUTER_PROFICIENCY_LEVELS = COMPUTER_PROFICIENCY_LEVELS;
+Student.COURSE_ROLL_PREFIXES = COURSE_ROLL_PREFIXES;
+Student.generateRollNumber = (course) => nextRollNumberFor(Student, course);
 Student.formatCnic = formatCnic;
 
 module.exports = Student;

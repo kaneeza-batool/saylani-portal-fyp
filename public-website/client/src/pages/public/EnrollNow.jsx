@@ -15,6 +15,11 @@ const CNIC_SCAN_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/p
 
 const QUALIFICATIONS = ['Matric', 'Intermediate', "Bachelor's", "Master's", 'Other'];
 const BATCH_OPTIONS = ['Morning', 'Evening', 'Weekend', 'Online-Only'];
+const COMPUTER_PROFICIENCY_OPTIONS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 
 function initialForm() {
   return {
@@ -28,6 +33,7 @@ function initialForm() {
     address: '',
     lastQualification: '',
     hasLaptop: '',
+    computerProficiency: '',
     course: '',
     campusId: '',
     preferredBatch: '',
@@ -52,6 +58,7 @@ function validateStep(step, form) {
   } else if (step === 1) {
     if (!form.lastQualification) errors.lastQualification = 'Please select your last qualification.';
     if (form.hasLaptop === '') errors.hasLaptop = 'Please let us know if you have a laptop.';
+    if (!form.computerProficiency) errors.computerProficiency = 'Please select your computer proficiency.';
   } else if (step === 2) {
     if (!form.course) errors.course = 'Please select a course.';
     if (!form.campusId) errors.campusId = 'Please select a campus.';
@@ -103,6 +110,7 @@ const EnrollNow = () => {
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [serverError, setServerError] = useState('');
   const [application, setApplication] = useState(null);
+  const [enrolledStudent, setEnrolledStudent] = useState(null);
 
   const [campuses, setCampuses] = useState([]);
   const [courseOptions, setCourseOptions] = useState([]);
@@ -182,12 +190,14 @@ const EnrollNow = () => {
       payload.append('campusId', form.campusId);
       payload.append('preferredBatch', form.preferredBatch);
       payload.append('hasLaptop', form.hasLaptop === 'yes');
+      payload.append('computerProficiency', form.computerProficiency);
       if (form.photo) payload.append('photo', form.photo);
       if (form.cnicFront) payload.append('cnicFront', form.cnicFront);
       if (form.cnicBack) payload.append('cnicBack', form.cnicBack);
 
       const res = await axios.post(`${API_URL}/api/applications`, payload);
       setApplication(res.data.application);
+      setEnrolledStudent(res.data.student);
       setStatus('success');
     } catch (err) {
       setStatus('error');
@@ -204,11 +214,11 @@ const EnrollNow = () => {
           Thanks, {application.fullName.split(' ')[0]}. We've received your application for{' '}
           <span className="font-semibold text-neutral-900">{application.selectedProgram}</span>. A confirmation email has been sent to {application.email}.
         </p>
-        {application.referenceNumber && (
+        {enrolledStudent?.rollNumber && (
           <div className="mt-6 p-4 bg-neutral-50 border border-neutral-200" style={{ borderRadius: 'var(--radius-standard)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Your Reference Number</p>
-            <p className="mt-1 text-xl font-black te-mono text-primary-800">{application.referenceNumber}</p>
-            <p className="mt-2 text-xs text-neutral-500">Keep this number to check your application status later.</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Your Roll Number</p>
+            <p className="mt-1 text-xl font-black te-mono text-primary-800">{enrolledStudent.rollNumber}</p>
+            <p className="mt-2 text-xs text-neutral-500">Keep this roll number for your records — it stays with you through admission.</p>
           </div>
         )}
         <p className="mt-6 text-sm text-neutral-600">We'll review your application and get back to you within 48 hours.</p>
@@ -312,6 +322,16 @@ const EnrollNow = () => {
                 ))}
               </div>
               {errors.hasLaptop && <p className={errorClass}>{errors.hasLaptop}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Computer Proficiency</label>
+              <select value={form.computerProficiency} onChange={updateField('computerProficiency')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
+                <option value="">Select...</option>
+                {COMPUTER_PROFICIENCY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+              {errors.computerProficiency && <p className={errorClass}>{errors.computerProficiency}</p>}
             </div>
           </div>
         )}
@@ -448,6 +468,10 @@ const EnrollNow = () => {
               <div className="flex justify-between border-b border-neutral-100 pb-2">
                 <span className="text-neutral-500">Has Laptop</span>
                 <span className="font-semibold text-neutral-900">{form.hasLaptop === 'yes' ? 'Yes' : 'No'}</span>
+              </div>
+              <div className="flex justify-between border-b border-neutral-100 pb-2">
+                <span className="text-neutral-500">Computer Proficiency</span>
+                <span className="font-semibold text-neutral-900 capitalize">{form.computerProficiency}</span>
               </div>
               <div className="flex justify-between border-b border-neutral-100 pb-2">
                 <span className="text-neutral-500">Course</span>
