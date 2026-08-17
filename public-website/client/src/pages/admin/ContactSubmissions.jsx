@@ -78,7 +78,7 @@ const ContactSubmissions = () => {
                     <p className="text-sm text-neutral-700 whitespace-pre-wrap">{s.message}</p>
                     <div className="mt-4 flex items-center gap-4">
                       <a href={`mailto:${s.email}`} className="text-primary-800 font-bold text-xs hover:underline no-underline">Reply by Email</a>
-                      <button type="button" onClick={() => handleDelete(s)} className="text-danger-text font-bold text-xs hover:underline bg-transparent border-none p-0 cursor-pointer">Delete</button>
+                      <button type="button" onClick={() => handleDelete(s)} className="text-danger-text font-bold text-xs hover:underline bg-transparent border-none px-1.5 py-1 cursor-pointer">Delete</button>
                     </div>
                   </div>
                 )}

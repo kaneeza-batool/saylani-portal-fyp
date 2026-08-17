@@ -70,7 +70,7 @@ const AdminLayout = () => {
           <button
             type="button"
             onClick={logout}
-            className="mt-3 text-xs font-bold text-white/60 hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0"
+            className="mt-3 text-xs font-bold text-white/60 hover:text-white transition-colors cursor-pointer bg-transparent border-none px-1.5 py-1 -ml-1.5"
           >
             Log Out →
           </button>

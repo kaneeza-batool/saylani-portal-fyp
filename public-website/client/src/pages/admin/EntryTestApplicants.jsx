@@ -90,7 +90,7 @@ const EntryTestApplicants = () => {
                   <td className="px-4 py-3 text-neutral-600 whitespace-nowrap capitalize">{a.testResult}{a.score != null ? ` (${a.score})` : ''}</td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <Link to={`/admin/entry-test/${a._id}/edit`} className="text-primary-800 font-bold text-xs hover:underline mr-4">Edit</Link>
-                    <button type="button" onClick={() => handleDelete(a)} className="text-danger-text font-bold text-xs hover:underline bg-transparent border-none p-0 cursor-pointer">Delete</button>
+                    <button type="button" onClick={() => handleDelete(a)} className="text-danger-text font-bold text-xs hover:underline bg-transparent border-none px-1.5 py-1 cursor-pointer">Delete</button>
                   </td>
                 </tr>
               ))}
