@@ -55,7 +55,7 @@ const OurStory = () => {
           </p>
         </div>
         <Card className="p-8 bg-neutral-50/60 border border-neutral-200 rounded-2xl">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <div className="te-display text-3xl font-extrabold text-primary-800"><AnimatedCounter target="2025" /></div>
               <div className="te-mono text-xs font-bold tracking-wider text-neutral-500 uppercase mt-1">Established</div>

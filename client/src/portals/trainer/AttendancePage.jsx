@@ -114,7 +114,7 @@ export default function AttendancePage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {STATUS_ORDER.map((key) => (
           <div key={key} className={`${SUMMARY_BG[key]} border border-neutral-200 rounded-xl px-[18px] py-4 text-center`}>
             <div className={`font-heading font-extrabold text-[24px] ${SUMMARY_TEXT_COLOR[key]}`}>{counts[key] ?? 0}</div>

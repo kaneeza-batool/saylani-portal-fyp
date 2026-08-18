@@ -89,7 +89,7 @@ export default function SkillPassportPage() {
               <p className="text-accent-400 text-sm font-semibold uppercase tracking-wide">{data.studentName}</p>
               <h2 className="font-heading text-2xl font-bold mt-1">Student Passport</h2>
             </div>
-            <div className="flex gap-8">
+            <div className="flex flex-wrap gap-x-6 gap-y-3 sm:gap-8">
               <div>
                 <p className="font-heading text-3xl font-bold">{data.completedCount}</p>
                 <p className="text-xs text-white/50 mt-0.5">Courses Completed</p>

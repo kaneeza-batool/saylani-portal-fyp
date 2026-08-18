@@ -26,7 +26,7 @@ export default function AssignmentInfoModal({ assignmentId, onClose }) {
         </div>
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Due Date</p>
               <p className="text-sm font-semibold text-neutral-900 mt-1">{formatDate(assignment.dueDate)}</p>

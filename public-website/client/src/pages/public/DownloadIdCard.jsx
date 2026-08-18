@@ -160,7 +160,7 @@ const DownloadIdCard = () => {
               <div className="flex justify-center">
                 <div
                   ref={cardRef}
-                  className="relative w-[360px] h-[220px] rounded-2xl overflow-hidden shadow-xl p-5 flex flex-col justify-between"
+                  className="relative w-[360px] max-w-full h-[220px] rounded-2xl overflow-hidden shadow-xl p-5 flex flex-col justify-between"
                   style={{ background: 'linear-gradient(135deg, #132345 0%, #1D3557 55%, #202938 100%)', color: '#FFFFFF' }}
                 >
                   {/* Decorative gold corner accent — inline colors throughout this card:

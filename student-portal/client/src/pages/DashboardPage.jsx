@@ -118,7 +118,7 @@ function ActiveCourseCard({ course, classDays, isLoading }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3 text-sm">
         <div>
           <p className="text-xs text-neutral-400">Batch</p>
           <p className="font-medium text-neutral-800 truncate">{course.batch}</p>
@@ -371,7 +371,7 @@ export default function DashboardPage() {
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 gap-3 sm:gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
       >
         {dashboardLoading ? (
           <>

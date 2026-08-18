@@ -185,7 +185,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[0, 1].map((i) => (
           <CardSkeleton key={i} />
         ))}
@@ -242,7 +242,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
+      <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {recentBatches.map((batch) => (
           <BatchCard key={batch.id} batch={batch} />
         ))}

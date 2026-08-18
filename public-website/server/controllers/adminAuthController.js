@@ -4,10 +4,17 @@ const AdminUser = require('../models/AdminUser');
 const { logAdminAuthAttempt } = require('../utils/adminAuditLog');
 
 const COOKIE_NAME = 'admin_token';
+// In production the frontend and backend are deployed on different domains,
+// so this cookie is cross-site — that requires sameSite: 'none', which
+// browsers only honor when secure: true is also set. Locally both run on
+// localhost (same-site), where sameSite: 'none' would actually be rejected
+// without HTTPS, so this stays 'lax'/non-secure there (same pattern as
+// student-portal/server/controllers/authController.js).
+const isProduction = process.env.NODE_ENV === 'production';
 const baseCookieOptions = {
   httpOnly: true,
-  sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  sameSite: isProduction ? 'none' : 'lax',
+  secure: isProduction,
 };
 
 exports.login = async (req, res) => {

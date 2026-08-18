@@ -266,7 +266,7 @@ export default function DashboardPage() {
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           label="Students"
           value={(students.data?.total ?? 0).toLocaleString()}
@@ -310,7 +310,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <PendingAdmissions
           admissions={admissions.data?.students}
           isLoading={admissions.isLoading}

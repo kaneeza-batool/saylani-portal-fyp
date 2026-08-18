@@ -131,7 +131,7 @@ export default function TrainerRegisterPage() {
             <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@titan.edu" className={inputClass} />
           </motion.div>
 
-          <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-3">
+          <motion.div variants={fieldVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="phone" className={labelClass}>Phone</label>
               <input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0300-1234567" className={inputClass} />
@@ -160,7 +160,7 @@ export default function TrainerRegisterPage() {
             </select>
           </motion.div>
 
-          <motion.div variants={fieldVariants} className="grid grid-cols-2 gap-3">
+          <motion.div variants={fieldVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="password" className={labelClass}>Password</label>
               <DarkPasswordField
