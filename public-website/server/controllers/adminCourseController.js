@@ -1,4 +1,5 @@
 const Course = require('../models/Course');
+const { destroyCloudinaryUrl } = require('../utils/cloudinaryCleanup');
 
 const slugify = (str) =>
   str
@@ -83,9 +84,13 @@ exports.uploadCourseImage = async (req, res) => {
       return res.status(400).json({ message: 'No image file uploaded.' });
     }
     const imageUrl = req.file.path;
+    const previous = await Course.findById(req.params.id).select('imageUrl').lean();
     const course = await Course.findByIdAndUpdate(req.params.id, { imageUrl, img: imageUrl }, { new: true });
     if (!course) {
       return res.status(404).json({ message: 'Course not found.' });
+    }
+    if (previous?.imageUrl && previous.imageUrl !== imageUrl) {
+      await destroyCloudinaryUrl(previous.imageUrl);
     }
     return res.status(200).json({ course });
   } catch (err) {
