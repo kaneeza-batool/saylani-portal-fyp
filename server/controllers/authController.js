@@ -260,7 +260,11 @@ exports.logout = async (_req, res) => {
 };
 
 exports.getMe = async (req, res) => {
-  return res.status(200).json({ user: await toSafeUser(req.user) });
+  try {
+    return res.status(200).json({ user: await toSafeUser(req.user) });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to load profile', error: err.message });
+  }
 };
 
 // Powers the Settings page — a user updating their own name/email/password.
