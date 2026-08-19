@@ -46,9 +46,9 @@ exports.submitApplication = async (req, res) => {
     // Documents step), so most applications will have none set. CNIC front
     // and back are separate fields/files, not one "scan" — a CNIC has two
     // sides and an applicant needs to be able to attach both.
-    const photoUrl = req.files?.photo?.[0] ? `/uploads/applications/${req.files.photo[0].filename}` : '';
-    const cnicFrontUrl = req.files?.cnicFront?.[0] ? `/uploads/applications/${req.files.cnicFront[0].filename}` : '';
-    const cnicBackUrl = req.files?.cnicBack?.[0] ? `/uploads/applications/${req.files.cnicBack[0].filename}` : '';
+    const photoUrl = req.files?.photo?.[0]?.path || '';
+    const cnicFrontUrl = req.files?.cnicFront?.[0]?.path || '';
+    const cnicBackUrl = req.files?.cnicBack?.[0]?.path || '';
 
     // Friendly duplicate check before create — Student.cnic is
     // unique-indexed, but that alone would surface as a raw 500/E11000.
