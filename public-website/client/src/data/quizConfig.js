@@ -127,6 +127,11 @@ export const scoreCourse = (track, answers) => {
 };
 
 export const getRecommendations = (courses, answers, limit = 2) => {
+  // Empty input (courses still loading/failed to load, or zero active
+  // courses) must not produce [undefined] — scored[0] would be undefined
+  // and every caller assumes results[0].track is a real course.
+  if (!Array.isArray(courses) || courses.length === 0) return [];
+
   const scored = courses
     .map((track) => scoreCourse(track, answers))
     .sort((a, b) => b.total - a.total);
