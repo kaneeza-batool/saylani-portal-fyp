@@ -74,7 +74,7 @@ async function seed() {
     process.exit(1);
   }
 
-  console.log(`Seeding attendance for ${student.fullName}...`);
+  console.log(`Seeding attendance for ${student.name}...`);
 
   // Web Development — Mon/Wed/Fri, longer-running (enrolled 7 months ago).
   await seedCourseAttendance(student, webDev, {

@@ -26,7 +26,7 @@ async function run() {
   student.hasCompletedOnboarding = false;
   await student.save();
 
-  console.log(`Cleared avatarUrl + hasCompletedOnboarding for ${student.fullName} — next login will hit /onboarding.`);
+  console.log(`Cleared avatarUrl + hasCompletedOnboarding for ${student.name} — next login will hit /onboarding.`);
 
   await mongoose.disconnect();
 }

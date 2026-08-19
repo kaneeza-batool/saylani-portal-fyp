@@ -271,7 +271,7 @@ async function seed() {
     process.exit(1);
   }
 
-  console.log(`Seeding progress for ${student.fullName}...`);
+  console.log(`Seeding progress for ${student.name}...`);
   await seedCourseModules(student, webDev, WEB_DEV_MODULES);
   await seedCourseModules(student, aiDs, AI_DS_MODULES);
 

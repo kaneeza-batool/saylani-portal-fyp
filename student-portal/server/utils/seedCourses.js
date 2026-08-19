@@ -92,7 +92,7 @@ async function seed() {
       progressPercent: item.enrollment.progressPercent,
       enrolledAt: item.enrollment.enrolledAt,
     });
-    console.log(`  Enrolled ${student.fullName} in ${course.name} (roll ${item.enrollment.rollNumber}).`);
+    console.log(`  Enrolled ${student.name} in ${course.name} (roll ${item.enrollment.rollNumber}).`);
   }
 
   await mongoose.disconnect();
