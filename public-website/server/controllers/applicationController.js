@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const Application = require('../models/Application');
 const Student = require('../models/Student');
 const { sendApplicationConfirmation } = require('../utils/mailer');
+const cloudinary = require('../utils/cloudinary');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CNIC_RE = /^\d{13}$/;
@@ -16,6 +17,14 @@ function generateReferenceNumber() {
 }
 
 exports.submitApplication = async (req, res) => {
+  // multer has already uploaded these to Cloudinary by the time this
+  // handler runs, before any of the validation/duplicate-CNIC checks
+  // below. Tracked here so a failed submission (this is a public,
+  // unauthenticated endpoint — validation failures and duplicate/garbage
+  // resubmissions are expected traffic, not edge cases) doesn't leave the
+  // files permanently orphaned in Cloudinary storage.
+  const uploadedFiles = [req.files?.photo?.[0], req.files?.cnicFront?.[0], req.files?.cnicBack?.[0]].filter(Boolean);
+  let succeeded = false;
   try {
     const {
       fullName, fatherName, cnic, phone, email, address,
@@ -46,9 +55,9 @@ exports.submitApplication = async (req, res) => {
     // Documents step), so most applications will have none set. CNIC front
     // and back are separate fields/files, not one "scan" — a CNIC has two
     // sides and an applicant needs to be able to attach both.
-    const photoUrl = req.files?.photo?.[0] ? `/uploads/applications/${req.files.photo[0].filename}` : '';
-    const cnicFrontUrl = req.files?.cnicFront?.[0] ? `/uploads/applications/${req.files.cnicFront[0].filename}` : '';
-    const cnicBackUrl = req.files?.cnicBack?.[0] ? `/uploads/applications/${req.files.cnicBack[0].filename}` : '';
+    const photoUrl = req.files?.photo?.[0]?.path || '';
+    const cnicFrontUrl = req.files?.cnicFront?.[0]?.path || '';
+    const cnicBackUrl = req.files?.cnicBack?.[0]?.path || '';
 
     // Friendly duplicate check before create — Student.cnic is
     // unique-indexed, but that alone would surface as a raw 500/E11000.
@@ -157,6 +166,7 @@ exports.submitApplication = async (req, res) => {
       }
     }
 
+    succeeded = true;
     return res.status(201).json({ application: responseApplication, student });
   } catch (err) {
     if (err.code === 11000) {
@@ -166,5 +176,15 @@ exports.submitApplication = async (req, res) => {
     }
     if (err.name === 'ValidationError') return res.status(400).json({ message: err.message });
     return res.status(500).json({ message: 'Failed to submit application', error: err.message });
+  } finally {
+    if (!succeeded) {
+      await Promise.allSettled(
+        uploadedFiles.map((file) =>
+          cloudinary.uploader.destroy(file.filename, {
+            resource_type: file.cloudinaryResult?.resource_type || 'image',
+          })
+        )
+      );
+    }
   }
 };
