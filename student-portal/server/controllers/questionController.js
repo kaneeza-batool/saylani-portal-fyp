@@ -160,15 +160,25 @@ exports.upvoteQuestion = async (req, res) => {
   }
 };
 
+// Scoped through the parent question's course — Answer itself has no course
+// field (see Answer.js), so without this join any logged-in student could
+// upvote an answer belonging to another course's question by guessing its
+// ID, the same class of cross-course leak upvoteQuestion/createAnswer above
+// already guard against directly.
 exports.upvoteAnswer = async (req, res) => {
   try {
-    const answer = await Answer.findByIdAndUpdate(
+    const answer = await Answer.findById(req.params.answerId).populate('question', 'course');
+    if (!answer || !answer.question || answer.question.course !== req.student.course) {
+      return res.status(404).json({ message: 'Answer not found' });
+    }
+
+    const updated = await Answer.findByIdAndUpdate(
       req.params.answerId,
       { $inc: { upvoteCount: 1 } },
       { new: true }
     );
-    if (!answer) return res.status(404).json({ message: 'Answer not found' });
-    return res.status(200).json({ upvoteCount: answer.upvoteCount });
+
+    return res.status(200).json({ upvoteCount: updated.upvoteCount });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to upvote answer', error: err.message });
   }

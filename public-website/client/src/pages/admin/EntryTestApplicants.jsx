@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 
 const STATUS_STYLE = {
   not_scheduled: 'text-neutral-400 bg-neutral-100 border-neutral-200',

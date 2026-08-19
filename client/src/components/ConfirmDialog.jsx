@@ -32,7 +32,7 @@ export default function ConfirmDialog({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             role="alertdialog"
             aria-modal="true"
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-[380px] bg-surface rounded-xl shadow-[0_24px_60px_rgba(13,25,53,0.35)] p-6 flex flex-col gap-4"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[calc(100%-2rem)] max-w-[380px] bg-surface rounded-xl shadow-[0_24px_60px_rgba(13,25,53,0.35)] p-6 flex flex-col gap-4"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-danger-50 text-danger-600 flex items-center justify-center shrink-0">

@@ -144,7 +144,7 @@ export default function QuizResultPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div className="bg-success-bg rounded-lg p-3 text-center">
               <p className="text-xl font-bold text-success-text">{attempt.correctCount}</p>
               <p className="text-xs text-neutral-600 mt-0.5">Correct</p>

@@ -67,7 +67,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <span className="text-overline uppercase text-neutral-500">Role</span>
             <span className="text-badge px-2.5 py-1 rounded-pill w-fit bg-info-bg text-info-text">{roleLabel(user?.role)}</span>

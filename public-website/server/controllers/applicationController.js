@@ -144,8 +144,17 @@ exports.submitApplication = async (req, res) => {
       referenceNumber: null,
     };
 
+    // Best-effort only: the Student and Application records are already
+    // saved at this point, so a mail-server hiccup here must not turn into
+    // a 500 that tells the applicant their submission failed when it
+    // actually succeeded (see the outer catch below, which would otherwise
+    // report "Failed to submit application" on a successful submission).
     if (application) {
-      await sendApplicationConfirmation(application.email, application.fullName, application.referenceNumber, application.selectedProgram);
+      try {
+        await sendApplicationConfirmation(application.email, application.fullName, application.referenceNumber, application.selectedProgram);
+      } catch (err) {
+        console.error('Application confirmation email failed to send — application was still saved:', err.message);
+      }
     }
 
     return res.status(201).json({ application: responseApplication, student });

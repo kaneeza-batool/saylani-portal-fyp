@@ -56,7 +56,7 @@ app.use('/api/admin/contact-submissions', adminContactRoutes);
 app.use('/api', enrollmentMetaRoutes);
 app.use('/api/chat', chatRoutes);
 
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5200;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 

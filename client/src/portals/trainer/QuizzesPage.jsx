@@ -91,7 +91,7 @@ function QuestionCard({ question, index, onChangeMarks, onChangeText, onChangeEx
         className={inputClass}
       />
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {question.options.map((opt) => (
           <label
             key={opt.id}
@@ -201,7 +201,7 @@ function QuizBuilderTab({ courses }) {
             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. HTML & CSS Basics" className={inputClass} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}>Module</label>
               <input type="text" value={module} onChange={(e) => setModule(e.target.value)} placeholder="e.g. Module 1: Basics" className={inputClass} />
@@ -212,7 +212,7 @@ function QuizBuilderTab({ courses }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className={labelClass}>Duration (min)</label>
               <input type="number" min="0" value={duration} onChange={(e) => setDuration(e.target.value)} className={inputClass} />
