@@ -172,10 +172,13 @@ exports.upvoteAnswer = async (req, res) => {
       return res.status(404).json({ message: 'Answer not found' });
     }
 
-    answer.upvoteCount += 1;
-    await answer.save();
+    const updated = await Answer.findByIdAndUpdate(
+      req.params.answerId,
+      { $inc: { upvoteCount: 1 } },
+      { new: true }
+    );
 
-    return res.status(200).json({ upvoteCount: answer.upvoteCount });
+    return res.status(200).json({ upvoteCount: updated.upvoteCount });
   } catch (err) {
     return res.status(500).json({ message: 'Failed to upvote answer', error: err.message });
   }
