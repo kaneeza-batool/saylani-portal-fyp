@@ -39,6 +39,9 @@ const app = express();
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+// New course-image/application uploads go to Cloudinary now (see
+// middleware/upload.js) — this only still serves whatever pre-existing
+// files happen to be sitting in ./uploads from before that migration.
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/contact', contactRoutes);

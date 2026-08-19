@@ -1,18 +1,20 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const cloudinaryStorage = require('../utils/cloudinaryStorage');
 
-const uploadDir = path.join(__dirname, '../uploads/courses');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Course images and application documents used to live on local disk
+// (multer.diskStorage) — that's an ephemeral filesystem on Railway/most
+// PaaS hosts, wiped on every redeploy. Switched to Cloudinary so uploads
+// actually survive a deploy. req.file(s).path is now the Cloudinary
+// secure_url directly (see adminCourseController.js / applicationController.js
+// — they used to build `/uploads/...` from req.file.filename, now they just
+// store req.file.path as-is).
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `course-${req.params.id}-${Date.now()}${ext}`);
-  },
+const storage = cloudinaryStorage({
+  params: (req, file) => ({
+    folder: 'titan-portal/courses',
+    public_id: `course-${req.params.id}-${Date.now()}`,
+    resource_type: 'image',
+  }),
 });
 
 const upload = multer({
@@ -29,23 +31,18 @@ const upload = multer({
 // Optional documents on the admission application form: a photo and both
 // sides of the CNIC (front and back are separate fields — a CNIC has two
 // sides and an applicant needs to be able to attach both, not just one).
-// Same disk-storage/size-cap pattern as the course-image upload above, its
-// own subfolder and mimetypes (a CNIC scan can reasonably be a PDF scan,
-// not just a photo of the card).
-const applicationsDir = path.join(__dirname, '../uploads/applications');
-if (!fs.existsSync(applicationsDir)) {
-  fs.mkdirSync(applicationsDir, { recursive: true });
-}
-
+// Same Cloudinary pattern as the course-image upload above, its own folder
+// and mimetypes (a CNIC scan can reasonably be a PDF scan, not just a photo
+// of the card — resource_type 'auto' lets Cloudinary store either kind).
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const CNIC_SCAN_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
-const applicationStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, applicationsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
+const applicationStorage = cloudinaryStorage({
+  params: (req, file) => ({
+    folder: 'titan-portal/applications',
+    public_id: `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e9)}`,
+    resource_type: 'auto',
+  }),
 });
 
 const applicationUpload = multer({
