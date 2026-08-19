@@ -1,33 +1,38 @@
-const Enrollment = require('../models/Enrollment');
 const Assignment = require('../models/Assignment');
 const AssignmentSubmission = require('../models/AssignmentSubmission');
 const Quiz = require('../models/Quiz');
 const QuizAttempt = require('../models/QuizAttempt');
-require('../models/Course'); // registers 'Course' so .populate('course') resolves it
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-// Unified 7-day agenda across every enrolled course — assignments due,
-// quizzes still available, and scheduled class days, merged into one
-// chronological list. Quizzes have no due date in this schema (unlike
-// assignments), so an un-attempted quiz shows as "available now" and
-// sorts at today rather than a specific future date.
+// One course per student now (see Student.js) — course is a plain name
+// string directly on the shared Student document, not an Enrollment row,
+// and Assignment/Quiz key off that same string `course` field, not a
+// `courseId`. This previously still queried the dead Enrollment collection
+// (never populated for a real student — see dashboardController's identical
+// note) and filtered Assignment/Quiz by a `courseId` field neither schema
+// has, so this endpoint always returned an empty agenda for every student
+// regardless of real due dates/quizzes. Migrated to the same course-string
+// pattern already applied to every other controller (dashboard, progress,
+// attendance, assignment, quiz, leaderboard, courses, resources).
+//
+// Class-day items were dropped for the same reason dashboardController's
+// `classDays` is hardcoded to `[]`: there's no live per-course schedule
+// data source left (Course.classDays is on the same dead Course
+// collection), so this only surfaces real assignment/quiz activity rather
+// than fabricating a schedule from nothing.
 exports.getMyWeekAgenda = async (req, res) => {
   try {
     const studentId = req.student._id;
-    const enrollments = await Enrollment.find({ student: studentId }).populate('course');
-    const courses = enrollments
-      .filter((e) => e.course)
-      .map((e) => ({ id: e.course._id, name: e.course.name, classDays: e.course.classDays || [] }));
+    const course = req.student.course;
 
     const now = new Date();
     const rangeEnd = new Date(now.getTime() + 7 * DAY_MS);
     const items = [];
 
-    for (const course of courses) {
+    if (course) {
       const assignments = await Assignment.find({
-        courseId: course.id,
+        course,
         dueDate: { $gte: now, $lte: rangeEnd },
       }).sort({ dueDate: 1 });
 
@@ -40,16 +45,16 @@ exports.getMyWeekAgenda = async (req, res) => {
       for (const a of assignments) {
         items.push({
           type: 'assignment',
-          courseId: course.id,
-          courseName: course.name,
+          courseId: a._id,
+          courseName: course,
           title: a.title,
           date: a.dueDate,
           meta: submittedIds.has(a._id.toString()) ? 'Already submitted' : 'Due',
-          link: `/assignment/${course.id}`,
+          link: '/assignment',
         });
       }
 
-      const quizzes = await Quiz.find({ courseId: course.id });
+      const quizzes = await Quiz.find({ course });
       const attempts = await QuizAttempt.find(
         { student: studentId, quiz: { $in: quizzes.map((q) => q._id) } },
         'quiz'
@@ -60,29 +65,13 @@ exports.getMyWeekAgenda = async (req, res) => {
         if (attemptedIds.has(q._id.toString())) continue;
         items.push({
           type: 'quiz',
-          courseId: course.id,
-          courseName: course.name,
+          courseId: q._id,
+          courseName: course,
           title: q.title,
           date: now,
           meta: 'Available now',
-          link: `/quiz/${course.id}`,
+          link: '/quiz',
         });
-      }
-
-      for (let i = 0; i < 7; i += 1) {
-        const d = new Date(now.getTime() + i * DAY_MS);
-        const weekday = WEEKDAY_NAMES[d.getDay()];
-        if (course.classDays.includes(weekday)) {
-          items.push({
-            type: 'class',
-            courseId: course.id,
-            courseName: course.name,
-            title: `${course.name} class`,
-            date: d,
-            meta: weekday,
-            link: `/dashboard/${course.id}`,
-          });
-        }
       }
     }
 
