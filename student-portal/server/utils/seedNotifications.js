@@ -65,7 +65,7 @@ async function seed() {
 
   const existingCount = await Notification.countDocuments({ student: student._id });
   if (existingCount > 0) {
-    console.log(`${existingCount} notifications already exist for ${student.fullName}. Skipping.`);
+    console.log(`${existingCount} notifications already exist for ${student.name}. Skipping.`);
     await mongoose.disconnect();
     return;
   }
@@ -75,7 +75,7 @@ async function seed() {
   }
 
   const unread = NOTIFICATIONS.filter((n) => !n.isRead).length;
-  console.log(`Seeded ${NOTIFICATIONS.length} notifications for ${student.fullName} (${unread} unread).`);
+  console.log(`Seeded ${NOTIFICATIONS.length} notifications for ${student.name} (${unread} unread).`);
 
   await mongoose.disconnect();
 }
