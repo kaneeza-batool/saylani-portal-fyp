@@ -63,6 +63,33 @@ const ResultsScreen = ({ answers, onRetake, courses }) => {
   const recommendations = getRecommendations(courses, answers, 2);
   const [top, runnerUp] = recommendations;
 
+  // No courses to recommend from (load failed, or none currently active) —
+  // show a fallback instead of crashing on `top.track` below.
+  if (!top) {
+    return (
+      <div className="text-center py-10">
+        <Badge className="te-mono text-xs font-bold uppercase tracking-widest px-3 py-1.5 text-accent-700 bg-accent-50 border border-accent-200 rounded-full">
+          Your Results
+        </Badge>
+        <p className="te-body text-sm text-neutral-600 mt-5 leading-relaxed max-w-sm mx-auto">
+          We couldn't load our programs just now, so we can't match you to one. Please browse the full catalog instead.
+        </p>
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Link to="/programs" className="text-sm font-bold text-neutral-600 hover:text-neutral-900 no-underline transition-colors">
+            See All Programs →
+          </Link>
+          <button
+            type="button"
+            onClick={onRetake}
+            className="px-6 py-3 border border-neutral-200 text-neutral-900 font-bold text-sm rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer"
+          >
+            Retake Quiz
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="text-center mb-10">

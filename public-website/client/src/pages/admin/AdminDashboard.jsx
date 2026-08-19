@@ -8,7 +8,7 @@ import { CATEGORY_LABELS } from '../../data/categoryLabels';
    Table of every course (active + inactive) with Edit/Deactivate/Add New.
    ============================================================ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 
 const AdminDashboard = () => {
   const location = useLocation();

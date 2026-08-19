@@ -19,7 +19,14 @@ exports.submitContact = async (req, res) => {
       message: message.trim(),
     });
 
-    await sendContactConfirmation(submission.email, submission.name, submission.subject);
+    // Best-effort only: the submission is already saved at this point, so a
+    // mail-server hiccup here must not turn into a 500 that tells the
+    // visitor their message failed to send when it actually succeeded.
+    try {
+      await sendContactConfirmation(submission.email, submission.name, submission.subject);
+    } catch (err) {
+      console.error('Contact confirmation email failed to send — submission was still saved:', err.message);
+    }
 
     return res.status(201).json({ submission });
   } catch (err) {
