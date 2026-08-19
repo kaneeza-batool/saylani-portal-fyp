@@ -12,7 +12,7 @@ import resolveImageUrl from '../../utils/resolveImageUrl';
    controls.
    ============================================================ */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5200';
 
 const EMPTY_COURSE = {
   title: '',

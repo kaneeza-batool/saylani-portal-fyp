@@ -8,10 +8,17 @@ const REFRESH_TOKEN_TTL = '7d';
 const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
 const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+// In production the frontend and backend are deployed on different domains,
+// so the auth cookies are cross-site — that requires sameSite: 'none', which
+// browsers only honor when secure: true is also set. Locally both run on
+// localhost (same-site), where sameSite: 'none' would actually be rejected
+// without HTTPS, so this stays 'lax'/non-secure there (same pattern as
+// student-portal/server/controllers/authController.js).
+const isProduction = process.env.NODE_ENV === 'production';
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  secure: isProduction,
+  sameSite: isProduction ? 'none' : 'lax',
   path: '/',
 };
 

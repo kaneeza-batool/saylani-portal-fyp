@@ -109,7 +109,7 @@ export default function BatchesPage() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[0, 1].map((i) => (
           <CardSkeleton key={i} />
         ))}
@@ -143,7 +143,7 @@ export default function BatchesPage() {
   }
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
+    <motion.div variants={staggerContainer} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {batches.map((batch) => (
         <BatchCard key={batch.id} batch={batch} />
       ))}

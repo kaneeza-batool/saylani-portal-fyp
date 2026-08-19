@@ -11,7 +11,7 @@ export default function CampusMapPage() {
   const { data, isLoading, isError } = useQuery({ queryKey: ['campus-map'], queryFn: fetchCampusMap, retry: false });
 
   if (isLoading) {
-    return <div className="bg-surface border border-neutral-200 rounded-xl animate-pulse" style={{ height: 560 }} />;
+    return <div className="bg-surface border border-neutral-200 rounded-xl animate-pulse h-[360px] sm:h-[560px]" />;
   }
   if (isError) {
     return <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] text-body-sm text-danger-600">Couldn't load map data.</div>;
@@ -22,7 +22,7 @@ export default function CampusMapPage() {
 
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="show" className="flex flex-col gap-4">
-      <motion.div variants={fadeIn} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden" style={{ height: 560 }}>
+      <motion.div variants={fadeIn} className="bg-surface border border-neutral-200 rounded-xl overflow-hidden h-[360px] sm:h-[560px]">
         <MapContainer center={[30.3753, 69.3451]} zoom={5} scrollWheelZoom style={{ height: '100%', width: '100%' }}>
           <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {cities.map((c) => {
@@ -43,7 +43,7 @@ export default function CampusMapPage() {
         </MapContainer>
       </motion.div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cities.map((c) => (
           <motion.div key={c.city} variants={fadeIn} className="bg-surface border border-neutral-200 rounded-xl p-4 flex flex-col gap-1">
             <span className="text-overline uppercase text-neutral-500">{c.city}</span>

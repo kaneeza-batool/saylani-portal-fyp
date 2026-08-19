@@ -12,7 +12,7 @@ function CourseCardSkeleton() {
       <div className="h-4 w-24 bg-neutral-200 rounded" />
       <div className="h-6 w-40 bg-neutral-200 rounded" />
       <div className="h-2 w-full bg-neutral-200 rounded-pill" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="h-8 bg-neutral-100 rounded" />
         <div className="h-8 bg-neutral-100 rounded" />
         <div className="h-8 bg-neutral-100 rounded" />
@@ -55,7 +55,7 @@ function CourseCard({ course, onViewDetails }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-3 text-sm">
         <div>
           <p className="text-xs text-neutral-400">Batch</p>
           <p className="font-medium text-neutral-800 truncate">{course.batch}</p>
