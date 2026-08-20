@@ -90,10 +90,14 @@ export default function TrainersPage() {
 
   const createMutation = useMutation({
     mutationFn: createTrainer,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['sub-admin-trainers'] });
       setAddOpen(false);
       setFormError('');
+      if (data?.credentials) {
+        setResetError(null);
+        setResetResult(data.credentials);
+      }
     },
     onError: (err) => setFormError(err.response?.data?.message || 'Failed to add trainer.'),
   });

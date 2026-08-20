@@ -8,7 +8,13 @@ const api = axios.create({
 // Endpoints that don't run against an existing access token, so a 401 from
 // them is a real auth failure, never something to silently retry via a
 // refresh. Same reasoning/shape as student-portal's authService.js.
-const SKIP_REFRESH_PATHS = ['/auth/login', '/auth/refresh', '/auth/logout', '/auth/register-trainer'];
+const SKIP_REFRESH_PATHS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/trainer/verify-cnic',
+  '/auth/trainer/reset-password',
+];
 
 // Single in-flight refresh shared across every request that 401s at the
 // same time, so several queries firing together right as the access token
@@ -62,14 +68,14 @@ export async function updateMe(payload) {
   return data.user;
 }
 
-export async function registerTrainer(payload) {
-  const { data } = await api.post('/auth/register-trainer', payload);
-  return data.user;
+export async function verifyTrainerCnic(cnic) {
+  const { data } = await api.post('/auth/trainer/verify-cnic', { cnic });
+  return data;
 }
 
-export async function fetchPublicCampuses() {
-  const { data } = await api.get('/public/campuses');
-  return data.items;
+export async function resetTrainerPasswordByCnic({ cnic, phone, newPassword }) {
+  const { data } = await api.post('/auth/trainer/reset-password', { cnic, phone, newPassword });
+  return data;
 }
 
 export default api;

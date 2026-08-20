@@ -5,9 +5,12 @@ export async function fetchTrainers({ search = '', status = 'all', page = 1, lim
   return data;
 }
 
+// Returns both the new profile and its one-time-only login credentials
+// (see server/controllers/trainerCreateController.js) — the caller is
+// responsible for showing `credentials` to the admin exactly once.
 export async function createTrainer(payload) {
   const { data } = await api.post('/admin/trainers', payload);
-  return data.item;
+  return data;
 }
 
 export async function updateTrainer(id, payload) {

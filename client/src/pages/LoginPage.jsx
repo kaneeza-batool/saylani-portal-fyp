@@ -173,10 +173,10 @@ export default function LoginPage() {
 
           <motion.div variants={fieldVariants} className="flex flex-col gap-1.5">
             <Link
-              to="/trainer/register"
+              to="/trainer/forgot-password"
               className="block text-center text-caption text-navy-300 hover:text-gold-400 transition-colors"
             >
-              Are you a trainer? Create an account
+              Trainer? Forgot your password
             </Link>
           </motion.div>
         </motion.form>

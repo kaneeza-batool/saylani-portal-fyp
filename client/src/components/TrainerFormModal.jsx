@@ -17,7 +17,17 @@ const COURSES = [
   'Cybersecurity Fundamentals',
 ];
 
-const EMPTY_FORM = { name: '', email: '', phone: '', employeeId: '', course: '', city: '', campus: '', status: 'active' };
+const EMPTY_FORM = { name: '', email: '', cnic: '', phone: '', employeeId: '', course: '', city: '', campus: '', status: 'active' };
+
+// Mirrors server/models/Trainer.js's own CITY_CODES/cityCode exactly — this
+// is display-only (the real employeeId is always generated server-side),
+// but showing an example tied to whatever campus is actually selected
+// beats a hardcoded "TRN-SUK-014" that's wrong the moment a Karachi campus
+// is picked.
+const CITY_CODES = { Sukkur: 'SUK', Karachi: 'KHI' };
+function cityCode(city) {
+  return CITY_CODES[city] || String(city || '').slice(0, 3).toUpperCase() || 'XXX';
+}
 
 export default function TrainerFormModal({ open, mode = 'add', initialValues, onClose, onSubmit, submitting, error }) {
   const { user } = useAuth();
@@ -102,8 +112,35 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
             <label className={labelClass} htmlFor="trainer-phone">
               Phone
             </label>
-            <input id="trainer-phone" type="text" value={form.phone} onChange={setField('phone')} className={inputClass} />
+            <input
+              id="trainer-phone"
+              type="text"
+              required={mode === 'add'}
+              value={form.phone}
+              onChange={setField('phone')}
+              className={inputClass}
+            />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass} htmlFor="trainer-cnic">
+            CNIC
+          </label>
+          <input
+            id="trainer-cnic"
+            type="text"
+            required={mode === 'add'}
+            placeholder="12345-1234567-1"
+            value={form.cnic}
+            onChange={setField('cnic')}
+            className={inputClass}
+          />
+          {mode === 'add' && (
+            <span className="text-caption text-neutral-400">
+              Needed so this trainer can reset their own password later without contacting an admin.
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -115,7 +152,7 @@ export default function TrainerFormModal({ open, mode = 'add', initialValues, on
               id="trainer-employeeId"
               type="text"
               disabled
-              placeholder="Generated automatically after saving (e.g. TRN-SUK-014)"
+              placeholder={`Generated automatically after saving (e.g. TRN-${cityCode(form.city)}-014)`}
               className={`${inputClass} opacity-70 cursor-not-allowed placeholder:text-neutral-400`}
             />
           ) : (

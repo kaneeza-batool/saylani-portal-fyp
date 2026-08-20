@@ -7,6 +7,18 @@ const trainerSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
+    // Optional at the schema level (sparse index) so the trainers seeded
+    // before this field existed stay valid — but required client-side on
+    // the "+ Add Trainer" form for every new trainer, since it's the
+    // identity check for the self-service forgot-password flow (see
+    // trainerPasswordController.verifyTrainerCnic/resetTrainerPasswordByCnic).
+    cnic: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      match: [/^\d{13}$/, 'CNIC must be 13 digits'],
+    },
     phone: { type: String, default: '', trim: true },
     // required stays true as a safety net — the pre('validate') hook below
     // always fills this in for a new document before this check runs, so it
@@ -41,6 +53,15 @@ function cityCode(city) {
 //     `TRN-{cityCode}-{next sequence for that city}`, matching the format
 //     every real trainer already has (TRN-SUK-013, TRN-KHI-008, ...) rather
 //     than requiring an admin to invent one by hand.
+// Same normalize-then-validate order as Student.js's cnic handling — strips
+// a dashed "12345-1234567-1" down to bare digits before the /^\d{13}$/
+// match validator sees it, so the Add Trainer form can accept either shape.
+trainerSchema.pre('validate', function normalizeCnic() {
+  if (this.cnic) {
+    this.cnic = String(this.cnic).replace(/\D/g, '');
+  }
+});
+
 trainerSchema.pre('validate', async function autoFieldsFromCampus() {
   if (this.campus && (this.isNew || this.isModified('campus'))) {
     const Campus = mongoose.model('Campus');
