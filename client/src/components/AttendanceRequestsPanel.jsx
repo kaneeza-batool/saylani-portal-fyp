@@ -126,7 +126,8 @@ export default function AttendanceRequestsPanel() {
                   <span className="text-caption text-neutral-600 font-normal">{r.reason}</span>
                   {isTrainer ? (
                     <span className="text-badge text-neutral-400 font-normal">
-                      Requested: {fmt(r.requestedCheckIn)} → {fmt(r.requestedCheckOut)}
+                      {fmtDate(r.date)}
+                      {r.trainerAttendance ? '' : ' (no existing record)'} — In: {fmt(r.requestedCheckIn)} · Out: {fmt(r.requestedCheckOut)}
                     </span>
                   ) : (
                     <span className="text-badge text-neutral-400 font-normal">

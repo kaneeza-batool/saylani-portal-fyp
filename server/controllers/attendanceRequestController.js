@@ -49,38 +49,64 @@ exports.getRequests = async (req, res) => {
   }
 };
 
+// Self-service only, always the trainer raising a request on their own
+// attendance — Super Admin/Sub-Admin never create one, they only resolve
+// (they already have full authority; there's nothing to "request" from
+// themselves). Two shapes, both ending up as one AttendanceRequest:
+//  - trainerAttendanceId given: correcting an existing record.
+//  - date given instead: requesting attendance for a day with no record at
+//    all (e.g. a missed check-in) — resolveRequest creates one on approval,
+//    same "attendanceRecord: null means create one" pattern
+//    studentAttendanceRequestController already uses.
 exports.createRequest = async (req, res) => {
   try {
-    const { trainerAttendanceId, requestedCheckIn, requestedCheckOut, reason } = req.body;
-    if (!trainerAttendanceId || !reason) {
-      return res.status(400).json({ message: 'trainerAttendanceId and reason are required' });
+    const { trainerAttendanceId, date, requestedCheckIn, requestedCheckOut, reason } = req.body;
+    if (!reason) return res.status(400).json({ message: 'reason is required' });
+    if (!trainerAttendanceId && !date) {
+      return res.status(400).json({ message: 'Either trainerAttendanceId or date is required' });
+    }
+    if (req.user.role !== 'trainer') {
+      return res.status(403).json({ message: 'Only a trainer can raise a correction request on their own attendance.' });
     }
 
-    const attendance = await TrainerAttendance.findById(trainerAttendanceId);
-    if (!attendance) return res.status(404).json({ message: 'Attendance record not found' });
+    const trainerProfile = await Trainer.findOne({ email: req.user.email });
+    if (!trainerProfile) return res.status(404).json({ message: 'Trainer profile not found' });
 
-    // Two ways in: a trainer raising a correction on their own record
-    // (self-service), or Super Admin raising one on a trainer's behalf from
-    // the View Attendance page — same as before this feature existed.
-    // Sub-admins don't get a create path here; they only resolve.
-    if (req.user.role === 'trainer') {
-      const trainerProfile = await Trainer.findOne({ email: req.user.email }).select('_id');
-      if (!trainerProfile || String(attendance.trainer) !== String(trainerProfile._id)) {
+    let attendance = null;
+    let requestDate;
+    let campus = trainerProfile.city;
+    let schedule = '';
+
+    if (trainerAttendanceId) {
+      attendance = await TrainerAttendance.findById(trainerAttendanceId);
+      if (!attendance) return res.status(404).json({ message: 'Attendance record not found' });
+      if (String(attendance.trainer) !== String(trainerProfile._id)) {
         return res.status(403).json({ message: 'You can only request a correction on your own attendance record.' });
       }
-    } else if (req.user.role !== 'super_admin') {
-      return res.status(403).json({ message: 'You do not have permission to raise this request.' });
+      requestDate = attendance.date;
+      campus = attendance.campus;
+      schedule = attendance.schedule;
+
+      const existing = await AttendanceRequest.findOne({ trainerAttendance: attendance._id, status: 'pending' });
+      if (existing) return res.status(409).json({ message: 'A correction request for this record is already pending.' });
+    } else {
+      requestDate = new Date(new Date(date).toDateString());
+      const alreadyRecorded = await TrainerAttendance.findOne({ trainer: trainerProfile._id, date: requestDate });
+      if (alreadyRecorded) {
+        return res.status(409).json({ message: 'Attendance already exists for this date — request a correction on it directly instead.' });
+      }
+      const existing = await AttendanceRequest.findOne({ trainer: trainerProfile._id, date: requestDate, status: 'pending' });
+      if (existing) return res.status(409).json({ message: 'A request for this date is already pending.' });
     }
 
-    const existing = await AttendanceRequest.findOne({ trainerAttendance: attendance._id, status: 'pending' });
-    if (existing) return res.status(409).json({ message: 'A correction request for this record is already pending.' });
-
     const request = await AttendanceRequest.create({
-      trainerAttendance: attendance._id,
-      trainer: attendance.trainer,
-      trainerName: attendance.trainerName,
-      campus: attendance.campus,
-      schedule: attendance.schedule,
+      trainerAttendance: attendance?._id || null,
+      trainer: trainerProfile._id,
+      trainerName: trainerProfile.name,
+      employeeId: trainerProfile.employeeId,
+      campus,
+      schedule,
+      date: requestDate,
       requestedCheckIn: requestedCheckIn || null,
       requestedCheckOut: requestedCheckOut || null,
       reason,
@@ -91,7 +117,7 @@ exports.createRequest = async (req, res) => {
       action: 'create',
       resourceType: 'AttendanceRequest',
       resourceId: request._id,
-      summary: `Requested attendance correction for "${request.trainerName}"`,
+      summary: `Requested attendance ${attendance ? 'correction' : ''} for "${request.trainerName}"`,
       resourceCampus: await resolveCampusIdByName(request.campus),
     });
 
@@ -134,8 +160,28 @@ exports.resolveRequest = async (req, res) => {
       const update = {};
       if (request.requestedCheckIn) update.checkIn = request.requestedCheckIn;
       if (request.requestedCheckOut) update.checkOut = request.requestedCheckOut;
-      if (Object.keys(update).length) {
-        await TrainerAttendance.findByIdAndUpdate(request.trainerAttendance, update);
+
+      if (request.trainerAttendance) {
+        if (Object.keys(update).length) {
+          await TrainerAttendance.findByIdAndUpdate(request.trainerAttendance, update);
+        }
+      } else {
+        // No existing record — approving this creates one, same upsert
+        // shape studentAttendanceRequestController.resolveRequest already
+        // uses for its own "no record yet" case.
+        await TrainerAttendance.findOneAndUpdate(
+          { trainer: request.trainer, date: request.date },
+          {
+            trainer: request.trainer,
+            trainerName: request.trainerName,
+            employeeId: request.employeeId,
+            campus: request.campus,
+            schedule: request.schedule,
+            date: request.date,
+            ...update,
+          },
+          { upsert: true, setDefaultsOnInsert: true }
+        );
       }
     }
 
@@ -158,8 +204,11 @@ exports.resolveRequest = async (req, res) => {
 
 async function notifyTrainer(request, status) {
   try {
-    const attendance = await TrainerAttendance.findById(request.trainerAttendance).populate('trainer', 'email');
-    const to = attendance?.trainer?.email;
+    // Looked up via the Trainer ref directly rather than through
+    // TrainerAttendance — request.trainerAttendance is null for a
+    // "no record yet" request, so that path can't be relied on here.
+    const trainer = await Trainer.findById(request.trainer).select('email');
+    const to = trainer?.email;
     if (!to) return;
 
     const approved = status === 'approved';

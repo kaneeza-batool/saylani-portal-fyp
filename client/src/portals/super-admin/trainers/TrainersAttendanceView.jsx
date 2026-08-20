@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { fetchTrainerAttendance } from '../../../services/trainerAttendanceService';
-import { createAttendanceRequest } from '../../../services/attendanceRequestService';
-import AttendanceCorrectionModal from '../../../components/AttendanceCorrectionModal';
 import ExportButtons from '../../../components/ExportButtons';
 
 const fadeInUp = { hidden: { opacity: 0, y: 4 }, show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: 'easeOut' } } };
 const staggerContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03 } } };
-const GRID_COLS = 'grid-cols-[1.3fr_1.1fr_1fr_1fr_1fr_0.8fr]';
+const GRID_COLS = 'grid-cols-[1.3fr_1.1fr_1fr_1fr_1fr]';
 
 function fmtDate(d) {
   return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -24,8 +22,8 @@ function duration(checkIn, checkOut) {
 
 function RowSkeleton() {
   return (
-    <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
-      {[0, 1, 2, 3, 4, 5].map((i) => (
+    <div className={`grid ${GRID_COLS} min-w-[600px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100`}>
+      {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="h-3 w-3/4 bg-neutral-100 rounded animate-pulse" />
       ))}
     </div>
@@ -41,13 +39,17 @@ const EXPORT_COLUMNS = [
   { header: 'Duration', accessor: (r) => duration(r.checkIn, r.checkOut) },
 ];
 
+// Read-only — corrections and missed-day requests both go through the
+// trainer's own self-service request on their Profile page, resolved from
+// the Attendance Request tab (see attendanceRequestController.js). No edit
+// action here: Super Admin already resolves those requests with full
+// authority, so a second, separate way to change a record from this page
+// would just be a shortcut around the same approval trail, not a shortcut
+// to anything this page needs to do itself.
 export default function TrainersAttendanceView() {
-  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [correctionRecord, setCorrectionRecord] = useState(null);
-  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 350);
@@ -59,16 +61,6 @@ export default function TrainersAttendanceView() {
     queryKey: ['trainer-attendance', { search, page }],
     queryFn: () => fetchTrainerAttendance({ search, page, limit: 10 }),
     keepPreviousData: true,
-  });
-
-  const requestMutation = useMutation({
-    mutationFn: createAttendanceRequest,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance-requests'] });
-      setCorrectionRecord(null);
-      setFormError('');
-    },
-    onError: (err) => setFormError(err.response?.data?.message || 'Failed to submit request.'),
   });
 
   const items = data?.items ?? [];
@@ -98,13 +90,12 @@ export default function TrainersAttendanceView() {
       </div>
 
       <motion.div variants={fadeInUp} className="bg-surface border border-neutral-200 rounded-xl overflow-x-auto">
-        <div className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
+        <div className={`grid ${GRID_COLS} min-w-[600px] gap-[16px] px-[18px] py-3.5 bg-neutral-50 border-b border-neutral-200`}>
           {['Trainer', 'Campus', 'Check In', 'Check Out', 'Duration'].map((h) => (
             <span key={h} className="text-overline uppercase text-neutral-500">
               {h}
             </span>
           ))}
-          <span className="text-overline uppercase text-neutral-500 text-right">Action</span>
         </div>
 
         {isLoading ? (
@@ -119,7 +110,7 @@ export default function TrainersAttendanceView() {
               <motion.div
                 key={r._id}
                 variants={fadeInUp}
-                className={`grid ${GRID_COLS} min-w-[720px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
+                className={`grid ${GRID_COLS} min-w-[600px] gap-[16px] px-[18px] py-3.5 items-center border-b border-neutral-100 last:border-b-0 transition-colors hover:bg-neutral-50`}
               >
                 <div className="min-w-0">
                   <div className="text-body-sm font-semibold text-neutral-900 truncate">{r.trainerName}</div>
@@ -129,22 +120,6 @@ export default function TrainersAttendanceView() {
                 <span className="text-body-sm text-neutral-600">{fmtTime(r.checkIn)}</span>
                 <span className="text-body-sm text-neutral-600">{fmtTime(r.checkOut)}</span>
                 <span className="text-body-sm text-neutral-600">{duration(r.checkIn, r.checkOut)}</span>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormError('');
-                      setCorrectionRecord(r);
-                    }}
-                    title="Request correction"
-                    className="w-[30px] h-[30px] border border-neutral-200 bg-surface rounded-sm cursor-pointer flex items-center justify-center transition-colors hover:bg-neutral-100"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B5D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                    </svg>
-                  </button>
-                </div>
               </motion.div>
             ))}
           </motion.div>
@@ -176,15 +151,6 @@ export default function TrainersAttendanceView() {
           </div>
         </div>
       )}
-
-      <AttendanceCorrectionModal
-        open={!!correctionRecord}
-        record={correctionRecord}
-        onClose={() => setCorrectionRecord(null)}
-        onSubmit={(payload) => requestMutation.mutate(payload)}
-        submitting={requestMutation.isPending}
-        error={formError}
-      />
     </motion.div>
   );
 }
