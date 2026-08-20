@@ -76,9 +76,18 @@ function MyAttendanceSection() {
 
   return (
     <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] flex flex-col gap-4">
-      <div>
-        <div className="font-heading font-bold text-h6 text-neutral-900">My Attendance</div>
-        <div className="text-body-sm text-neutral-400 mt-0.5">Your own check-in/check-out history. Spot a mistake? Request a correction.</div>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-heading font-bold text-h6 text-neutral-900">My Attendance</div>
+          <div className="text-body-sm text-neutral-400 mt-0.5">Your own check-in/check-out history. Spot a mistake? Request a correction.</div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCorrectionRecord({})}
+          className="border border-neutral-200 bg-surface text-neutral-600 text-caption font-semibold px-3 py-[7px] rounded cursor-pointer transition-colors hover:bg-neutral-100 shrink-0"
+        >
+          Missed a day? Request attendance
+        </button>
       </div>
 
       {attendanceLoading ? (
