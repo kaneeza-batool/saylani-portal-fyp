@@ -302,7 +302,7 @@ export default function StudentsPage() {
                     </div>
                   </div>
                   <span className="text-body-sm font-semibold text-neutral-700 truncate">{s.rollNumber || '—'}</span>
-                  <span className="text-body-sm text-neutral-600">{s.phone}</span>
+                  <span className="text-body-sm text-neutral-600 whitespace-nowrap">{s.phone}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.course}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.campus?.name}</span>
                   <span className="text-body-sm text-neutral-600 truncate">{s.batch?.trainer || '—'}</span>
