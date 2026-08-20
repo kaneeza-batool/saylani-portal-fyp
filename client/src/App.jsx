@@ -6,7 +6,7 @@ import { SocketProvider } from './context/SocketContext';
 import { getRoleHome } from './utils/roleHome';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
-import TrainerRegisterPage from './pages/TrainerRegisterPage';
+import TrainerForgotPasswordPage from './pages/TrainerForgotPasswordPage';
 import PublicLayout from './layouts/PublicLayout';
 import DonorPublicLayout from './layouts/DonorPublicLayout';
 import CareersPage from './pages/public/CareersPage';
@@ -100,7 +100,7 @@ function App() {
             <SocketProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/trainer/register" element={<TrainerRegisterPage />} />
+                <Route path="/trainer/forgot-password" element={<TrainerForgotPasswordPage />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 <Route element={<PublicLayout />}>

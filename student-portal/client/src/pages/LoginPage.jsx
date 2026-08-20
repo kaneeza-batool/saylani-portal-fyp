@@ -127,11 +127,6 @@ function CreatePasswordForm() {
   const navigate = useNavigate();
   const [cnic, setCnic] = useState('');
   const [verified, setVerified] = useState(false);
-  // Whether this CNIC's account already has a password — determines whether
-  // the next step asks for a phone number too (recreation) or not
-  // (first-time setup). See authController.setPassword for why: a CNIC
-  // alone is never enough to overwrite an existing password.
-  const [hasExistingPassword, setHasExistingPassword] = useState(false);
   const [error, setError] = useState('');
   const [verifying, setVerifying] = useState(false);
 
@@ -145,8 +140,7 @@ function CreatePasswordForm() {
     setError('');
     setVerifying(true);
     try {
-      const { hasPassword } = await authService.verifyCnic(cnic);
-      setHasExistingPassword(hasPassword);
+      await authService.verifyCnic(cnic);
       setVerified(true);
     } catch (err) {
       setError(err.response?.data?.message || 'CNIC verification failed.');
@@ -167,16 +161,19 @@ function CreatePasswordForm() {
       setError('Passwords do not match.');
       return;
     }
-    if (hasExistingPassword && !phone.trim()) {
-      setError('Enter the phone number on file to create a new password.');
-      return;
-    }
     setSubmitting(true);
     try {
-      // Real session either way now (see authController.setPassword) —
-      // ProtectedRoute sends them to onboarding first, then to
-      // pending-approval or courses depending on portalAccess.
-      await completeSetPassword(cnic, password, hasExistingPassword ? phone : undefined);
+      // Phone is always sent — the server only actually checks it against
+      // the account's phone on file when that account already has a
+      // password (see authController.setPassword); for a genuinely
+      // first-time account it's simply unused. Sending it unconditionally,
+      // rather than branching this form on whether a password already
+      // exists, is what keeps this one uniform flow: same fields, same
+      // copy, same button, whether a student is setting a password for the
+      // first time or replacing a forgotten one — nothing here reveals
+      // which case it is, and there's no limit on how many times a CNIC
+      // can go through this to get a new password.
+      await completeSetPassword(cnic, password, phone);
       navigate('/courses');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to set password.');
@@ -214,29 +211,20 @@ function CreatePasswordForm() {
   return (
     <form onSubmit={handleSetPassword} className="flex flex-col gap-4">
       <ErrorBanner message={error} />
-      {hasExistingPassword ? (
-        <div className="rounded-md bg-info-bg text-info-text text-sm font-medium px-3.5 py-2.5">
-          This account already has a password. Confirm the phone number on file to replace it — your profile,
-          attendance, fees, and quiz history all stay exactly as they are.
-        </div>
-      ) : (
-        <div className="rounded-md bg-success-bg text-success-text text-sm font-medium px-3.5 py-2.5">
-          CNIC verified. Choose a password to finish setting up your account.
-        </div>
-      )}
-      {hasExistingPassword && (
-        <div>
-          <label className={labelClass}>Phone number on file</label>
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="03001234567"
-            className={inputClass}
-            required
-          />
-        </div>
-      )}
+      <div className="rounded-md bg-success-bg text-success-text text-sm font-medium px-3.5 py-2.5">
+        CNIC verified. Enter your phone number and choose a password.
+      </div>
+      <div>
+        <label className={labelClass}>Phone number on file</label>
+        <input
+          type="text"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="03001234567"
+          className={inputClass}
+          required
+        />
+      </div>
       <PasswordField label="New Password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
       <PasswordField
         label="Confirm Password"
@@ -249,7 +237,7 @@ function CreatePasswordForm() {
         disabled={submitting}
         className="w-full rounded-md px-5 py-2.5 text-sm font-semibold uppercase tracking-wide bg-primary-800 text-white transition-colors hover:bg-primary-900 disabled:opacity-40 disabled:cursor-not-allowed mt-2"
       >
-        {submitting ? 'Setting password...' : hasExistingPassword ? 'Replace Password' : 'Set Password'}
+        {submitting ? 'Setting password...' : 'Set Password'}
       </button>
     </form>
   );

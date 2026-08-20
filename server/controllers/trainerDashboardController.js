@@ -93,8 +93,8 @@ exports.getMyBatches = async (req, res) => {
 // The trainer's own check-in/out history (TrainerAttendance — a separate
 // thing from the student rosters this controller otherwise deals with).
 // Matched via email against the standalone Trainer CRUD record, same link
-// authController.registerTrainer sets up when a trainer self-registers —
-// there's no direct User<->Trainer ref, so email is the join key.
+// trainerCreateController.createTrainer sets up when an admin adds a
+// trainer — there's no direct User<->Trainer ref, so email is the join key.
 exports.getMyAttendance = async (req, res) => {
   try {
     const trainerProfile = await Trainer.findOne({ email: req.user.email }).select('_id');

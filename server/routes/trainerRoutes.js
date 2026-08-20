@@ -6,6 +6,7 @@ const { checkPermission } = require('../middleware/checkPermission');
 const { restrictTo } = require('../middleware/roleMiddleware');
 const { updateTrainerStatus } = require('../controllers/trainerStatusController');
 const { resetTrainerPassword } = require('../controllers/trainerPasswordController');
+const { createTrainer } = require('../controllers/trainerCreateController');
 
 const controller = buildCrudController(Trainer, {
   searchFields: ['name', 'email', 'employeeId', 'course', 'city'],
@@ -13,6 +14,11 @@ const controller = buildCrudController(Trainer, {
   label: (doc) => doc.name,
   populate: [{ path: 'campus', select: 'name city' }],
 });
+
+// Trainer creation also has to mint a login (see trainerCreateController) —
+// the generic crudFactory create only ever made the profile document, which
+// is why trainers used to have to self-register separately for an account.
+controller.create = createTrainer;
 
 // A sub_admin's request body can't be trusted on campus — force it to their
 // own regardless of what the client sends, same lockdown pattern
