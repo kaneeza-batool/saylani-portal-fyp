@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getProgress } from '../services/progressService';
 import CircularProgress from '../components/CircularProgress';
+import { StatCard, StatCardSkeleton } from '../components/StatCard';
 import { fadeInUp, staggerContainer } from '../lib/motionVariants';
 import { CheckCircleIcon, ClockIcon, ChevronDownIcon, CertificateIcon } from '../components/icons';
 
@@ -137,27 +138,20 @@ export default function ProgressPage() {
         )}
       </div>
 
-      {!isLoading && !isError && (
+      {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Topics</p>
-            <p className="text-lg font-bold text-neutral-900 mt-1">
-              {data.completedTopics} / {data.totalTopics}
-            </p>
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Quizzes Attempted</p>
-            <p className="text-lg font-bold text-neutral-900 mt-1">
-              {data.quizzes.completed} / {data.quizzes.total}
-            </p>
-          </div>
-          <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Assignments Submitted</p>
-            <p className="text-lg font-bold text-neutral-900 mt-1">
-              {data.assignments.completed} / {data.assignments.total}
-            </p>
-          </div>
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
         </div>
+      ) : (
+        !isError && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <StatCard label="Topics" value={`${data.completedTopics} / ${data.totalTopics}`} />
+            <StatCard label="Quizzes Attempted" value={`${data.quizzes.completed} / ${data.quizzes.total}`} />
+            <StatCard label="Assignments Submitted" value={`${data.assignments.completed} / ${data.assignments.total}`} />
+          </div>
+        )
       )}
 
       <div className="bg-white border border-neutral-200 rounded-lg shadow-card overflow-hidden">

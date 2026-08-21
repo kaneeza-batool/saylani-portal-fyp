@@ -114,16 +114,36 @@ const EnrollNow = () => {
 
   const [campuses, setCampuses] = useState([]);
   const [courseOptions, setCourseOptions] = useState([]);
+  const [metaStatus, setMetaStatus] = useState('loading'); // loading | ready | error
 
   // Campus list and the course picker both come straight from the server —
   // campuses because the public site has no campus data of its own, and
   // courses because Student.COURSES (the 7-value enum a Student document
   // will actually accept) is the only valid source, not this site's own
-  // marketing course catalog.
-  useEffect(() => {
-    axios.get(`${API_URL}/api/campuses`).then((res) => setCampuses(res.data.campuses)).catch(() => {});
-    axios.get(`${API_URL}/api/course-options`).then((res) => setCourseOptions(res.data.courses)).catch(() => {});
-  }, []);
+  // marketing course catalog. Both are required to submit Step 3 (Program
+  // Selection), so a failed fetch needs a visible retry, not a silently
+  // empty dropdown a visitor can't explain — same loading/empty-state
+  // pattern as the Campuses page (see pages/public/Campuses.jsx).
+  // No synchronous setMetaStatus('loading') here — the initial useState
+  // above already starts at 'loading', so the mount effect only needs to
+  // fetch. The retry button (onClick, not an effect) resets to 'loading'
+  // itself before calling this again.
+  const fetchMeta = () => {
+    Promise.all([axios.get(`${API_URL}/api/campuses`), axios.get(`${API_URL}/api/course-options`)])
+      .then(([campusesRes, coursesRes]) => {
+        setCampuses(campusesRes.data.campuses);
+        setCourseOptions(coursesRes.data.courses);
+        setMetaStatus('ready');
+      })
+      .catch(() => setMetaStatus('error'));
+  };
+
+  useEffect(fetchMeta, []);
+
+  const retryLoadMeta = () => {
+    setMetaStatus('loading');
+    fetchMeta();
+  };
 
   const updateField = (field) => (e) => {
     const value = e.target ? e.target.value : e;
@@ -341,27 +361,47 @@ const EnrollNow = () => {
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-neutral-900">Select Your Program</h2>
 
-            <div>
-              <label className={labelClass}>Course</label>
-              <select value={form.course} onChange={updateField('course')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
-                <option value="">Select...</option>
-                {courseOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              {errors.course && <p className={errorClass}>{errors.course}</p>}
-            </div>
+            {metaStatus === 'loading' && <p className="text-sm text-neutral-400">Loading courses and campuses…</p>}
 
-            <div>
-              <label className={labelClass}>Campus</label>
-              <select value={form.campusId} onChange={updateField('campusId')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
-                <option value="">Select...</option>
-                {campuses.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
-                ))}
-              </select>
-              {errors.campusId && <p className={errorClass}>{errors.campusId}</p>}
-            </div>
+            {metaStatus === 'error' && (
+              <div className="flex items-center justify-between gap-3 border border-neutral-200 p-3.5" style={{ borderRadius: 'var(--radius-standard)' }}>
+                <p className="text-xs text-danger-text">Couldn't load courses and campuses. Please try again.</p>
+                <button
+                  type="button"
+                  onClick={retryLoadMeta}
+                  className="shrink-0 px-4 py-1.5 text-xs font-semibold text-neutral-700 border border-neutral-200 hover:bg-neutral-50 transition-colors"
+                  style={{ borderRadius: 'var(--radius-standard)' }}
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {metaStatus === 'ready' && (
+              <>
+                <div>
+                  <label className={labelClass}>Course</label>
+                  <select value={form.course} onChange={updateField('course')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
+                    <option value="">Select...</option>
+                    {courseOptions.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  {errors.course && <p className={errorClass}>{errors.course}</p>}
+                </div>
+
+                <div>
+                  <label className={labelClass}>Campus</label>
+                  <select value={form.campusId} onChange={updateField('campusId')} className={inputClass} style={{ borderRadius: 'var(--radius-standard)' }}>
+                    <option value="">Select...</option>
+                    {campuses.map((c) => (
+                      <option key={c._id} value={c._id}>{c.name}</option>
+                    ))}
+                  </select>
+                  {errors.campusId && <p className={errorClass}>{errors.campusId}</p>}
+                </div>
+              </>
+            )}
 
             <div>
               <label className={labelClass}>Preferred Batch / Timing</label>
