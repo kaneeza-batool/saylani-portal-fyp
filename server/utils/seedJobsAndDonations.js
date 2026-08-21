@@ -9,88 +9,84 @@ const Campaign = require('../models/Campaign');
 const Donation = require('../models/Donation');
 const { computeMatchScore } = require('./matchScore');
 
-// Job.company and JobApplication's identity fields are free text — neither
-// model has a real ObjectId ref to Employer or Student (see report). Company
-// names below are intentionally fictional (no real Pakistani company is
-// referenced) so a "rejected"/"pending" Employer status never reads as a
-// claim about an actual business. Job.company is written to match an
+// TITAN only posts jobs for its own two real campuses (Karachi, Sukkur) —
+// this used to seed fictional outside companies (Zenith Softworks etc.) as
+// a stand-in careers board, but that's not what this project actually is:
+// TITAN itself is the employer, hiring trainers and staff, not a job board
+// aggregating third-party listings. Job.company is written to match an
 // Employer.companyName string purely for narrative consistency, not because
-// the schema requires or enforces it.
+// the schema requires or enforces it (see models/Job.js, models/Employer.js
+// — neither has a real ObjectId ref to the other).
 const EMPLOYERS = [
-  { companyName: 'Zenith Softworks', contactEmail: 'hr@zenithsoftworks.example.com', contactPhone: '021-3456701', city: 'Karachi', status: 'verified' },
-  { companyName: 'Indus Cloud Systems', contactEmail: 'careers@induscloud.example.com', contactPhone: '042-3567812', city: 'Lahore', status: 'verified' },
-  { companyName: 'Bytewave Technologies', contactEmail: 'jobs@bytewave.example.com', contactPhone: '051-2345678', city: 'Islamabad', status: 'verified' },
-  { companyName: 'Metro Digital Solutions', contactEmail: 'hr@metrodigital.example.com', contactPhone: '021-3456789', city: 'Karachi', status: 'pending' },
-  { companyName: 'Quantum Loop Pvt Ltd', contactEmail: 'talent@quantumloop.example.com', contactPhone: '042-3521234', city: 'Lahore', status: 'verified' },
-  { companyName: 'Nexus Tech Karachi', contactEmail: 'contact@nexustech.example.com', contactPhone: '021-3491234', city: 'Karachi', status: 'rejected' },
-  { companyName: 'Silverline IT Services', contactEmail: 'careers@silverline.example.com', contactPhone: '051-2287654', city: 'Islamabad', status: 'verified' },
-  { companyName: 'Falcon Analytics', contactEmail: 'hr@falconanalytics.example.com', contactPhone: '042-3598765', city: 'Lahore', status: 'pending' },
+  { companyName: 'TITAN', contactEmail: 'careers@titan.edu.pk', contactPhone: '021-3456701', city: 'Karachi', status: 'verified' },
 ];
 
-// requirements/description text below deliberately shares vocabulary with
-// some of the JOB_APPLICATIONS skills/experience/education text further
-// down, so computeMatchScore (imported above, same function the real apply
-// flow uses) produces real, varied, non-zero scores rather than everything
-// landing on null.
+// TITAN hires trainers and staff for its own two campuses — every posting
+// below is company: 'TITAN' at either Karachi or Sukkur, the institute's
+// only two real campuses (see README). requirements/description text still
+// deliberately shares vocabulary with the JOB_APPLICATIONS skills/experience
+// /education text further down, so computeMatchScore (imported above, same
+// function the real apply flow uses) produces real, varied, non-zero scores
+// rather than everything landing on null.
 const JOBS = [
   {
-    title: 'Frontend React Developer', company: 'Zenith Softworks', location: 'Karachi', type: 'Full-time', status: 'open', published: true,
-    description: 'Build and maintain customer-facing web applications using React and modern JavaScript.',
+    title: 'Web Development Trainer', company: 'TITAN', location: 'Karachi', type: 'Full-time', status: 'open', published: true,
+    description: 'Teach the Web Development track — HTML/CSS/JavaScript through React and Node.js/Express/MongoDB — to enrolled students.',
     requirements: ['React', 'JavaScript', 'HTML', 'CSS', 'REST APIs', 'Git'],
   },
   {
-    title: 'Backend Node.js Developer', company: 'Zenith Softworks', location: 'Karachi', type: 'Full-time', status: 'open', published: true,
-    description: 'Design and maintain REST APIs and backend services powering our web platform.',
+    title: 'Backend Development Trainer', company: 'TITAN', location: 'Karachi', type: 'Full-time', status: 'open', published: true,
+    description: 'Lead the backend half of the Web Development track — REST API design, databases, and server-side fundamentals.',
     requirements: ['Node.js', 'Express', 'MongoDB', 'REST APIs', 'JavaScript', 'Git'],
   },
   {
-    title: 'Data Analyst', company: 'Indus Cloud Systems', location: 'Lahore', type: 'Full-time', status: 'open', published: true,
-    description: 'Analyze business data and build dashboards to support decision-making across teams.',
+    title: 'AI & Data Science Trainer', company: 'TITAN', location: 'Sukkur', type: 'Full-time', status: 'open', published: true,
+    description: 'Teach Python, statistics, and applied data analysis to the AI & Data Science cohort.',
     requirements: ['Python', 'SQL', 'Data Analysis', 'Statistics', 'Excel'],
   },
   {
-    title: 'Machine Learning Engineer', company: 'Indus Cloud Systems', location: 'Lahore', type: 'Full-time', status: 'open', published: true,
-    description: 'Develop and deploy machine learning models for predictive analytics products.',
+    title: 'Machine Learning Trainer', company: 'TITAN', location: 'Sukkur', type: 'Full-time', status: 'open', published: true,
+    description: 'Teach machine learning fundamentals and guide capstone projects for the AI & Data Science track.',
     requirements: ['Python', 'Machine Learning', 'Deep Learning', 'SQL', 'Statistics'],
   },
   {
-    title: 'UI/UX Designer', company: 'Bytewave Technologies', location: 'Islamabad', type: 'Full-time', status: 'open', published: true,
-    description: 'Design intuitive interfaces and user flows for mobile and web products.',
+    title: 'UI/UX Design Trainer', company: 'TITAN', location: 'Karachi', type: 'Full-time', status: 'open', published: true,
+    description: 'Teach UX research, wireframing, and UI design in Figma to the UI/UX Design cohort.',
     requirements: ['Figma', 'UI Design', 'UX Research', 'Wireframing', 'Prototyping'],
   },
   {
-    title: 'Graphic Designer (Intern)', company: 'Bytewave Technologies', location: 'Islamabad', type: 'Internship', status: 'open', published: true,
-    description: 'Support the design team with marketing graphics, social media assets, and branding.',
+    title: 'Graphic Design Trainer', company: 'TITAN', location: 'Karachi', type: 'Internship', status: 'open', published: true,
+    description: 'Assist the design faculty with the Graphic Designing track — Photoshop, Illustrator, and branding fundamentals.',
     requirements: ['Adobe Photoshop', 'Illustrator', 'Branding', 'Typography'],
   },
   {
-    title: 'Flutter Mobile Developer', company: 'Quantum Loop Pvt Ltd', location: 'Lahore', type: 'Full-time', status: 'open', published: true,
-    description: 'Build cross-platform mobile applications with Flutter for our client portfolio.',
+    title: 'Mobile App Development Trainer (Flutter)', company: 'TITAN', location: 'Sukkur', type: 'Full-time', status: 'open', published: true,
+    description: 'Teach Flutter and Dart for cross-platform mobile development to the Mobile App Development cohort.',
     requirements: ['Flutter', 'Dart', 'Mobile App Development', 'REST APIs', 'Git'],
   },
   {
-    title: 'Digital Marketing Executive', company: 'Silverline IT Services', location: 'Islamabad', type: 'Full-time', status: 'open', published: true,
-    description: 'Plan and run digital marketing campaigns across social media and search platforms.',
+    title: 'Digital Marketing Trainer', company: 'TITAN', location: 'Sukkur', type: 'Full-time', status: 'open', published: true,
+    description: 'Teach SEO, social media marketing, and paid advertising fundamentals to the Digital Marketing cohort.',
     requirements: ['SEO', 'Social Media Marketing', 'Google Ads', 'Content Marketing', 'Analytics'],
   },
   {
-    title: 'Cybersecurity Analyst', company: 'Silverline IT Services', location: 'Islamabad', type: 'Full-time', status: 'closed', published: true,
-    description: 'Monitor systems for security threats and support incident response.',
+    title: 'Cybersecurity Trainer', company: 'TITAN', location: 'Sukkur', type: 'Full-time', status: 'closed', published: true,
+    description: 'Teach networking, common threats, and defensive fundamentals for the Cybersecurity Fundamentals track.',
     requirements: ['Network Security', 'Penetration Testing', 'SIEM', 'Risk Assessment'],
   },
   {
-    title: 'Full Stack Developer', company: 'Metro Digital Solutions', location: 'Karachi', type: 'Contract', status: 'open', published: true,
-    description: 'Own features end-to-end across a React frontend and Node.js backend.',
+    title: 'Full Stack Development Trainer', company: 'TITAN', location: 'Karachi', type: 'Contract', status: 'open', published: true,
+    description: 'Cover the full-stack capstone module for the Web Development track on a contract basis.',
     requirements: ['React', 'Node.js', 'MongoDB', 'JavaScript', 'REST APIs'],
   },
   {
-    title: 'QA / Test Engineer', company: 'Falcon Analytics', location: 'Lahore', type: 'Part-time', status: 'open', published: false,
-    description: 'Write and execute test plans for web and mobile applications.',
+    title: 'IT Lab Support Assistant', company: 'TITAN', location: 'Sukkur', type: 'Part-time', status: 'open', published: false,
+    description: 'Maintain and troubleshoot lab computers and classroom AV/network equipment across sessions.',
     requirements: ['Manual Testing', 'Test Case Design', 'Bug Tracking', 'REST APIs'],
   },
   {
-    title: 'Social Media Manager', company: 'Nexus Tech Karachi', location: 'Karachi', type: 'Internship', status: 'open', published: true,
-    description: 'Manage day-to-day content and engagement across our social channels.',
+    title: 'Social Media & Content Coordinator', company: 'TITAN', location: 'Karachi', type: 'Internship', status: 'open', published: true,
+    description: 'Manage day-to-day content and engagement across TITAN\'s social channels.',
     requirements: ['Social Media Marketing', 'Content Creation', 'Copywriting'],
   },
 ];
