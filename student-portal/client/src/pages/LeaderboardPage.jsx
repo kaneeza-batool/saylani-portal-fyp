@@ -105,6 +105,10 @@ export default function LeaderboardPage() {
               Retry
             </button>
           </div>
+        ) : data.students.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-sm font-medium text-neutral-500">No one's on the leaderboard yet.</p>
+          </div>
         ) : (
           <motion.div
             variants={staggerContainer}

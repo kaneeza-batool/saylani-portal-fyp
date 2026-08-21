@@ -18,6 +18,15 @@ export default function CampusMapPage() {
   }
 
   const cities = data.cities;
+
+  if (cities.length === 0) {
+    return (
+      <div className="bg-surface border border-neutral-200 rounded-xl p-[22px] text-body-sm text-neutral-500">
+        No campuses to show yet.
+      </div>
+    );
+  }
+
   const maxCount = Math.max(1, ...cities.map((c) => c.studentCount));
 
   return (

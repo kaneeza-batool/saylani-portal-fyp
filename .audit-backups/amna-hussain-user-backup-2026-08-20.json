@@ -1,0 +1,69 @@
+{
+  "_id": "6a868e730578cded98034180",
+  "name": "Amna Hussain",
+  "email": "amna.hussain@titan-demo.com",
+  "password": "$2b$12$.7E/b9yRuwFJI.3IbJ0ePe5Y63tAL2Vz4yCx16j1Nb7r4XogsfLAe",
+  "role": "trainer",
+  "campus_id": "6a8018b027d576ae1661791e",
+  "permissions": {
+    "STUDENT": {
+      "read": false,
+      "write": false,
+      "update": false
+    },
+    "ATTENDANCE_VIEW": {
+      "read": false,
+      "write": false
+    },
+    "ATTENDANCE_MARK": {
+      "read": false,
+      "write": false,
+      "update": false
+    },
+    "ATTENDANCE_ADD_MULTI": {
+      "read": false,
+      "write": false,
+      "update": false
+    },
+    "TRAINER": {
+      "read": false,
+      "write": false
+    },
+    "TRAINER_ATTENDANCE_MARK": {
+      "read": false,
+      "write": false,
+      "update": false
+    },
+    "TRAINER_ATTENDANCE_VIEW": {
+      "read": false,
+      "write": false
+    },
+    "BATCH": {
+      "read": false,
+      "write": false,
+      "update": false
+    },
+    "ADMISSIONS": {
+      "read": false,
+      "write": false,
+      "update": false
+    },
+    "FEEDBACK": {
+      "read": false
+    },
+    "ALERTS": {
+      "read": false
+    },
+    "AUDIT": {
+      "read": false
+    },
+    "FEES": {
+      "read": false,
+      "update": false
+    }
+  },
+  "status": "active",
+  "avatar_url": "",
+  "createdAt": "2026-08-20T05:19:47.730Z",
+  "updatedAt": "2026-08-20T05:19:47.730Z"
+}
